@@ -995,6 +995,12 @@
         .community-side .lj-btn { text-decoration: none; }
         .community-edit { position: absolute; top: 10px; right: 10px; display: none; }
         body.is-admin .community-edit { display: inline-flex; }
+        .community-admin { position: absolute; top: 10px; right: 10px; z-index: 3; display: none; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        body.is-admin .community-admin { display: flex; }
+        .community-band.is-off { display: none; }
+        body.is-admin .community-band.is-off { display: grid; opacity: .5; border-style: dashed !important; }
+        body.is-admin .community-band.is-off::before { content: "Oculta para tus clientes"; position: absolute; top: 12px; left: 14px; z-index: 3; padding: 4px 10px; border-radius: 2px; background: #a3121a; color: #fff; font: 800 11px/1.2 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+        @media (max-width: 760px) { body.is-admin .community-band { padding-top: 56px; } }
 
         .buy-mini {
             position: relative; margin-top: 2.25rem; display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(16px, 3vw, 32px); align-items: center;
@@ -1658,7 +1664,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                     <div class="community-big"><span id="communityNum">+800</span><small>miembros</small></div>
                     <a id="communityJoin" class="lj-btn lj-btn-green lj-btn-lg" href="#" target="_blank" rel="noopener noreferrer">Unirme a la comunidad</a>
                 </div>
-                <button id="communityEditBtn" type="button" class="lj-btn lj-btn-sm community-edit">✏️ Editar comunidad</button>
+                <div class="community-admin"><button id="communityToggleBtn" type="button" class="lj-btn lj-btn-sm"></button><button id="communityEditBtn" type="button" class="lj-btn lj-btn-sm">✏️ Editar comunidad</button></div>
             </section>
 
             <section class="home-block">
@@ -3508,6 +3514,9 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             document.getElementById("communityCount").textContent = `más de ${n.toLocaleString("es-PE")} personas`;
             document.getElementById("communityNum").textContent = `+${n.toLocaleString("es-PE")}`;
             document.getElementById("communityJoin").href = communityJoinLink(c);
+            const on = c.visible !== false;
+            document.getElementById("communityBand").classList.toggle("is-off", !on);
+            document.getElementById("communityToggleBtn").textContent = on ? "🙈 Ocultar a clientes" : "👁 Mostrar a clientes";
         }
         let pendingCommunityLogo = null;
         function refreshCommunityPreview() {
@@ -3517,6 +3526,15 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
         }
         function initCommunity() {
             const c = () => DATA.site.community;
+            document.getElementById("communityToggleBtn").addEventListener("click", () => {
+                if (!isAdmin) return;
+                const on = c().visible !== false;
+                c().visible = !on;
+                commit();
+                const live = typeof fbSession !== "undefined" && fbSession && typeof fbCfg === "function" && fbCfg();
+                showToast((on ? "La comunidad ya no se mostrará a tus clientes." : "La comunidad se mostrará otra vez a tus clientes.") +
+                    (live ? " Se aplica al instante." : " Toca 🚀 Publicar para que se aplique."), "Comunidad");
+            });
             document.getElementById("communityEditBtn").addEventListener("click", () => {
                 if (!isAdmin) return;
                 pendingCommunityLogo = null;
@@ -4452,7 +4470,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             if (!fbCfg() || !fbSession) return;
             try {
                 const now = Date.now();
-                await fsRequest("live/catalog", { method: "PATCH", auth: true, body: { fields: fsFields({ sets: liveSnapshot(), updatedAt: now }) } });
+                await fsRequest("live/catalog", { method: "PATCH", auth: true, body: { fields: fsFields({ sets: liveSnapshot(), communityVisible: DATA.site.community.visible !== false, updatedAt: now }) } });
                 liveApplied = now;
                 setDbPill("live");
             } catch (e) {
@@ -4479,6 +4497,9 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                         if (k in o && o[k] !== s[k] && !(k === "price" && o[k] === null)) { s[k] = o[k]; changed = true; }
                     });
                 });
+                if (typeof d.communityVisible === "boolean" && d.communityVisible !== (DATA.site.community.visible !== false)) {
+                    DATA.site.community.visible = d.communityVisible; changed = true;
+                }
                 if (changed) {
                     liveSyncing = true;
                     renderAll();
