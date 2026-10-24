@@ -1110,40 +1110,94 @@
         .db-code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; line-height: 1.45; resize: vertical; white-space: pre; }
         .db-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
         .db-status { font-size: 12.5px; font-weight: 700; }
+        /* Pedidos y clientes */
+        .ord-panel { overflow-x: hidden; }
+        #ordersModal .lj-close { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
         .ord-tabs { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; }
-        .ord-tab { padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0, 0, 0, 0.45); color: #e7d9b0; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .ord-tab { min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0, 0, 0, 0.45); color: #e7d9b0; font-weight: 800; font-size: 14px; cursor: pointer; }
         .ord-tab.active { background: linear-gradient(180deg, #4a2c08 0%, #241205 100%); color: #fff3b0; box-shadow: inset 0 0 0 1px #f5d061; }
-        #ordRefresh { margin-left: auto; }
-        .ord-stats { grid-template-columns: repeat(4, 1fr); }
-        .ord-controls { display: grid; grid-template-columns: 1.6fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .ord-controls .lj-input { padding: 8px 10px; font-size: 14px; }
-        .ord-list { display: flex; flex-direction: column; gap: 10px; }
-        .ord-card { padding: 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); border-left: 4px solid #f59e0b; background: rgba(0, 0, 0, 0.45); }
-        .ord-card.st-pagado { border-left-color: #34d399; }
-        .ord-card.st-entregado { border-left-color: #10b981; opacity: 0.85; }
-        .ord-card.st-cancelado { border-left-color: #f87171; opacity: 0.6; }
-        .ord-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .ord-code { font-family: 'Cinzel', serif; font-size: 15px; color: #fff3b0; letter-spacing: 0.04em; }
-        .ord-date { font-size: 12px; color: #a8a29e; margin-left: 10px; }
-        .ord-status { width: auto; padding: 6px 10px; font-size: 13px; font-weight: 700; }
-        .ord-cust { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: #e7e5e4; margin-top: 8px; }
-        .ord-cust a, .cust-meta a { color: #fcd34d; font-weight: 700; }
-        .ord-items { list-style: none; margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.35); font-size: 13px; color: #d6d3d1; }
-        .ord-items li { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
-        .ord-items li span:last-child { color: #fcd34d; font-weight: 700; white-space: nowrap; }
-        .ord-total { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 8px; font-size: 13px; color: #6ee7b7; }
-        .ord-total b { font-family: 'Cinzel', serif; font-size: 16px; color: #fff3b0; }
-        .ord-note { font-size: 11px; color: #a8a29e; }
-        .cust-row { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.25); background: rgba(0, 0, 0, 0.4); }
-        .cust-name { font-family: 'Cinzel', serif; font-weight: 700; color: #fff; font-size: 14px; }
-        .cust-meta { font-size: 12px; color: #a8a29e; margin-top: 2px; }
-        .cust-friend { font-size: 11px; color: #fcd34d; font-weight: 700; display: flex; flex-direction: column; gap: 3px; }
-        .cust-friend .lj-input { padding: 6px 8px; font-size: 13px; color-scheme: dark; }
-        @media (max-width: 760px) {
-            .ord-stats { grid-template-columns: repeat(2, 1fr); }
-            .ord-controls { grid-template-columns: 1fr; }
-            .cust-row { grid-template-columns: 1fr; }
-            .cust-row .stock-status { justify-self: start; }
+        .ord-refresh { margin-left: auto; min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0, 0, 0, 0.45); color: #fde68a; font-weight: 800; font-size: 13px; cursor: pointer; }
+        .ord-refresh:hover, .ord-tab:hover { border-color: #f5d061; }
+        .ord-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+        .ord-sum { padding: 10px 8px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(0, 0, 0, 0.45); text-align: center; min-width: 0; }
+        .ord-sum b { display: block; font-family: 'Cinzel', serif; font-size: 20px; color: #fff3b0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ord-sum span { display: block; font-size: 10.5px; color: #a8a29e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+        .ord-sum.warn b { color: #fcd34d; }
+        .ord-sum.ok b { color: #6ee7b7; }
+        .ord-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        .ord-chips[hidden] { display: none; }
+        .ord-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(212, 175, 55, 0.35); background: rgba(0, 0, 0, 0.45); color: #e7d9b0; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .ord-chip .chip-n { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+        .ord-chip.active { color: #1a0d03; background: linear-gradient(180deg, #fde68a, #d99a22); border-color: #fff3b0; }
+        .ord-chip.active .chip-n { background: rgba(0, 0, 0, 0.2); }
+        .ord-chip.chip-pendiente:not(.active) .chip-n { background: rgba(245, 158, 11, 0.25); color: #fde68a; }
+        .ord-controls { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 8px; margin-bottom: 12px; }
+        .ord-controls .lj-input { min-height: 44px; padding: 8px 12px; font-size: 14px; }
+        .ord-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+        .ord-empty { grid-column: 1 / -1; text-align: center; padding: 32px 10px; color: #a8a29e; font-size: 14px; }
+        .ord-empty.err { color: #fca5a5; }
+        .ord-card { --st: #f59e0b; min-width: 0; padding: 14px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.25); border-top: 3px solid var(--st); background: linear-gradient(180deg, rgba(30, 14, 6, 0.75) 0%, rgba(0, 0, 0, 0.5) 100%); display: flex; flex-direction: column; gap: 10px; }
+        .ord-card.st-pagado { --st: #34d399; }
+        .ord-card.st-entregado { --st: #10b981; }
+        .ord-card.st-cancelado { --st: #f87171; }
+        .ord-card.st-cancelado .ord-items, .ord-card.st-cancelado .ord-total { opacity: 0.55; }
+        .cust-card { --st: #d4af37; }
+        .ord-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .ord-id { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .ord-code { font-family: 'Cinzel', serif; font-size: 16px; color: #fff3b0; letter-spacing: 0.05em; }
+        .ord-date { font-size: 12px; color: #a8a29e; }
+        .ord-badge { flex-shrink: 0; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; border: 1px solid; white-space: nowrap; }
+        .ord-badge.st-pendiente { color: #fde68a; border-color: rgba(245, 158, 11, 0.7); background: rgba(245, 158, 11, 0.15); }
+        .ord-badge.st-pagado { color: #a7f3d0; border-color: rgba(52, 211, 153, 0.7); background: rgba(52, 211, 153, 0.14); }
+        .ord-badge.st-entregado { color: #6ee7b7; border-color: rgba(16, 185, 129, 0.7); background: rgba(16, 185, 129, 0.18); }
+        .ord-badge.st-cancelado { color: #fca5a5; border-color: rgba(248, 113, 113, 0.7); background: rgba(220, 38, 38, 0.15); }
+        .ord-cust { display: flex; flex-direction: column; gap: 3px; }
+        .ord-cust-name, .cust-name { font-weight: 800; color: #fff; font-size: 14.5px; overflow-wrap: anywhere; }
+        .cust-name { font-family: 'Cinzel', serif; font-size: 15px; }
+        .ord-cust-steam { font-size: 12.5px; color: #d6d3d1; overflow-wrap: anywhere; }
+        .ord-cust-steam a { color: #fcd34d; font-weight: 700; text-decoration: underline; display: inline-block; padding: 6px 0; }
+        .ord-steam-id { font-family: ui-monospace, Consolas, monospace; color: #e7e5e4; }
+        .ord-items { list-style: none; margin: 0; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.4); font-size: 13px; color: #e7e5e4; }
+        .ord-items li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+        .ord-items li + li { border-top: 1px dashed rgba(212, 175, 55, 0.15); }
+        .it-name { min-width: 0; overflow-wrap: anywhere; }
+        .it-name b { color: #fcd34d; }
+        .it-price { color: #fcd34d; font-weight: 700; white-space: nowrap; }
+        .ord-total-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+        .ord-notes { font-size: 11.5px; color: #a8a29e; min-width: 0; }
+        .ord-total { font-family: 'Cinzel', serif; font-size: 24px; font-weight: 900; color: #fff3b0; white-space: nowrap; line-height: 1; }
+        .cust-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+        .cust-stats div { padding: 8px 6px; border-radius: 8px; background: rgba(0, 0, 0, 0.4); text-align: center; min-width: 0; }
+        .cust-stats b { display: block; font-family: 'Cinzel', serif; color: #fff3b0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cust-stats span { display: block; font-size: 10.5px; color: #a8a29e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        .fr-edit { padding: 10px; border-radius: 10px; border: 1px solid rgba(110, 231, 183, 0.25); background: rgba(2, 44, 34, 0.25); }
+        .fr-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .fr-label { font-size: 11.5px; font-weight: 800; color: #a7f3d0; text-transform: uppercase; letter-spacing: 0.05em; }
+        .fr-badge { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid; }
+        .fr-badge.fr-none { color: #a8a29e; border-color: #57534e; }
+        .fr-badge.fr-ok { color: #86efac; border-color: rgba(34, 197, 94, 0.6); background: rgba(34, 197, 94, 0.12); }
+        .fr-badge.fr-wait { color: #fde68a; border-color: rgba(245, 158, 11, 0.7); background: rgba(245, 158, 11, 0.12); }
+        .fr-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+        .fr-date { grid-column: 1 / -1; width: 100%; min-height: 44px; padding: 6px 8px; font-size: 14px; color-scheme: dark; min-width: 0; }
+        .fr-btn { min-height: 44px; padding: 0 6px; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0, 0, 0, 0.5); color: #fde68a; font-weight: 700; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+        .fr-btn:hover:not(:disabled) { border-color: #f5d061; background: rgba(66, 34, 6, 0.6); }
+        .fr-btn:disabled { opacity: 0.35; cursor: default; }
+        .fr-clear:not(:disabled) { color: #fca5a5; border-color: rgba(248, 113, 113, 0.45); }
+        .ord-actions { display: flex; align-items: flex-end; gap: 8px; }
+        .ord-status-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 800; color: #fcd34d; text-transform: uppercase; letter-spacing: 0.05em; }
+        .ord-status { min-height: 44px; padding: 6px 10px; font-size: 14px; font-weight: 700; }
+        .ord-del { min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(248, 113, 113, 0.5); background: rgba(69, 10, 10, 0.55); color: #fecaca; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; }
+        .ord-del:hover { background: #7f1d1d; color: #fff; }
+        @media (max-width: 900px) {
+            .ord-list { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .ord-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .ord-controls { grid-template-columns: minmax(0, 1fr); }
+            .ord-refresh span { display: none; }
+            .ord-tab { flex: 1; padding: 0 10px; }
+            .ord-chip { padding: 0 11px; }
+            .ord-card { padding: 12px; }
         }
 
         .lj-panel.xwide { max-width: 860px; }
@@ -1742,8 +1796,18 @@
             <div class="db-step">
                 <h3>3. Reglas de seguridad</h3>
                 <p>Cópialas en Firebase → Firestore Database → <b>Reglas</b> y toca <b>Publicar</b>. Así solo tú puedes ver pedidos y cambiar precios.</p>
-                <textarea id="dbRules" class="lj-input db-code" rows="7" readonly="" spellcheck="false"></textarea>
+                <textarea id="dbRules" class="lj-input db-code" rows="7" readonly spellcheck="false"></textarea>
                 <div class="db-row"><button id="dbRulesCopy" type="button" class="lj-btn lj-btn-sm">📋 Copiar reglas</button></div>
+            </div>
+
+            <div class="db-step">
+                <h3>4. Aviso por correo (Google Apps Script)</h3>
+                <p>Pega la dirección de tu aplicación web de Apps Script (termina en <code>/exec</code>). Cada pedido nuevo te llegará por correo.</p>
+                <input id="dbNotifyUrl" class="lj-input" type="url" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec">
+                <div class="db-row">
+                    <button id="dbNotifySave" type="button" class="lj-btn lj-btn-sm lj-btn-gold">Guardar aviso</button>
+                    <span id="dbNotifyStatus" class="db-status"></span>
+                </div>
             </div>
             <div id="dbError" class="lj-error"></div>
         </div>
@@ -1751,25 +1815,23 @@
 
     <!-- ================= MODAL: PEDIDOS Y CLIENTES ================= -->
     <div id="ordersModal" class="lj-modal" role="dialog" aria-modal="true" aria-labelledby="ordersTitle">
-        <div class="lj-panel xwide">
+        <div class="lj-panel xwide ord-panel">
             <div class="lj-panel-head">
                 <h2 id="ordersTitle" class="lj-panel-title gold-gradient-text">📋 Pedidos y clientes</h2>
                 <button type="button" class="lj-close" data-close="ordersModal" aria-label="Cerrar">×</button>
             </div>
-            <div class="ord-tabs">
-                <button type="button" class="ord-tab active" data-tab="orders">Pedidos</button>
-                <button type="button" class="ord-tab" data-tab="customers">Clientes</button>
-                <button id="ordRefresh" type="button" class="lj-btn lj-btn-sm">↻ Actualizar</button>
+            <div class="ord-tabs" role="tablist">
+                <button type="button" class="ord-tab active" data-tab="orders" role="tab">Pedidos</button>
+                <button type="button" class="ord-tab" data-tab="customers" role="tab">Clientes</button>
+                <button id="ordRefresh" type="button" class="ord-refresh" aria-label="Actualizar">↻ <span>Actualizar</span></button>
             </div>
-            <div id="ordStats" class="stock-stats ord-stats"></div>
+            <div id="ordStats" class="ord-summary"></div>
+            <div id="ordChips" class="ord-chips" role="group" aria-label="Filtrar por estado"></div>
             <div class="ord-controls">
-                <input id="ordSearch" class="lj-input" type="text" placeholder="Buscar por código, nombre o ID de Steam…">
-                <select id="ordStatus" class="lj-input">
-                    <option value="all">Todos los estados</option>
-                    <option value="pendiente">⏳ Pendientes</option>
-                    <option value="pagado">💰 Pagados</option>
-                    <option value="entregado">✅ Entregados</option>
-                    <option value="cancelado">✖ Cancelados</option>
+                <input id="ordSearch" class="lj-input" type="search" placeholder="Buscar por código, nombre o ID de Steam…">
+                <select id="ordSort" class="lj-input" aria-label="Ordenar">
+                    <option value="recent">Más recientes</option>
+                    <option value="amount">Mayor monto</option>
                 </select>
             </div>
             <div id="ordList" class="ord-list"></div>
@@ -1786,11 +1848,11 @@
             <p class="buy-hint" style="margin:0 0 12px;">Se configura una sola vez. Los datos se guardan <strong>solo en este navegador</strong>; el token nunca se sube a la página.</p>
             <div class="lj-field">
                 <label class="lj-label" for="ghOwner">Usuario de GitHub</label>
-                <input id="ghOwner" class="lj-input" type="text" autocapitalize="off" spellcheck="false" placeholder="ej. litlejacob" required="">
+                <input id="ghOwner" class="lj-input" type="text" autocapitalize="off" spellcheck="false" placeholder="ej. litlejacob" required>
             </div>
             <div class="lj-field">
                 <label class="lj-label" for="ghRepo">Nombre del repositorio</label>
-                <input id="ghRepo" class="lj-input" type="text" autocapitalize="off" spellcheck="false" placeholder="ej. litlejacob-store" required="">
+                <input id="ghRepo" class="lj-input" type="text" autocapitalize="off" spellcheck="false" placeholder="ej. litlejacob-store" required>
             </div>
             <div class="lj-row">
                 <div class="lj-field">
@@ -2299,9 +2361,10 @@
         }
 
         let confirmResolver = null;
-        function confirmDialog(message, okLabel = "Confirmar") {
+        function confirmDialog(message, okLabel = "Confirmar", cancelLabel = "Cancelar") {
             document.getElementById("confirmMessage").textContent = message;
             document.getElementById("confirmOk").textContent = okLabel;
+            document.getElementById("confirmCancel").textContent = cancelLabel;
             openModal("confirmModal");
             return new Promise(resolve => { confirmResolver = resolve; });
         }
@@ -4204,7 +4267,19 @@
                 createdAt: new Date()
             };
             fsRequest("orders", { method: "POST", query: "documentId=" + encodeURIComponent(st.code), body: { fields: fsFields(doc) } })
+                .then(() => notifyNewOrder(st.code))
                 .catch(e => console.warn("No se pudo registrar el pedido:", e));
+        }
+        // Avisa a tu script de Google (solo manda el código; el script lee el pedido real de la base de datos)
+        function notifyNewOrder(code) {
+            const url = DATA.site && DATA.site.notifyUrl;
+            if (!url || !code) return;
+            const payload = JSON.stringify({ code });
+            try {
+                if (navigator.sendBeacon && navigator.sendBeacon(url, new Blob([payload], { type: "text/plain;charset=utf-8" }))) return;
+            } catch (e) { /* se usa fetch */ }
+            fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: payload, keepalive: true })
+                .catch(e => console.warn("No se pudo enviar el aviso:", e));
         }
 
         // ---- Ventana: Base de datos ----
@@ -4241,10 +4316,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
-    // Pedidos: los clientes solo pueden crear; solo tú los ves y cambias
+    // Pedidos: los clientes solo pueden crear; solo tú los ves, cambias y eliminas
     match /orders/{id} {
       allow create: if isAdmin() || validOrder();
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
     // Clientes: solo tú
     match /customers/{id} {
@@ -4278,6 +4355,11 @@ service cloud.firestore {
             document.getElementById("dbSessionBox").style.display = f && fbSession ? "" : "none";
             document.getElementById("dbNeedCfg").style.display = f ? "none" : "";
             if (fbSession) document.getElementById("dbSessionInfo").textContent = `Conectado como ${fbSession.email}`;
+            const nUrl = (DATA.site && DATA.site.notifyUrl) || "";
+            const nStatus = document.getElementById("dbNotifyStatus");
+            if (document.activeElement !== document.getElementById("dbNotifyUrl")) document.getElementById("dbNotifyUrl").value = nUrl;
+            nStatus.textContent = nUrl ? "✓ Aviso activado" : "Sin configurar";
+            nStatus.style.color = nUrl ? "#6ee7b7" : "#a8a29e";
             const rules = document.getElementById("dbRules");
             rules.value = fbSession ? firestoreRules(fbSession.uid) : "Primero entra como administrador (paso 2) y aquí aparecerán tus reglas.";
             document.getElementById("dbRulesCopy").disabled = !fbSession;
@@ -4324,6 +4406,19 @@ service cloud.firestore {
                 await livePush();
                 showToast("Precios y stock enviados a la base de datos.", "En vivo");
             });
+            document.getElementById("dbNotifySave").addEventListener("click", () => {
+                const err = document.getElementById("dbError");
+                const v = document.getElementById("dbNotifyUrl").value.trim();
+                if (v && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(v)) {
+                    err.textContent = "La dirección debe ser como https://script.google.com/macros/s/…/exec";
+                    return;
+                }
+                err.textContent = "";
+                DATA.site.notifyUrl = v;
+                commit();
+                updateDbStatus();
+                showToast(v ? "Aviso guardado. Toca 🚀 Publicar para que se active en tu web." : "Aviso por correo desactivado.", "Base de datos");
+            });
             document.getElementById("dbRulesCopy").addEventListener("click", () => {
                 const t = document.getElementById("dbRules");
                 t.select();
@@ -4345,13 +4440,19 @@ service cloud.firestore {
                 fbLoadSession();
                 updateDbStatus();
                 liveFetch();
+                if (new URLSearchParams(location.search).get("panel") === "pedidos") {
+                    if (isAdmin) openOrders();
+                    else document.getElementById("loginOpenBtn").click();
+                }
             });
             setInterval(() => { if (document.visibilityState === "visible") liveFetch(); }, 60000);
             document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") liveFetch(); });
         }
 
         // ---- Ventana: Pedidos y clientes ----
-        const ordState = { tab: "orders", orders: [], customers: {}, loading: false, error: "" };
+        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "" };
+        const friendSaved = {};   // última fecha de amistad guardada en Firestore, por cliente
+        const friendTimers = {};  // guardado diferido (para los botones −1 / +1)
         function custKey(steamId, name) {
             if (steamId) return "s" + steamId;
             return "n-" + (normalizeText(name || "cliente").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "cliente");
@@ -4360,22 +4461,29 @@ service cloud.firestore {
             if (!(d instanceof Date) || isNaN(d)) return "";
             return d.toLocaleString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
         }
-        function todayIso() {
-            const d = new Date();
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        function isoOf(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+        function todayIso() { return isoOf(new Date()); }
+        function isoShift(iso, days) {
+            const d = iso ? new Date(iso + "T12:00:00") : new Date();
+            d.setDate(d.getDate() + days);
+            return isoOf(d);
         }
+        function validIso(iso) { return /^\d{4}-\d{2}-\d{2}$/.test(iso || "") && Number(iso.slice(0, 4)) >= 2000 && !isNaN(new Date(iso + "T12:00:00")); }
+        // Estado de la regla de 30 días (solo informativo: cualquier fecha es válida)
         function friendInfo(key) {
             const c = ordState.customers[key];
-            const since = c && c.friendSince;
-            if (!since) return { txt: "Sin fecha de amistad", cls: "st-none", since: "" };
+            const since = c && validIso(c.friendSince) ? c.friendSince : "";
+            if (!since) return { txt: "Sin fecha de amistad", cls: "fr-none", since: "" };
             const start = new Date(since + "T00:00:00");
-            const ready = new Date(start.getTime() + 30 * 86400000);
-            const left = Math.ceil((ready - Date.now()) / 86400000);
-            if (left <= 0) return { txt: "✓ Entrega inmediata", cls: "st-ok", since };
-            return { txt: `Entrega desde ${ready.toLocaleDateString("es-PE")} (faltan ${left} ${left === 1 ? "día" : "días"})`, cls: "st-low", since };
+            const ready = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 30);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const left = Math.round((ready - today) / 86400000);
+            if (left <= 0) return { txt: "✓ Entrega inmediata", cls: "fr-ok", since };
+            return { txt: `Entrega desde ${ready.toLocaleDateString("es-PE")}, faltan ${left} ${left === 1 ? "día" : "días"}`, cls: "fr-wait", since };
         }
         function findSet(id) { return DATA.sets.find(s => String(s.id) === String(id)); }
         function isSale(o) { return o.status === "pagado" || o.status === "entregado"; }
+        function statusMeta(key) { return ORDER_STATUSES.find(s => s.key === key) || ORDER_STATUSES[0]; }
 
         async function openOrders() {
             if (!fbCfg() || !fbSession) { openDbModal(fbCfg() ? "Entra como administrador para ver tus pedidos." : "Primero conecta tu base de datos de Firebase."); return; }
@@ -4393,7 +4501,11 @@ service cloud.firestore {
                 ]);
                 ordState.orders = ((o && o.documents) || []).map(fsDoc);
                 ordState.customers = {};
-                ((c && c.documents) || []).forEach(d => { const x = fsDoc(d); ordState.customers[x._id] = x; });
+                ((c && c.documents) || []).forEach(d => {
+                    const x = fsDoc(d);
+                    ordState.customers[x._id] = x;
+                    friendSaved[x._id] = x.friendSince || "";
+                });
             } catch (e) {
                 ordState.error = fsErrorText(e);
             }
@@ -4412,70 +4524,122 @@ service cloud.firestore {
             Object.values(ordState.customers).forEach(c => {
                 if (!map[c._id]) map[c._id] = { key: c._id, name: c.name || "", steamId: c.steamId || "", orders: 0, spent: 0, last: null };
             });
-            return Object.values(map).sort((a, b) => (b.last || 0) - (a.last || 0));
+            return Object.values(map);
         }
+
+        // ---- Piezas de la interfaz ----
+        function steamLineHtml(steamId) {
+            const url = steamProfileUrl(steamId);
+            return `🎮 ${steamId ? `<span class="ord-steam-id">${escapeHtml(steamId)}</span>` : "sin ID de Steam"}${url ? ` <a href="${url}" target="_blank" rel="noopener noreferrer">Perfil de Steam ↗</a>` : ""}`;
+        }
+        function friendEditorHtml(key) {
+            const fi = friendInfo(key);
+            return `<div class="fr-edit" data-key="${escapeHtml(key)}">
+                <div class="fr-top">
+                    <span class="fr-label">🤝 Amigos desde</span>
+                    <span class="fr-badge ${fi.cls}">${escapeHtml(fi.txt)}</span>
+                </div>
+                <div class="fr-controls">
+                    <input type="date" class="lj-input fr-date" data-act="friend-date" value="${fi.since}" aria-label="Fecha de amistad">
+                    <button type="button" class="fr-btn" data-act="friend-shift" data-days="-1">−1 día</button>
+                    <button type="button" class="fr-btn" data-act="friend-shift" data-days="1">+1 día</button>
+                    <button type="button" class="fr-btn" data-act="friend-today">Hoy</button>
+                    <button type="button" class="fr-btn fr-clear" data-act="friend-clear" ${fi.since ? "" : "disabled"}>Borrar</button>
+                </div>
+            </div>`;
+        }
+        function orderCardHtml(o) {
+            const key = custKey(o.steamId, o.customerName);
+            const st = statusMeta(o.status);
+            const items = (o.items || []).map(it => `<li><span class="it-name">${it.qty > 1 ? `<b>${it.qty} ×</b> ` : ""}${escapeHtml(it.name)}</span><span class="it-price">${money((Number(it.price) || 0) * (it.qty || 1))}</span></li>`).join("");
+            const notes = [setsLabel(Number(o.count) || (o.items || []).reduce((n, it) => n + (it.qty || 1), 0))];
+            if (o.discount) notes.push(`Dscto. −${money(o.discount)}`);
+            if (o.stockApplied) notes.push("stock descontado");
+            if (o.paymentMethod) notes.push(`Pago: ${escapeHtml(o.paymentMethod)}`);
+            return `<article class="ord-card st-${escapeHtml(st.key)}" data-id="${escapeHtml(o._id)}">
+                <header class="ord-head">
+                    <div class="ord-id"><b class="ord-code">${escapeHtml(o.code || o._id)}</b><span class="ord-date">${fmtDate(o.createdAt)}</span></div>
+                    <span class="ord-badge st-${escapeHtml(st.key)}">${st.txt}</span>
+                </header>
+                <div class="ord-cust">
+                    <div class="ord-cust-name">👤 ${escapeHtml(o.customerName || "Sin nombre")}</div>
+                    <div class="ord-cust-steam">${steamLineHtml(o.steamId)}</div>
+                </div>
+                <ul class="ord-items">${items}</ul>
+                <div class="ord-total-row"><span class="ord-notes">${notes.join(" · ")}</span><b class="ord-total">${money(o.total)}</b></div>
+                ${friendEditorHtml(key)}
+                <footer class="ord-actions">
+                    <label class="ord-status-wrap"><span>Estado</span>
+                        <select class="lj-input ord-status" data-act="status">${ORDER_STATUSES.map(s => `<option value="${s.key}" ${s.key === st.key ? "selected" : ""}>${s.txt}</option>`).join("")}</select>
+                    </label>
+                    <button type="button" class="ord-del" data-act="delete">🗑 Eliminar</button>
+                </footer>
+            </article>`;
+        }
+        function customerCardHtml(c) {
+            return `<article class="ord-card cust-card" data-key="${escapeHtml(c.key)}">
+                <header class="ord-head">
+                    <div class="ord-id"><b class="cust-name">👤 ${escapeHtml(c.name || "Sin nombre")}</b></div>
+                </header>
+                <div class="ord-cust-steam">${steamLineHtml(c.steamId)}</div>
+                <div class="cust-stats">
+                    <div><b>${c.orders}</b><span>${c.orders === 1 ? "Pedido" : "Pedidos"}</span></div>
+                    <div><b>${money(c.spent)}</b><span>Gastado</span></div>
+                    <div><b>${c.last ? c.last.toLocaleDateString("es-PE") : "—"}</b><span>Último pedido</span></div>
+                </div>
+                ${friendEditorHtml(c.key)}
+            </article>`;
+        }
+
         function renderOrders() {
-            document.querySelectorAll("#ordersModal .ord-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === ordState.tab));
-            const statusSel = document.getElementById("ordStatus");
-            statusSel.style.display = ordState.tab === "orders" ? "" : "none";
-            const list = document.getElementById("ordList");
-            const stats = document.getElementById("ordStats");
+            document.querySelectorAll("#ordersModal .ord-tab").forEach(b => {
+                const on = b.dataset.tab === ordState.tab;
+                b.classList.toggle("active", on);
+                b.setAttribute("aria-selected", on ? "true" : "false");
+            });
+            const isOrders = ordState.tab === "orders";
             const now = new Date();
-            const today = ordState.orders.filter(o => o.createdAt && o.createdAt.toDateString() === now.toDateString()).length;
+            const customers = customersList();
             const pending = ordState.orders.filter(o => o.status === "pendiente").length;
+            const today = ordState.orders.filter(o => o.createdAt && o.createdAt.toDateString() === now.toDateString()).length;
             const month = ordState.orders.filter(o => isSale(o) && o.createdAt && o.createdAt.getMonth() === now.getMonth() && o.createdAt.getFullYear() === now.getFullYear())
                 .reduce((a, o) => a + (Number(o.total) || 0), 0);
-            stats.innerHTML = `
-                <div class="stock-stat warn"><b>${pending}</b><span>Pendientes</span></div>
-                <div class="stock-stat"><b>${today}</b><span>Pedidos hoy</span></div>
-                <div class="stock-stat"><b>${money(month)}</b><span>Ventas del mes</span></div>
-                <div class="stock-stat"><b>${customersList().length}</b><span>Clientes</span></div>`;
+            document.getElementById("ordStats").innerHTML = `
+                <div class="ord-sum warn"><b>${pending}</b><span>Pendientes</span></div>
+                <div class="ord-sum"><b>${today}</b><span>Pedidos hoy</span></div>
+                <div class="ord-sum ok"><b>${money(month)}</b><span>Ventas del mes</span></div>
+                <div class="ord-sum"><b>${customers.length}</b><span>Clientes</span></div>`;
 
-            if (ordState.loading && !ordState.orders.length) { list.innerHTML = `<div class="cart-empty">Cargando…</div>`; return; }
-            if (ordState.error) { list.innerHTML = `<div class="cart-empty" style="color:#fca5a5;">${escapeHtml(ordState.error)}</div>`; return; }
+            const chips = document.getElementById("ordChips");
+            chips.hidden = !isOrders;
+            if (isOrders) {
+                const count = k => k === "all" ? ordState.orders.length : ordState.orders.filter(o => (o.status || "pendiente") === k).length;
+                const defs = [{ key: "all", txt: "Todos" }, { key: "pendiente", txt: "Pendientes" }, { key: "pagado", txt: "Pagados" }, { key: "entregado", txt: "Entregados" }, { key: "cancelado", txt: "Cancelados" }];
+                chips.innerHTML = defs.map(d => `<button type="button" class="ord-chip chip-${d.key} ${ordState.filter === d.key ? "active" : ""}" data-filter="${d.key}" aria-pressed="${ordState.filter === d.key}">${d.txt}<span class="chip-n">${count(d.key)}</span></button>`).join("");
+            }
+            const sortSel = document.getElementById("ordSort");
+            sortSel.options[1].textContent = isOrders ? "Mayor monto" : "Mayor gasto";
+            sortSel.value = ordState.sort;
+            document.getElementById("ordSearch").placeholder = isOrders ? "Buscar por código, nombre o ID de Steam…" : "Buscar por nombre o ID de Steam…";
+
+            const list = document.getElementById("ordList");
+            if (ordState.loading && !ordState.orders.length) { list.innerHTML = `<div class="ord-empty">Cargando…</div>`; return; }
+            if (ordState.error) { list.innerHTML = `<div class="ord-empty err">${escapeHtml(ordState.error)}</div>`; return; }
             const q = normalizeText(document.getElementById("ordSearch").value.trim());
 
-            if (ordState.tab === "customers") {
-                const rows = customersList().filter(c => !q || normalizeText(`${c.name} ${c.steamId}`).includes(q));
-                list.innerHTML = rows.length ? rows.map(c => {
-                    const fi = friendInfo(c.key);
-                    const url = steamProfileUrl(c.steamId);
-                    return `<div class="cust-row" data-key="${escapeHtml(c.key)}">
-                        <div class="cust-main">
-                            <div class="cust-name">${escapeHtml(c.name || "Sin nombre")}</div>
-                            <div class="cust-meta">🎮 ${c.steamId ? escapeHtml(c.steamId) : "sin ID"}${url ? ` · <a href="${url}" target="_blank" rel="noopener noreferrer">Ver perfil</a>` : ""} · ${c.orders} ${c.orders === 1 ? "pedido" : "pedidos"} · Compró ${money(c.spent)}${c.last ? " · Último: " + fmtDate(c.last) : ""}</div>
-                        </div>
-                        <label class="cust-friend">Amigos desde
-                            <input type="date" class="lj-input" data-act="friend-date" value="${fi.since}" max="${todayIso()}">
-                        </label>
-                        <span class="stock-status ${fi.cls}">${escapeHtml(fi.txt)}</span>
-                    </div>`;
-                }).join("") : `<div class="cart-empty">Aún no hay clientes. Aparecerán cuando lleguen pedidos.</div>`;
+            if (!isOrders) {
+                const rows = customers.filter(c => !q || normalizeText(`${c.name} ${c.steamId}`).includes(q))
+                    .sort((a, b) => ordState.sort === "amount" ? b.spent - a.spent : (b.last || 0) - (a.last || 0));
+                list.innerHTML = rows.length ? rows.map(customerCardHtml).join("") : `<div class="ord-empty">${customers.length ? "Ningún cliente coincide con la búsqueda." : "Aún no hay clientes. Aparecerán cuando lleguen pedidos."}</div>`;
                 return;
             }
-
-            const f = statusSel.value;
-            const rows = ordState.orders.filter(o => (f === "all" || o.status === f) &&
-                (!q || normalizeText(`${o.code || o._id} ${o.customerName} ${o.steamId}`).includes(q)));
-            list.innerHTML = rows.length ? rows.map(o => {
-                const key = custKey(o.steamId, o.customerName);
-                const fi = friendInfo(key);
-                const url = steamProfileUrl(o.steamId);
-                const items = (o.items || []).map(it => `<li><span>${it.qty > 1 ? it.qty + " × " : ""}${escapeHtml(it.name)}</span><span>${money((Number(it.price) || 0) * (it.qty || 1))}</span></li>`).join("");
-                return `<div class="ord-card st-${escapeHtml(o.status || "pendiente")}" data-id="${escapeHtml(o._id)}">
-                    <div class="ord-head">
-                        <div><b class="ord-code">${escapeHtml(o.code || o._id)}</b><span class="ord-date">${fmtDate(o.createdAt)}</span></div>
-                        <select class="lj-input ord-status" data-act="status">${ORDER_STATUSES.map(s => `<option value="${s.key}" ${s.key === o.status ? "selected" : ""}>${s.txt}</option>`).join("")}</select>
-                    </div>
-                    <div class="ord-cust">👤 <b>${escapeHtml(o.customerName || "")}</b> · 🎮 ${o.steamId ? escapeHtml(o.steamId) : "sin ID"}${url ? ` · <a href="${url}" target="_blank" rel="noopener noreferrer">Ver perfil</a>` : ""}
-                        <span class="stock-status ${fi.cls}">${escapeHtml(fi.txt)}</span>
-                        ${fi.since ? "" : `<button type="button" class="lj-btn lj-btn-sm" data-act="friend-today">🤝 Amigos desde hoy</button>`}
-                    </div>
-                    <ul class="ord-items">${items}</ul>
-                    <div class="ord-total">${o.discount ? `<span>Dscto. −${money(o.discount)}</span>` : ""}<b>Total ${money(o.total)}</b>${o.stockApplied ? `<span class="ord-note">stock descontado</span>` : ""}</div>
-                </div>`;
-            }).join("") : `<div class="cart-empty">${ordState.orders.length ? "No hay pedidos con ese filtro." : "Aún no hay pedidos. Aparecerán aquí cuando tus clientes envíen uno."}</div>`;
+            const rows = ordState.orders.filter(o => (ordState.filter === "all" || (o.status || "pendiente") === ordState.filter) &&
+                (!q || normalizeText(`${o.code || o._id} ${o.customerName} ${o.steamId}`).includes(q)))
+                .sort((a, b) => ordState.sort === "amount" ? (Number(b.total) || 0) - (Number(a.total) || 0) : (b.createdAt || 0) - (a.createdAt || 0));
+            list.innerHTML = rows.length ? rows.map(orderCardHtml).join("") : `<div class="ord-empty">${ordState.orders.length ? "No hay pedidos con ese filtro." : "Aún no hay pedidos. Aparecerán aquí cuando tus clientes envíen uno."}</div>`;
         }
+
+        // ---- Acciones ----
         async function setOrderStatus(order, status, selectEl) {
             const fields = { status, updatedAt: new Date() };
             const keys = ["status", "updatedAt"];
@@ -4496,7 +4660,7 @@ service cloud.firestore {
                 await fsRequest(`orders/${encodeURIComponent(order._id)}`, { method: "PATCH", auth: true, query: maskQuery(keys), body: { fields: fsFields(fields) } });
                 Object.assign(order, fields);
                 if (stockChanged) commit();
-                showToast(`Pedido ${order.code || order._id}: ${ORDER_STATUSES.find(s => s.key === status).txt}`, "Pedidos");
+                showToast(`Pedido ${order.code || order._id}: ${statusMeta(status).txt}`, "Pedidos");
             } catch (e) {
                 if (stockChanged) (order.items || []).forEach(it => { const s = findSet(it.id); if (s && s.stock != null) s.stock += (it.qty || 1); });
                 if (selectEl) selectEl.value = order.status;
@@ -4504,36 +4668,112 @@ service cloud.firestore {
             }
             renderOrders();
         }
+
+        async function deleteOrder(order) {
+            const code = order.code || order._id;
+            if (!(await confirmDialog(`¿Eliminar el pedido ${code} de ${order.customerName || "este cliente"}? No se puede deshacer.`, "🗑 Eliminar"))) return;
+            const tracked = (order.items || []).filter(it => { const s = findSet(it.id); return s && s.stock != null; });
+            let restore = false;
+            if (order.stockApplied && tracked.length) {
+                restore = await confirmDialog(`Este pedido ya descontó stock. ¿Devolver estas unidades al stock? ${tracked.map(it => `${it.qty || 1} × ${it.name}`).join(", ")}`, "Sí, devolver", "No, solo eliminar");
+            }
+            try {
+                await fsRequest(`orders/${encodeURIComponent(order._id)}`, { method: "DELETE", auth: true });
+            } catch (e) {
+                showToast(fsErrorText(e), "Error");
+                return;
+            }
+            ordState.orders = ordState.orders.filter(o => o !== order);
+            if (restore) {
+                tracked.forEach(it => {
+                    const s = findSet(it.id);
+                    s.stock += (it.qty || 1);
+                    if (s.soldOut && s.stock > 0) s.soldOut = false;
+                });
+                commit();
+            }
+            showToast(`Pedido ${code} eliminado${restore ? " y stock devuelto" : ""}.`, "Pedidos");
+            renderOrders();
+        }
+
+        // Refresca en todas las tarjetas de ese cliente la fecha y el estado de los 30 días (sin redibujar todo)
+        function refreshFriendUi(key) {
+            const fi = friendInfo(key);
+            document.querySelectorAll("#ordList .fr-edit").forEach(box => {
+                if (box.dataset.key !== key) return;
+                const input = box.querySelector(".fr-date");
+                if (document.activeElement !== input) input.value = fi.since;
+                const badge = box.querySelector(".fr-badge");
+                badge.className = "fr-badge " + fi.cls;
+                badge.textContent = fi.txt;
+                box.querySelector(".fr-clear").disabled = !fi.since;
+            });
+        }
+        function changeFriendSince(key, iso) {
+            if (iso && !validIso(iso)) return;
+            ordState.customers[key] = Object.assign(ordState.customers[key] || { _id: key }, { friendSince: iso || "" });
+            refreshFriendUi(key);
+            clearTimeout(friendTimers[key]);
+            friendTimers[key] = setTimeout(() => setFriendSince(key, iso || ""), 700);
+        }
         async function setFriendSince(key, date) {
             const known = customersList().find(c => c.key === key) || {};
             const fields = { friendSince: date || "", name: known.name || "", steamId: known.steamId || "", updatedAt: new Date() };
             try {
                 await fsRequest(`customers/${encodeURIComponent(key)}`, { method: "PATCH", auth: true, query: maskQuery(Object.keys(fields)), body: { fields: fsFields(fields) } });
                 ordState.customers[key] = Object.assign(ordState.customers[key] || { _id: key }, fields);
-                showToast(date ? "Fecha de amistad guardada." : "Fecha de amistad borrada.", "Clientes");
-            } catch (e) { showToast(fsErrorText(e), "Error"); }
-            renderOrders();
+                friendSaved[key] = fields.friendSince;
+                showToast(date ? `Amigos desde ${new Date(date + "T12:00:00").toLocaleDateString("es-PE")}: guardado.` : "Fecha de amistad borrada.", "Clientes");
+            } catch (e) {
+                ordState.customers[key] = Object.assign(ordState.customers[key] || { _id: key }, { friendSince: friendSaved[key] || "" });
+                showToast(fsErrorText(e), "Error");
+            }
+            refreshFriendUi(key);
         }
+
         function initOrdersPanel() {
-            document.querySelectorAll("#ordersModal .ord-tab").forEach(b => b.addEventListener("click", () => { ordState.tab = b.dataset.tab; renderOrders(); }));
+            document.querySelectorAll("#ordersModal .ord-tab").forEach(b => b.addEventListener("click", () => {
+                ordState.tab = b.dataset.tab;
+                renderOrders();
+            }));
             document.getElementById("ordRefresh").addEventListener("click", loadOrders);
             document.getElementById("ordSearch").addEventListener("input", renderOrders);
-            document.getElementById("ordStatus").addEventListener("change", renderOrders);
+            document.getElementById("ordSort").addEventListener("change", (e) => { ordState.sort = e.target.value; renderOrders(); });
+            document.getElementById("ordChips").addEventListener("click", (e) => {
+                const chip = e.target.closest("[data-filter]");
+                if (!chip) return;
+                ordState.filter = chip.dataset.filter;
+                renderOrders();
+            });
             const list = document.getElementById("ordList");
+            const orderOf = (el) => { const card = el.closest(".ord-card[data-id]"); return card ? ordState.orders.find(x => x._id === card.dataset.id) : null; };
             list.addEventListener("change", (e) => {
                 const act = e.target.dataset.act;
                 if (act === "status") {
-                    const o = ordState.orders.find(x => x._id === e.target.closest(".ord-card").dataset.id);
+                    const o = orderOf(e.target);
                     if (o) setOrderStatus(o, e.target.value, e.target);
                 } else if (act === "friend-date") {
-                    setFriendSince(e.target.closest(".cust-row").dataset.key, e.target.value);
+                    const key = e.target.closest(".fr-edit").dataset.key;
+                    if (!e.target.value) changeFriendSince(key, "");
+                    else if (validIso(e.target.value)) changeFriendSince(key, e.target.value);
                 }
             });
             list.addEventListener("click", (e) => {
-                const btn = e.target.closest("[data-act='friend-today']");
-                if (!btn) return;
-                const o = ordState.orders.find(x => x._id === btn.closest(".ord-card").dataset.id);
-                if (o) setFriendSince(custKey(o.steamId, o.customerName), todayIso());
+                const btn = e.target.closest("button[data-act]");
+                if (!btn || btn.disabled) return;
+                const act = btn.dataset.act;
+                if (act === "delete") {
+                    const o = orderOf(btn);
+                    if (o) deleteOrder(o);
+                    return;
+                }
+                const box = btn.closest(".fr-edit");
+                if (!box) return;
+                const key = box.dataset.key;
+                const cur = friendInfo(key).since;
+                if (act === "friend-shift") changeFriendSince(key, isoShift(cur, Number(btn.dataset.days)));
+                else if (act === "friend-today") changeFriendSince(key, todayIso());
+                else if (act === "friend-clear") changeFriendSince(key, "");
             });
         }
 
