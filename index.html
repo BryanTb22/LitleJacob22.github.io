@@ -1188,6 +1188,14 @@
         .ord-status { min-height: 44px; padding: 6px 10px; font-size: 14px; font-weight: 700; }
         .ord-del { min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(248, 113, 113, 0.5); background: rgba(69, 10, 10, 0.55); color: #fecaca; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; }
         .ord-del:hover { background: #7f1d1d; color: #fff; }
+        .cust-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .cust-btn { min-height: 44px; font-size: 13.5px; }
+        .cust-edit { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; border: 1px solid rgba(245, 208, 97, 0.45); background: rgba(40, 22, 6, 0.5); }
+        .cust-edit .lj-label { margin-bottom: 2px; }
+        .cust-edit .lj-input { min-height: 44px; font-size: 15px; }
+        .cust-edit-help { font-size: 11.5px; color: #a8a29e; line-height: 1.45; }
+        .cust-save { min-height: 44px; border-radius: 10px; border: 1px solid #fff3b0; background: linear-gradient(180deg, #fde68a, #d99a22); color: #1a0d03; font-weight: 800; font-size: 14px; cursor: pointer; }
+        .cust-card.is-busy { opacity: 0.6; pointer-events: none; }
         @media (max-width: 900px) {
             .ord-list { grid-template-columns: minmax(0, 1fr); }
         }
@@ -4450,7 +4458,7 @@ service cloud.firestore {
         }
 
         // ---- Ventana: Pedidos y clientes ----
-        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "" };
+        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null };
         const friendSaved = {};   // última fecha de amistad guardada en Firestore, por cliente
         const friendTimers = {};  // guardado diferido (para los botones −1 / +1)
         function custKey(steamId, name) {
@@ -4588,7 +4596,107 @@ service cloud.firestore {
                     <div><b>${c.last ? c.last.toLocaleDateString("es-PE") : "—"}</b><span>Último pedido</span></div>
                 </div>
                 ${friendEditorHtml(c.key)}
+                ${ordState.editing === c.key ? `<div class="cust-edit">
+                    <div><label class="lj-label">Nombre</label><input class="lj-input" data-f="name" type="text" maxlength="60" value="${escapeHtml(c.name || "")}"></div>
+                    <div><label class="lj-label">ID de amigo de Steam</label><input class="lj-input" data-f="steam" type="text" inputmode="numeric" maxlength="80" value="${escapeHtml(c.steamId || "")}" placeholder="Ej. 123456789"></div>
+                    <div class="cust-edit-help">Se corregirá en ${c.orders === 1 ? "su pedido" : `sus ${c.orders} pedidos`}. La fecha de amistad se conserva.</div>
+                    <div class="lj-error cust-edit-err"></div>
+                    <div class="cust-actions">
+                        <button type="button" class="fr-btn cust-btn" data-act="cust-cancel">Cancelar</button>
+                        <button type="button" class="cust-save" data-act="cust-save">💾 Guardar</button>
+                    </div>
+                </div>` : `<footer class="cust-actions">
+                    <button type="button" class="fr-btn cust-btn" data-act="cust-edit">✏️ Editar</button>
+                    <button type="button" class="ord-del" data-act="cust-delete">🗑 Eliminar</button>
+                </footer>`}
             </article>`;
+        }
+        function ordersOfKey(key) { return ordState.orders.filter(o => custKey(o.steamId, o.customerName) === key); }
+
+        // Editar cliente: corrige nombre / ID de Steam en todos sus pedidos y conserva la fecha de amistad
+        async function saveCustomerEdit(key, card) {
+            const err = card.querySelector(".cust-edit-err");
+            const name = card.querySelector('[data-f="name"]').value.trim().replace(/\s+/g, " ").slice(0, 60);
+            const steamRaw = card.querySelector('[data-f="steam"]').value;
+            const steam = normalizeSteamId(steamRaw);
+            if (!name) { err.textContent = "Escribe el nombre del cliente."; return; }
+            if (steam === null) { err.textContent = "El ID de amigo de Steam son solo números (ej. 123456789)."; return; }
+            const newKey = custKey(steam, name);
+            const orders = ordersOfKey(key);
+            const old = ordState.customers[key];
+            const target = newKey !== key ? (ordState.customers[newKey] || customersList().find(c => c.key === newKey)) : null;
+            if (target && !(await confirmDialog(`Ya existe un cliente con ese ${steam ? "ID de Steam" : "nombre"} (${target.name || newKey}). ¿Unir ambos clientes en uno solo?`, "Unir clientes"))) return;
+            card.classList.add("is-busy");
+            const now = new Date();
+            try {
+                for (const o of orders) {
+                    if (o.customerName === name && (o.steamId || "") === steam) continue;
+                    await fsRequest(`orders/${encodeURIComponent(o._id)}`, { method: "PATCH", auth: true, query: maskQuery(["customerName", "steamId", "updatedAt"]), body: { fields: fsFields({ customerName: name, steamId: steam, updatedAt: now }) } });
+                    Object.assign(o, { customerName: name, steamId: steam, updatedAt: now });
+                }
+                const tDoc = ordState.customers[newKey];
+                const friendSince = (tDoc && tDoc.friendSince) || (old && old.friendSince) || "";
+                const fields = { friendSince, name, steamId: steam, updatedAt: now };
+                await fsRequest(`customers/${encodeURIComponent(newKey)}`, { method: "PATCH", auth: true, query: maskQuery(Object.keys(fields)), body: { fields: fsFields(fields) } });
+                ordState.customers[newKey] = Object.assign(tDoc || { _id: newKey }, fields);
+                friendSaved[newKey] = friendSince;
+                if (newKey !== key && old) {
+                    await fsRequest(`customers/${encodeURIComponent(key)}`, { method: "DELETE", auth: true });
+                    delete ordState.customers[key]; delete friendSaved[key];
+                }
+                ordState.editing = null;
+                showToast(target ? `Clientes unidos: ${name}.` : `Cliente actualizado: ${name}.`, "Clientes");
+                renderOrders();
+            } catch (e) {
+                showToast(fsErrorText(e), "Error");
+                ordState.editing = null;
+                loadOrders();
+            }
+        }
+
+        // Eliminar cliente: borra su registro y sus pedidos (si no, volvería a aparecer por sus pedidos)
+        async function deleteCustomer(key, card) {
+            const c = customersList().find(x => x.key === key) || { name: "" };
+            const orders = ordersOfKey(key);
+            const who = c.name || "este cliente";
+            const msg = orders.length
+                ? `¿Eliminar a ${who} y ${orders.length === 1 ? "su pedido" : `sus ${orders.length} pedidos`} (${orders.map(o => o.code || o._id).join(", ")})? No se puede deshacer.`
+                : `¿Eliminar a ${who}? Se borrará su fecha de amistad. No se puede deshacer.`;
+            if (!(await confirmDialog(msg, "🗑 Eliminar"))) return;
+            const back = {};
+            orders.filter(o => o.stockApplied).forEach(o => (o.items || []).forEach(it => {
+                const s = findSet(it.id);
+                if (s && s.stock != null) back[String(s.id)] = (back[String(s.id)] || 0) + (it.qty || 1);
+            }));
+            let restore = false;
+            if (Object.keys(back).length) {
+                restore = await confirmDialog(`Algunos pedidos ya descontaron stock. ¿Devolver estas unidades? ${Object.entries(back).map(([id, q]) => `${q} × ${findSet(id).name}`).join(", ")}`, "Sí, devolver", "No, solo eliminar");
+            }
+            if (card) card.classList.add("is-busy");
+            try {
+                for (const o of orders) {
+                    await fsRequest(`orders/${encodeURIComponent(o._id)}`, { method: "DELETE", auth: true });
+                    ordState.orders = ordState.orders.filter(x => x !== o);
+                }
+                if (ordState.customers[key]) {
+                    await fsRequest(`customers/${encodeURIComponent(key)}`, { method: "DELETE", auth: true });
+                    delete ordState.customers[key]; delete friendSaved[key];
+                }
+            } catch (e) {
+                showToast(fsErrorText(e), "Error");
+                loadOrders();
+                return;
+            }
+            if (restore) {
+                Object.entries(back).forEach(([id, q]) => {
+                    const s = findSet(id);
+                    s.stock += q;
+                    if (s.soldOut && s.stock > 0) s.soldOut = false;
+                });
+                commit();
+            }
+            showToast(`${who} eliminado${orders.length ? ` con ${orders.length === 1 ? "su pedido" : `sus ${orders.length} pedidos`}` : ""}${restore ? " y stock devuelto" : ""}.`, "Clientes");
+            renderOrders();
         }
 
         function renderOrders() {
@@ -4734,6 +4842,7 @@ service cloud.firestore {
         function initOrdersPanel() {
             document.querySelectorAll("#ordersModal .ord-tab").forEach(b => b.addEventListener("click", () => {
                 ordState.tab = b.dataset.tab;
+                ordState.editing = null;
                 renderOrders();
             }));
             document.getElementById("ordRefresh").addEventListener("click", loadOrders);
@@ -4762,6 +4871,15 @@ service cloud.firestore {
                 const btn = e.target.closest("button[data-act]");
                 if (!btn || btn.disabled) return;
                 const act = btn.dataset.act;
+                if (act.startsWith("cust-")) {
+                    const card = btn.closest(".cust-card");
+                    const key = card.dataset.key;
+                    if (act === "cust-edit") { ordState.editing = key; renderOrders(); const inp = list.querySelector(`.cust-card[data-key="${CSS.escape(key)}"] [data-f="name"]`); if (inp) inp.focus(); }
+                    else if (act === "cust-cancel") { ordState.editing = null; renderOrders(); }
+                    else if (act === "cust-save") saveCustomerEdit(key, card);
+                    else if (act === "cust-delete") deleteCustomer(key, card);
+                    return;
+                }
                 if (act === "delete") {
                     const o = orderOf(btn);
                     if (o) deleteOrder(o);
