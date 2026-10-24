@@ -3,6 +3,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LitleJacob Store • Sets de Dota 2</title>
+    <meta name="description" content="LitleJacob Store: tienda de sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y haz tu pedido por WhatsApp. También compramos inventarios y cuentas.">
+    <meta name="theme-color" content="#0b0505">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LitleJacob Store">
+    <meta property="og:title" content="LitleJacob Store • Sets de Dota 2">
+    <meta property="og:description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Pedidos por WhatsApp.">
+    <meta property="og:url" content="https://litlejacob2.github.io/">
+    <meta property="og:image" content="https://litlejacob2.github.io/img/og-preview.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LitleJacob Store • Sets de Dota 2">
+    <meta name="twitter:description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Pedidos por WhatsApp.">
+    <meta name="twitter:image" content="https://litlejacob2.github.io/img/og-preview.jpg">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Cinzel (Títulos Épicos) & Rajdhani / Inter (Interfaz Gamer) -->
@@ -1002,6 +1018,27 @@
         .sell-list li { display: flex; align-items: center; gap: 10px; color: #f5f5f4; font-weight: 600; font-size: 0.95rem; }
         .sell-list li::before { content: '✦'; color: #f5d061; }
         .sell-card .lj-btn { margin-top: auto; text-decoration: none; }
+
+        /* ===== Cómo comprar, pagos y entrega ===== */
+        [hidden] { display: none !important; }
+        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 1.5rem; }
+        .info-card { padding: 18px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.35); background: rgba(0, 0, 0, 0.45); }
+        .info-card h3 { font-family: 'Cinzel', serif; font-weight: 800; font-size: 1.05rem; color: #fff3b0; letter-spacing: 0.04em; text-transform: uppercase; }
+        .info-card p { color: #a8a29e; font-size: 13px; margin-top: 4px; }
+        .pay-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
+        .pay-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); font-size: 14px; color: #f5f5f4; }
+        .pay-list li strong { color: #fff3b0; }
+        .pay-tag { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; white-space: nowrap; }
+        .pay-tag.free { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
+        .pay-tag.fee { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+        .deliv-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 10px; }
+        .deliv-list li { font-size: 14px; color: #e7e5e4; line-height: 1.45; }
+        .deliv-list li b { color: #fff3b0; }
+        .trust-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 1.25rem; }
+        .trust-grid img { width: 100%; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); display: block; }
+        .social-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 1rem; }
+        @media (max-width: 720px) { .info-grid { grid-template-columns: 1fr; } }
+
         .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 2.25rem; }
         .step { padding: 16px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.35); background: rgba(0, 0, 0, 0.45); text-align: center; }
         .step .n { width: 36px; height: 36px; margin: 0 auto 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-weight: 900; color: #1a0d03; background: linear-gradient(180deg, #fde68a, #d99a22); }
@@ -1199,6 +1236,71 @@
                             <span class="arrow">WhatsApp →</span>
                         </a>
                     </div>
+                </div>
+            </section>
+
+
+            <!-- CÓMO COMPRAR, MÉTODOS DE PAGO Y TIEMPOS DE ENTREGA -->
+            <section class="home-block" id="como-comprar">
+                <h2 class="home-block-title gold-gradient-text">Cómo comprar</h2>
+                <div class="ornamental-divider">
+                    <div class="ornamental-dot"></div>
+                    <div class="ornamental-line-left"></div>
+                    <div class="ornamental-diamond"></div>
+                    <div class="ornamental-line-right"></div>
+                    <div class="ornamental-dot"></div>
+                </div>
+
+                <div class="steps">
+                    <div class="step"><div class="n">1</div><strong>Elige tus sets</strong><span>Entra a Sets Caché y arma tu carrito.</span></div>
+                    <div class="step"><div class="n">2</div><strong>Envía tu pedido</strong><span>Con un toque se abre WhatsApp con tu pedido listo.</span></div>
+                    <div class="step"><div class="n">3</div><strong>Paga y recibe</strong><span>Coordinamos el pago y la entrega por el mismo chat.</span></div>
+                </div>
+
+                <div class="info-grid">
+                    <article class="info-card" id="metodos-pago">
+                        <h3>Métodos de pago</h3>
+                        <p>Elige el que te resulte más cómodo.</p>
+                        <ul class="pay-list">
+                            <li><strong>Yape</strong></li>
+                            <li><strong>Plin</strong></li>
+                            <li><strong>PayPal</strong><span class="pay-tag fee">Comisión extra</span></li>
+                            <li><strong>Binance</strong><span class="pay-tag free">Sin comisión</span></li>
+                        </ul>
+                    </article>
+
+                    <article class="info-card" id="tiempos-entrega">
+                        <h3>Tiempos de entrega</h3>
+                        <p>Para los sets caché.</p>
+                        <ul class="deliv-list">
+                            <li>⚡ <b>Si ya somos amigos:</b> la entrega es inmediata.</li>
+                            <li>⏳ <b>Si aún no somos amigos:</b> se cumplen 30 días de amistad antes de la entrega del set.</li>
+                        </ul>
+                    </article>
+                </div>
+            </section>
+
+            <!-- PRUEBAS DE CONFIANZA: quita el atributo hidden cuando agregues tus capturas -->
+            <section class="home-block" id="confianza" hidden>
+                <h2 class="home-block-title gold-gradient-text">Clientes satisfechos</h2>
+                <div class="ornamental-divider">
+                    <div class="ornamental-dot"></div>
+                    <div class="ornamental-line-left"></div>
+                    <div class="ornamental-diamond"></div>
+                    <div class="ornamental-line-right"></div>
+                    <div class="ornamental-dot"></div>
+                </div>
+                <div class="trust-grid">
+                    <!-- <img src="img/cliente01.jpg" alt="Captura de cliente satisfecho" loading="lazy"> -->
+                </div>
+            </section>
+
+            <!-- REDES SOCIALES: pon tus enlaces y quita el atributo hidden -->
+            <section class="home-block" id="redes" hidden>
+                <h2 class="home-block-title gold-gradient-text">Síguenos</h2>
+                <div class="social-row">
+                    <!-- <a class="lj-btn lj-btn-gold" href="https://instagram.com/TU_USUARIO" target="_blank" rel="noopener noreferrer">Instagram</a> -->
+                    <!-- <a class="lj-btn lj-btn-gold" href="https://tiktok.com/@TU_USUARIO" target="_blank" rel="noopener noreferrer">TikTok</a> -->
                 </div>
             </section>
 
@@ -2287,7 +2389,7 @@
             list.innerHTML = t.items.map(({ set: s, qty }) => {
                 const cofre = getCofre(s.cofre);
                 return `<div class="cart-item" data-id="${s.id}">
-                    <div class="cart-thumb">${s.img ? `<img src="${s.img}" alt="">` : CHEST_SVG}</div>
+                    <div class="cart-thumb">${s.img ? `<img src="${s.img}" alt="" loading="lazy">` : CHEST_SVG}</div>
                     <div class="cart-info">
                         <div class="cart-name">${escapeHtml(s.name)}</div>
                         <div class="cart-meta">${escapeHtml(categoryLabel(s))}${cofre ? " • " + escapeHtml(cofre.name) : ""}</div>
@@ -3016,7 +3118,7 @@
             for (let i = 2; i <= n; i++) {
                 const img = pendingStyleImgs[i - 2];
                 html += `<div class="style-slot">
-                    <div class="style-thumb">${img ? `<img src="${img}" alt="">` : "Sin foto"}</div>
+                    <div class="style-thumb">${img ? `<img src="${img}" alt="" loading="lazy">` : "Sin foto"}</div>
                     <div class="style-name">Estilo ${i}</div>
                     <label class="lj-btn lj-btn-sm lj-btn-gold">📷 ${img ? "Cambiar" : "Subir foto"}<input type="file" accept="image/*" class="hidden" data-style-input="${i}"></label>
                     ${img ? `<button type="button" class="lj-btn lj-btn-sm" data-style-remove="${i}">Quitar</button>` : ""}
