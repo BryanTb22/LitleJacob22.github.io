@@ -1183,7 +1183,9 @@
         .fr-badge.fr-none { color: #a8a29e; border-color: #57534e; }
         .fr-badge.fr-ok { color: #86efac; border-color: rgba(34, 197, 94, 0.6); background: rgba(34, 197, 94, 0.12); }
         .fr-badge.fr-wait { color: #fde68a; border-color: rgba(245, 158, 11, 0.7); background: rgba(245, 158, 11, 0.12); }
-        .fr-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+        .fr-controls { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+        .fr-controls .fr-btn { grid-column: span 2; }
+        .fr-controls .fr-month, .fr-controls .fr-clear { grid-column: span 3; }
         .fr-date { grid-column: 1 / -1; width: 100%; min-height: 44px; padding: 6px 8px; font-size: 14px; color-scheme: dark; min-width: 0; }
         .fr-btn { min-height: 44px; padding: 0 6px; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0, 0, 0, 0.5); color: #fde68a; font-weight: 700; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
         .fr-btn:hover:not(:disabled) { border-color: #f5d061; background: rgba(66, 34, 6, 0.6); }
@@ -1203,6 +1205,24 @@
         .cust-save { min-height: 44px; border-radius: 10px; border: 1px solid #fff3b0; background: linear-gradient(180deg, #fde68a, #d99a22); color: #1a0d03; font-weight: 800; font-size: 14px; cursor: pointer; }
         .cust-card.is-busy { opacity: 0.6; pointer-events: none; }
         .cust-new-bar { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+        .cust-actions-3 { grid-template-columns: 1.3fr 1fr 1fr; }
+        .since-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+        .since-row .fr-btn { padding: 0 12px; }
+        .pick { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px dashed rgba(196, 200, 206, .3); }
+        .pick-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+        .pick-row .lj-input, .pick-meta .lj-input { min-height: 44px; font-size: 14px; }
+        .pick-row .fr-btn { padding: 0 12px; }
+        .pick-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+        .pick-list:empty { display: none; }
+        .pick-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 4px 4px 10px; background: rgba(0,0,0,.35); font-size: 13.5px; }
+        .pick-list li b { color: #ff6b5f; }
+        .pick-qty { display: flex; gap: 4px; }
+        .pick-qty .fr-btn { min-width: 44px; padding: 0; }
+        .pick-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .pick-meta label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 800; color: #8b9097; text-transform: uppercase; letter-spacing: .05em; }
+        .pick-total { font-weight: 800; color: #eef0f3; font-size: 14px; }
+        .pick-total:empty { display: none; }
+        @media (max-width: 600px) { .cust-actions-3 { grid-template-columns: 1fr 1fr; } .cust-actions-3 .cust-save { grid-column: 1 / -1; } .pick-meta { grid-template-columns: 1fr; } }
         .cust-new-btn { padding: 0 20px; }
         .cust-new { border-top-color: #34d399 !important; }
         .ord-wa { min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(37, 211, 102, .45); background: rgba(2, 44, 34, .55); color: #b7f5cc; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; }
@@ -2334,8 +2354,8 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                 <div class="buy-customer-title">Tus datos para la entrega</div>
                 <div class="lj-row">
                     <div class="lj-field">
-                        <label class="lj-label" for="custName">Tu nombre</label>
-                        <input id="custName" class="lj-input" type="text" maxlength="60" autocomplete="name" placeholder="Ej. Bryan">
+                        <label class="lj-label" for="custName">Tu nombre de Dota 2</label>
+                        <input id="custName" class="lj-input" type="text" maxlength="60" autocomplete="nickname" placeholder="Ej. LitleJacob">
                     </div>
                     <div class="lj-field">
                         <label class="lj-label" for="custSteam">ID de amigo de Steam</label>
@@ -2343,8 +2363,8 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                     </div>
                 </div>
                 <div class="lj-field">
-                    <label class="lj-label" for="custPhone">Tu WhatsApp</label>
-                    <input id="custPhone" class="lj-input" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="Ej. 987 654 321">
+                    <label class="lj-label" for="custPhone">Tu WhatsApp (número o @usuario)</label>
+                    <input id="custPhone" class="lj-input" type="text" maxlength="40" autocomplete="tel" autocapitalize="off" placeholder="Ej. 987 654 321 o @tuusuario">
                 </div>
                 <div class="buy-customer-help">Tu ID de amigo está en Steam → Amigos → <b>Añadir un amigo</b> ("Tu código de amigo"). También puedes pegar el enlace de tu perfil.</div>
                 <div id="custError" class="lj-error"></div>
@@ -4544,6 +4564,11 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
         function normalizePhone(v) {
             v = String(v || "").trim();
             if (!v) return "";
+            // @usuario de WhatsApp: 3 a 35 caracteres, letras, números, punto o guion bajo; empieza con letra
+            if (v.startsWith("@") || /[a-z_]/i.test(v)) {
+                const u = v.replace(/^@+/, "").toLowerCase();
+                return /^[a-z][a-z0-9._]{2,34}$/.test(u) && !/\.\./.test(u) && !/\.$/.test(u) ? "@" + u : null;
+            }
             let d = v.replace(/[^\d+]/g, "");
             const plus = d.startsWith("+");
             d = d.replace(/\+/g, "");
@@ -4552,8 +4577,10 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             if (plus || d.length >= 10) return /^\d{8,15}$/.test(d) ? d : null;
             return null;
         }
+        function isWaUser(d) { return String(d || "").startsWith("@"); }
         function fmtPhone(d) {
             if (!d) return "";
+            if (isWaUser(d)) return d;
             const m = /^51(9\d{2})(\d{3})(\d{3})$/.exec(d);
             return m ? `+51 ${m[1]} ${m[2]} ${m[3]}` : "+" + d;
         }
@@ -4575,7 +4602,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
         function customerLines(st) {
             const c = readCustomerForm();
             const lines = [`Pedido N° ${st.code}`];
-            if (c.name) lines.push(`Nombre: ${c.name}`);
+            if (c.name) lines.push(`Nombre de Dota 2: ${c.name}`);
             if (c.steam) lines.push(`ID de amigo de Steam: ${c.steam}`);
             return "\n\n" + lines.join("\n");
         }
@@ -4605,7 +4632,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             const nameEl = document.getElementById("custName"), steamEl = document.getElementById("custSteam");
             nameEl.classList.toggle("is-invalid", !c.name);
             steamEl.classList.toggle("is-invalid", !c.steam);
-            if (!c.name) { err.textContent = "Escribe tu nombre para enviar el pedido."; nameEl.focus(); return false; }
+            if (!c.name) { err.textContent = "Escribe tu nombre de Dota 2 para enviar el pedido."; nameEl.focus(); return false; }
             if (!c.steam) {
                 err.textContent = c.steam === null ? "Tu ID de amigo de Steam son solo números (ej. 123456789)." : "Escribe tu ID de amigo de Steam para poder entregarte los sets.";
                 steamEl.focus(); return false;
@@ -4613,7 +4640,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             const phoneEl = document.getElementById("custPhone");
             phoneEl.classList.toggle("is-invalid", !c.phone);
             if (!c.phone) {
-                err.textContent = c.phone === null ? "Revisa tu número de WhatsApp (ej. 987 654 321)." : "Escribe tu WhatsApp para avisarte cuando entreguemos tu set.";
+                err.textContent = c.phone === null ? "Revisa tu WhatsApp: escribe tu número (ej. 987 654 321) o tu @usuario." : "Escribe tu WhatsApp para avisarte cuando entreguemos tu set.";
                 phoneEl.focus(); return false;
             }
             err.textContent = "";
@@ -4684,7 +4711,7 @@ service cloud.firestore {
         && d.code is string && d.code.size() <= 20
         && d.customerName is string && d.customerName.size() > 0 && d.customerName.size() <= 60
         && d.steamId is string && d.steamId.size() <= 20
-        && (!('phone' in d) || (d.phone is string && d.phone.size() <= 20))
+        && (!('phone' in d) || (d.phone is string && d.phone.size() <= 40))
         && d.items is list && d.items.size() > 0 && d.items.size() <= 80
         && d.count is int && d.total is number && d.total >= 0
         && d.createdAt is timestamp
@@ -4830,7 +4857,7 @@ service cloud.firestore {
         }
 
         // ---- Ventana: Pedidos y clientes ----
-        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null, phoneEditing: null, creating: false };
+        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null, phoneEditing: null, creating: false, buying: null };
         const friendSaved = {};   // última fecha de amistad guardada en Firestore, por cliente
         const friendTimers = {};  // guardado diferido (para los botones −1 / +1)
         function custKey(steamId, name) {
@@ -4926,6 +4953,7 @@ service cloud.firestore {
                     <button type="button" class="fr-btn" data-act="friend-shift" data-days="-1">−1 día</button>
                     <button type="button" class="fr-btn" data-act="friend-shift" data-days="1">+1 día</button>
                     <button type="button" class="fr-btn" data-act="friend-today">Hoy</button>
+                    <button type="button" class="fr-btn fr-month" data-act="friend-month">📅 Hace 1 mes</button>
                     <button type="button" class="fr-btn fr-clear" data-act="friend-clear" ${fi.since ? "" : "disabled"}>Borrar</button>
                 </div>
             </div>`;
@@ -4959,17 +4987,20 @@ service cloud.firestore {
                 "— *LitleJacob Store* · litlejacob.trade"
             ].join("\n");
         }
-        function waSendLink(phone, text) { return `https://api.whatsapp.com/send?phone=${phone}` + (text ? `&text=${encodeURIComponent(text)}` : ""); }
+        function waSendLink(phone, text) {
+            if (isWaUser(phone)) return "https://api.whatsapp.com/send" + (text ? `?text=${encodeURIComponent(text)}` : "");
+            return `https://api.whatsapp.com/send?phone=${phone}` + (text ? `&text=${encodeURIComponent(text)}` : "");
+        }
         function deliveryLink(o) { const ph = phoneFor(o); return ph ? waSendLink(ph, deliveryMessage(o)) : ""; }
         function phoneLineHtml(o) {
             if (ordState.phoneEditing === o._id) {
-                return `<div class="ord-phone-add"><input class="lj-input" data-f="phone" type="tel" inputmode="tel" maxlength="20" placeholder="WhatsApp del cliente (ej. 987 654 321)" value="${o.phone ? escapeHtml(fmtPhone(o.phone)) : ""}">
+                return `<div class="ord-phone-add"><input class="lj-input" data-f="phone" type="text" maxlength="40" autocapitalize="off" placeholder="WhatsApp: número o @usuario" value="${o.phone ? escapeHtml(fmtPhone(o.phone)) : ""}">
                     <button type="button" class="cust-save" data-act="phone-save">Guardar y avisar</button>
                     <button type="button" class="fr-btn" data-act="phone-cancel">Cancelar</button></div>`;
             }
             const ph = phoneFor(o);
             return ph
-                ? `<div class="ord-cust-steam">📱 <a href="${waSendLink(ph)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(ph))}</a></div>`
+                ? `<div class="ord-cust-steam">📱 ${isWaUser(ph) ? `<b>${escapeHtml(ph)}</b>` : `<a href="${waSendLink(ph)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(ph))}</a>`}</div>`
                 : `<div class="ord-cust-steam">📱 sin WhatsApp · <button type="button" class="ord-link" data-act="phone-edit">Agregar número</button></div>`;
         }
         function orderCardHtml(o) {
@@ -5004,6 +5035,12 @@ service cloud.firestore {
         }
         function openDelivery(o) {
             if (!phoneFor(o)) { ordState.phoneEditing = o._id; renderOrders(); focusPhone(o); return false; }
+            const ph = phoneFor(o);
+            if (isWaUser(ph)) {
+                // No hay enlace oficial para abrir un chat por @usuario: se copia el mensaje y se abre WhatsApp
+                try { navigator.clipboard && navigator.clipboard.writeText(deliveryMessage(o)); } catch (e) { /* sin portapapeles */ }
+                showToast(`Mensaje copiado. En WhatsApp busca a ${ph}, abre su chat y pégalo.`, "WhatsApp");
+            }
             window.open(deliveryLink(o), "_blank", "noopener,noreferrer");
             return true;
         }
@@ -5013,7 +5050,7 @@ service cloud.firestore {
         }
         async function savePhone(o, card) {
             const phone = normalizePhone(card.querySelector('[data-f="phone"]').value);
-            if (!phone) { showToast("Revisa el número de WhatsApp (ej. 987 654 321).", "WhatsApp"); return; }
+            if (!phone) { showToast("Revisa el WhatsApp: un número (ej. 987 654 321) o un @usuario (ej. @tuusuario).", "WhatsApp"); return; }
             const win = window.open("about:blank", "_blank");
             try {
                 await fsRequest(`orders/${encodeURIComponent(o._id)}`, { method: "PATCH", auth: true, query: maskQuery(["phone", "updatedAt"]), body: { fields: fsFields({ phone, updatedAt: new Date() }) } });
@@ -5032,7 +5069,7 @@ service cloud.firestore {
                     <div class="ord-id"><b class="cust-name">👤 ${escapeHtml(c.name || "Sin nombre")}</b></div>
                 </header>
                 <div class="ord-cust-steam">${steamLineHtml(c.steamId)}</div>
-                <div class="ord-cust-steam">📱 ${c.phone ? `<a href="${waSendLink(c.phone)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(c.phone))}</a>` : "sin WhatsApp"}</div>
+                <div class="ord-cust-steam">📱 ${c.phone ? (isWaUser(c.phone) ? `<b>${escapeHtml(c.phone)}</b>` : `<a href="${waSendLink(c.phone)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(c.phone))}</a>`) : "sin WhatsApp"}</div>
                 <div class="cust-stats">
                     <div><b>${c.orders}</b><span>${c.orders === 1 ? "Pedido" : "Pedidos"}</span></div>
                     <div><b>${money(c.spent)}</b><span>Gastado</span></div>
@@ -5040,30 +5077,122 @@ service cloud.firestore {
                 </div>
                 ${friendEditorHtml(c.key)}
                 ${ordState.editing === c.key ? `<div class="cust-edit">
-                    <div><label class="lj-label">Nombre</label><input class="lj-input" data-f="name" type="text" maxlength="60" value="${escapeHtml(c.name || "")}"></div>
+                    <div><label class="lj-label">Nombre de Dota 2</label><input class="lj-input" data-f="name" type="text" maxlength="60" value="${escapeHtml(c.name || "")}"></div>
                     <div><label class="lj-label">ID de amigo de Steam</label><input class="lj-input" data-f="steam" type="text" inputmode="numeric" maxlength="80" value="${escapeHtml(c.steamId || "")}" placeholder="Ej. 123456789"></div>
-                    <div><label class="lj-label">WhatsApp</label><input class="lj-input" data-f="phone" type="tel" inputmode="tel" maxlength="20" value="${escapeHtml(fmtPhone(c.phone || ""))}" placeholder="Ej. 987 654 321"></div>
+                    <div><label class="lj-label">WhatsApp (número o @usuario)</label><input class="lj-input" data-f="phone" type="text" maxlength="40" autocapitalize="off" value="${escapeHtml(fmtPhone(c.phone || ""))}" placeholder="Ej. 987 654 321"></div>
                     <div class="cust-edit-help">Se corregirá en ${c.orders === 1 ? "su pedido" : `sus ${c.orders} pedidos`}. La fecha de amistad se conserva.</div>
                     <div class="lj-error cust-edit-err"></div>
                     <div class="cust-actions">
                         <button type="button" class="fr-btn cust-btn" data-act="cust-cancel">Cancelar</button>
                         <button type="button" class="cust-save" data-act="cust-save">💾 Guardar</button>
                     </div>
-                </div>` : `<footer class="cust-actions">
+                </div>` : ordState.buying === c.key ? purchaseFormHtml(c) : `<footer class="cust-actions cust-actions-3">
+                    <button type="button" class="cust-save cust-btn" data-act="buy-open">🛒 Agregar compra</button>
                     <button type="button" class="fr-btn cust-btn" data-act="cust-edit">✏️ Editar</button>
                     <button type="button" class="ord-del" data-act="cust-delete">🗑 Eliminar</button>
                 </footer>`}
             </article>`;
+        }
+        // Selector de sets para registrar a mano lo que llevó un cliente
+        function purchasePickerHtml() {
+            const opts = DATA.sets.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), "es"))
+                .map(st => `<option value="${escapeHtml(String(st.id))}">${escapeHtml(st.name)} — S/${escapeHtml(String(st.price))}</option>`).join("");
+            const today = todayIso();
+            return `<div class="pick" data-pick>
+                <label class="lj-label">¿Qué llevó? (opcional)</label>
+                <div class="pick-row"><select class="lj-input" data-f="pick-set"><option value="">Elige un set…</option>${opts}</select><button type="button" class="fr-btn" data-act="pick-add">➕ Agregar</button></div>
+                <ul class="pick-list"></ul>
+                <div class="pick-meta">
+                    <label>Fecha de compra<input class="lj-input fr-date" data-f="pick-date" type="date" value="${today}" max="${today}"></label>
+                    <label>Estado<select class="lj-input" data-f="pick-status">${ORDER_STATUSES.map(st => `<option value="${st.key}" ${st.key === "entregado" ? "selected" : ""}>${st.txt}</option>`).join("")}</select></label>
+                </div>
+                <div class="pick-total"></div>
+            </div>`;
+        }
+        function pickItems(card) {
+            const box = card.querySelector("[data-pick]");
+            try { return JSON.parse(box.dataset.items || "[]"); } catch (e) { return []; }
+        }
+        function renderPick(card) {
+            const box = card.querySelector("[data-pick]");
+            const items = pickItems(card);
+            box.querySelector(".pick-list").innerHTML = items.map((it, i) => {
+                const st = findSet(it.id);
+                return `<li><span>${it.qty > 1 ? `<b>${it.qty} ×</b> ` : ""}${escapeHtml(st ? st.name : it.id)}</span>
+                    <span class="pick-qty"><button type="button" class="fr-btn" data-act="pick-dec" data-i="${i}">−</button><button type="button" class="fr-btn" data-act="pick-inc" data-i="${i}">+</button><button type="button" class="fr-btn fr-clear" data-act="pick-del" data-i="${i}">✕</button></span></li>`;
+            }).join("");
+            const total = items.reduce((t, it) => { const st = findSet(it.id); return t + (st ? Number(st.price) || 0 : 0) * it.qty; }, 0);
+            box.querySelector(".pick-total").textContent = items.length ? `${setsLabel(items.reduce((n, it) => n + it.qty, 0))} · Total ${money(total)}` : "";
+        }
+        function pickAction(card, act, i) {
+            const box = card.querySelector("[data-pick]");
+            let items = pickItems(card);
+            if (act === "pick-add") {
+                const id = box.querySelector('[data-f="pick-set"]').value;
+                if (!id) return;
+                const ex = items.find(it => String(it.id) === id);
+                if (ex) ex.qty += 1; else items.push({ id, qty: 1 });
+            } else if (act === "pick-inc") items[i].qty += 1;
+            else if (act === "pick-dec") { items[i].qty -= 1; if (items[i].qty <= 0) items.splice(i, 1); }
+            else if (act === "pick-del") items.splice(i, 1);
+            box.dataset.items = JSON.stringify(items);
+            renderPick(card);
+        }
+        // Crea el pedido de la compra registrada a mano (misma estructura que los pedidos de la web)
+        async function savePurchase(card, cust) {
+            const items = pickItems(card);
+            if (!items.length) return null;
+            const box = card.querySelector("[data-pick]");
+            const status = box.querySelector('[data-f="pick-status"]').value;
+            const dateIso = box.querySelector('[data-f="pick-date"]').value;
+            const when = dateIso && dateIso !== todayIso() ? new Date(dateIso + "T12:00:00") : new Date();
+            const lines = items.map(it => { const st = findSet(it.id); return { id: String(it.id), name: st ? String(st.name).slice(0, 80) : String(it.id), qty: it.qty, price: st ? Number(st.price) || 0 : 0 }; });
+            const subtotal = lines.reduce((t, it) => t + it.price * it.qty, 0);
+            const order = { code: newOrderCode(), customerName: cust.name, steamId: cust.steamId || "", items: lines, count: lines.reduce((n, it) => n + it.qty, 0),
+                subtotal, discount: 0, total: subtotal, status, createdAt: when };
+            if (cust.phone) order.phone = cust.phone;
+            if (isSale({ status })) {
+                const tracked = lines.filter(it => { const st = findSet(it.id); return st && st.stock != null; });
+                if (tracked.length && await confirmDialog(`¿Descontar del stock los sets de esta compra (${tracked.map(it => it.name).join(", ")})?`, "Descontar", "No descontar")) {
+                    tracked.forEach(it => { const st = findSet(it.id); st.stock = Math.max(0, st.stock - it.qty); if (st.stock === 0) st.soldOut = true; });
+                    order.stockApplied = true;
+                    commit();
+                }
+            }
+            await fsRequest("orders", { method: "POST", auth: true, query: "documentId=" + encodeURIComponent(order.code), body: { fields: fsFields(order) } });
+            ordState.orders.unshift(Object.assign({ _id: order.code }, order));
+            return order;
+        }
+        function purchaseFormHtml(c) {
+            return `<div class="cust-edit">${purchasePickerHtml()}
+                <div class="lj-error cust-edit-err"></div>
+                <div class="cust-actions">
+                    <button type="button" class="fr-btn cust-btn" data-act="buy-cancel">Cancelar</button>
+                    <button type="button" class="cust-save" data-act="buy-save">💾 Guardar compra</button>
+                </div></div>`;
+        }
+        async function saveCustomerPurchase(key, card) {
+            const c = customersList().find(x => x.key === key);
+            const err = card.querySelector(".cust-edit-err");
+            if (!pickItems(card).length) { err.textContent = "Agrega al menos un set."; return; }
+            card.classList.add("is-busy");
+            try {
+                const o = await savePurchase(card, { name: c.name, steamId: c.steamId, phone: c.phone });
+                ordState.buying = null;
+                showToast(`Compra registrada (${o.code}) para ${c.name}.`, "Clientes");
+                renderOrders();
+            } catch (e) { card.classList.remove("is-busy"); err.textContent = fsErrorText(e); }
         }
         function newCustomerHtml() {
             if (!ordState.creating) return `<div class="cust-new-bar"><button type="button" class="cust-save cust-new-btn" data-act="cust-new">➕ Nuevo cliente</button></div>`;
             return `<article class="ord-card cust-card cust-new" data-key="__nuevo">
                 <header class="ord-head"><div class="ord-id"><b class="cust-name">➕ Nuevo cliente</b></div></header>
                 <div class="cust-edit">
-                    <div><label class="lj-label">Nombre</label><input class="lj-input" data-f="name" type="text" maxlength="60" placeholder="Ej. Andi Lima"></div>
+                    <div><label class="lj-label">Nombre de Dota 2</label><input class="lj-input" data-f="name" type="text" maxlength="60" placeholder="Ej. noname"></div>
                     <div><label class="lj-label">ID de amigo de Steam</label><input class="lj-input" data-f="steam" type="text" inputmode="numeric" maxlength="80" placeholder="Ej. 123456789 (o enlace del perfil)"></div>
-                    <div><label class="lj-label">WhatsApp</label><input class="lj-input" data-f="phone" type="tel" inputmode="tel" maxlength="20" placeholder="Ej. 987 654 321"></div>
-                    <div><label class="lj-label">Amigos desde (opcional)</label><input class="lj-input fr-date" data-f="since" type="date"></div>
+                    <div><label class="lj-label">WhatsApp (número o @usuario)</label><input class="lj-input" data-f="phone" type="text" maxlength="40" autocapitalize="off" placeholder="Ej. 987 654 321 o @usuario"></div>
+                    <div><label class="lj-label">Amigos desde (opcional)</label><div class="since-row"><input class="lj-input fr-date" data-f="since" type="date"><button type="button" class="fr-btn" data-act="new-month">📅 Hace 1 mes</button></div></div>
+                    ${purchasePickerHtml()}
                     <div class="lj-error cust-edit-err"></div>
                     <div class="cust-actions">
                         <button type="button" class="fr-btn cust-btn" data-act="cust-new-cancel">Cancelar</button>
@@ -5078,9 +5207,9 @@ service cloud.firestore {
             const steam = normalizeSteamId(card.querySelector('[data-f="steam"]').value);
             const phone = normalizePhone(card.querySelector('[data-f="phone"]').value);
             const since = card.querySelector('[data-f="since"]').value;
-            if (!name) { err.textContent = "Escribe el nombre del cliente."; return; }
+            if (!name) { err.textContent = "Escribe el nombre de Dota 2 del cliente."; return; }
             if (steam === null) { err.textContent = "El ID de amigo de Steam son solo números (ej. 123456789)."; return; }
-            if (phone === null) { err.textContent = "Revisa el número de WhatsApp (ej. 987 654 321)."; return; }
+            if (phone === null) { err.textContent = "Revisa el WhatsApp: un número (ej. 987 654 321) o un @usuario (ej. @tuusuario)."; return; }
             if (since && !validIso(since)) { err.textContent = "Revisa la fecha de amistad."; return; }
             const key = custKey(steam, name);
             if (customersList().some(c => c.key === key)) { err.textContent = `Ya existe un cliente con ese ${steam ? "ID de Steam" : "nombre"}. Búscalo en la lista y edítalo.`; return; }
@@ -5090,8 +5219,9 @@ service cloud.firestore {
                 await fsRequest(`customers/${encodeURIComponent(key)}`, { method: "PATCH", auth: true, query: maskQuery(Object.keys(fields)), body: { fields: fsFields(fields) } });
                 ordState.customers[key] = Object.assign({ _id: key }, fields);
                 friendSaved[key] = fields.friendSince;
+                const o = await savePurchase(card, { name, steamId: steam || "", phone: phone || "" });
                 ordState.creating = false;
-                showToast(`Cliente creado: ${name}.`, "Clientes");
+                showToast(`Cliente creado: ${name}.` + (o ? ` Compra registrada (${o.code}).` : ""), "Clientes");
                 renderOrders();
             } catch (e) {
                 card.classList.remove("is-busy");
@@ -5106,11 +5236,11 @@ service cloud.firestore {
             const name = card.querySelector('[data-f="name"]').value.trim().replace(/\s+/g, " ").slice(0, 60);
             const steamRaw = card.querySelector('[data-f="steam"]').value;
             const steam = normalizeSteamId(steamRaw);
-            if (!name) { err.textContent = "Escribe el nombre del cliente."; return; }
+            if (!name) { err.textContent = "Escribe el nombre de Dota 2 del cliente."; return; }
             if (steam === null) { err.textContent = "El ID de amigo de Steam son solo números (ej. 123456789)."; return; }
             const phoneInp = card.querySelector('[data-f="phone"]');
             const phone = phoneInp ? normalizePhone(phoneInp.value) : "";
-            if (phone === null) { err.textContent = "Revisa el número de WhatsApp (ej. 987 654 321)."; return; }
+            if (phone === null) { err.textContent = "Revisa el WhatsApp: un número (ej. 987 654 321) o un @usuario (ej. @tuusuario)."; return; }
             const newKey = custKey(steam, name);
             const orders = ordersOfKey(key);
             const old = ordState.customers[key];
@@ -5337,6 +5467,7 @@ service cloud.firestore {
                 ordState.tab = b.dataset.tab;
                 ordState.editing = null;
                 ordState.creating = false;
+                ordState.buying = null;
                 renderOrders();
             }));
             document.getElementById("ordRefresh").addEventListener("click", loadOrders);
@@ -5365,6 +5496,11 @@ service cloud.firestore {
                 const btn = e.target.closest("button[data-act]");
                 if (!btn || btn.disabled) return;
                 const act = btn.dataset.act;
+                if (act.startsWith("pick-")) { pickAction(btn.closest(".cust-card"), act, Number(btn.dataset.i)); return; }
+                if (act === "new-month") { btn.closest(".since-row").querySelector('[data-f="since"]').value = isoShift(todayIso(), -30); return; }
+                if (act === "buy-open") { ordState.buying = btn.closest(".cust-card").dataset.key; ordState.editing = null; renderOrders(); return; }
+                if (act === "buy-cancel") { ordState.buying = null; renderOrders(); return; }
+                if (act === "buy-save") { const card = btn.closest(".cust-card"); saveCustomerPurchase(card.dataset.key, card); return; }
                 if (act === "cust-new") { ordState.creating = true; renderOrders(); const i = list.querySelector('.cust-new [data-f="name"]'); if (i) i.focus(); return; }
                 if (act === "cust-new-cancel") { ordState.creating = false; renderOrders(); return; }
                 if (act === "cust-new-save") { createCustomer(btn.closest(".cust-card")); return; }
@@ -5397,6 +5533,7 @@ service cloud.firestore {
                 const cur = friendInfo(key).since;
                 if (act === "friend-shift") changeFriendSince(key, isoShift(cur, Number(btn.dataset.days)));
                 else if (act === "friend-today") changeFriendSince(key, todayIso());
+                else if (act === "friend-month") changeFriendSince(key, isoShift(todayIso(), -30));
                 else if (act === "friend-clear") changeFriendSince(key, "");
             });
         }
