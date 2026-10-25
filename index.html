@@ -1212,6 +1212,13 @@
         .pick-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
         .pick-row .lj-input, .pick-meta .lj-input { min-height: 44px; font-size: 14px; }
         .pick-row .fr-btn { padding: 0 12px; }
+        .pick-search { position: relative; min-width: 0; }
+        .pick-search .lj-input { width: 100%; }
+        .pick-results { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); max-height: 260px; overflow-y: auto; background: #120b0b; border: 1px solid rgba(255, 107, 95, .45); box-shadow: 0 12px 28px rgba(0,0,0,.6); }
+        .pick-opt { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; background: none; border: 0; border-bottom: 1px solid rgba(255,255,255,.06); color: #eee; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+        .pick-opt b { color: #f5c542; white-space: nowrap; }
+        .pick-opt:hover, .pick-opt.is-hi { background: rgba(196, 30, 30, .35); }
+        .pick-none { padding: 10px 12px; font-size: 13px; color: #aaa; }
         .pick-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
         .pick-list:empty { display: none; }
         .pick-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 4px 4px 10px; background: rgba(0,0,0,.35); font-size: 13.5px; }
@@ -5095,12 +5102,10 @@ service cloud.firestore {
         }
         // Selector de sets para registrar a mano lo que llevó un cliente
         function purchasePickerHtml() {
-            const opts = DATA.sets.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), "es"))
-                .map(st => `<option value="${escapeHtml(String(st.id))}">${escapeHtml(st.name)} — S/${escapeHtml(String(st.price))}</option>`).join("");
             const today = todayIso();
             return `<div class="pick" data-pick>
                 <label class="lj-label">¿Qué llevó? (opcional)</label>
-                <div class="pick-row"><select class="lj-input" data-f="pick-set"><option value="">Elige un set…</option>${opts}</select><button type="button" class="fr-btn" data-act="pick-add">➕ Agregar</button></div>
+                <div class="pick-row"><div class="pick-search"><input class="lj-input" data-f="pick-q" type="search" placeholder="🔎 Escribe para buscar un set…" autocomplete="off"><div class="pick-results" hidden></div></div><button type="button" class="fr-btn" data-act="pick-add">➕ Agregar</button></div>
                 <ul class="pick-list"></ul>
                 <div class="pick-meta">
                     <label>Fecha de compra<input class="lj-input fr-date" data-f="pick-date" type="date" value="${today}" max="${today}"></label>
@@ -5109,6 +5114,26 @@ service cloud.firestore {
                 <div class="pick-total"></div>
             </div>`;
         }
+        function pickMatches(q) {
+            const n = normalizeText(q.trim());
+            const all = DATA.sets.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), "es"));
+            if (!n) return all;
+            const starts = [], has = [];
+            all.forEach(st => { const t = normalizeText(st.name); if (t.startsWith(n)) starts.push(st); else if (t.includes(n) || String(st.id) === q.trim()) has.push(st); });
+            return starts.concat(has);
+        }
+        function renderPickResults(box) {
+            const inp = box.querySelector('[data-f="pick-q"]');
+            const res = box.querySelector(".pick-results");
+            const m = pickMatches(inp.value).slice(0, 40);
+            const hi = Math.min(Number(box.dataset.hi || 0), Math.max(m.length - 1, 0));
+            box.dataset.hi = hi;
+            res.innerHTML = m.length ? m.map((st, i) => `<button type="button" class="pick-opt${i === hi ? " is-hi" : ""}" data-act="pick-choose" data-id="${escapeHtml(String(st.id))}"><span>${escapeHtml(st.name)}</span><b>S/${escapeHtml(String(st.price))}</b></button>`).join("")
+                : `<div class="pick-none">No hay sets con “${escapeHtml(inp.value.trim())}”</div>`;
+            res.hidden = false;
+            const cur = res.querySelector(".is-hi"); if (cur) cur.scrollIntoView({ block: "nearest" });
+        }
+        function closePickResults(box) { const res = box.querySelector(".pick-results"); if (res) res.hidden = true; }
         function pickItems(card) {
             const box = card.querySelector("[data-pick]");
             try { return JSON.parse(box.dataset.items || "[]"); } catch (e) { return []; }
@@ -5127,9 +5152,11 @@ service cloud.firestore {
         function pickAction(card, act, i) {
             const box = card.querySelector("[data-pick]");
             let items = pickItems(card);
-            if (act === "pick-add") {
-                const id = box.querySelector('[data-f="pick-set"]').value;
-                if (!id) return;
+            if (act === "pick-add" || act === "pick-choose") {
+                const inp = box.querySelector('[data-f="pick-q"]');
+                let id = act === "pick-choose" ? String(i) : "";
+                if (!id) { const m = pickMatches(inp.value); if (!inp.value.trim() || !m.length) { inp.focus(); renderPickResults(box); return; } id = String((m[Number(box.dataset.hi || 0)] || m[0]).id); }
+                inp.value = ""; box.dataset.hi = 0; closePickResults(box);
                 const ex = items.find(it => String(it.id) === id);
                 if (ex) ex.qty += 1; else items.push({ id, qty: 1 });
             } else if (act === "pick-inc") items[i].qty += 1;
@@ -5481,6 +5508,28 @@ service cloud.firestore {
             });
             const list = document.getElementById("ordList");
             const orderOf = (el) => { const card = el.closest(".ord-card[data-id]"); return card ? ordState.orders.find(x => x._id === card.dataset.id) : null; };
+            // Buscador de sets al registrar una compra
+            list.addEventListener("input", (e) => {
+                if (e.target.dataset.f !== "pick-q") return;
+                const box = e.target.closest("[data-pick]"); box.dataset.hi = 0; renderPickResults(box);
+            });
+            list.addEventListener("focusin", (e) => {
+                if (e.target.dataset.f === "pick-q") renderPickResults(e.target.closest("[data-pick]"));
+            });
+            list.addEventListener("keydown", (e) => {
+                if (e.target.dataset.f !== "pick-q") return;
+                const box = e.target.closest("[data-pick]");
+                const n = box.querySelectorAll(".pick-opt").length;
+                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                    e.preventDefault(); if (!n) return;
+                    box.dataset.hi = (Number(box.dataset.hi || 0) + (e.key === "ArrowDown" ? 1 : n - 1)) % n; renderPickResults(box);
+                } else if (e.key === "Enter") {
+                    e.preventDefault(); pickAction(box.closest(".cust-card"), "pick-add");
+                } else if (e.key === "Escape") closePickResults(box);
+            });
+            document.addEventListener("pointerdown", (e) => {
+                document.querySelectorAll(".pick-search").forEach(ps => { if (!ps.contains(e.target)) { const r = ps.querySelector(".pick-results"); if (r) r.hidden = true; } });
+            });
             list.addEventListener("change", (e) => {
                 const act = e.target.dataset.act;
                 if (act === "status") {
@@ -5496,6 +5545,7 @@ service cloud.firestore {
                 const btn = e.target.closest("button[data-act]");
                 if (!btn || btn.disabled) return;
                 const act = btn.dataset.act;
+                if (act === "pick-choose") { pickAction(btn.closest(".cust-card"), act, btn.dataset.id); btn.closest(".cust-card").querySelector('[data-f="pick-q"]').focus(); return; }
                 if (act.startsWith("pick-")) { pickAction(btn.closest(".cust-card"), act, Number(btn.dataset.i)); return; }
                 if (act === "new-month") { btn.closest(".since-row").querySelector('[data-f="since"]').value = isoShift(todayIso(), -30); return; }
                 if (act === "buy-open") { ordState.buying = btn.closest(".cust-card").dataset.key; ordState.editing = null; renderOrders(); return; }
