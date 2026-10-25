@@ -1202,6 +1202,9 @@
         .cust-edit-help { font-size: 11.5px; color: #a8a29e; line-height: 1.45; }
         .cust-save { min-height: 44px; border-radius: 10px; border: 1px solid #fff3b0; background: linear-gradient(180deg, #fde68a, #d99a22); color: #1a0d03; font-weight: 800; font-size: 14px; cursor: pointer; }
         .cust-card.is-busy { opacity: 0.6; pointer-events: none; }
+        .cust-new-bar { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+        .cust-new-btn { padding: 0 20px; }
+        .cust-new { border-top-color: #34d399 !important; }
         .ord-wa { min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(37, 211, 102, .45); background: rgba(2, 44, 34, .55); color: #b7f5cc; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; }
         .ord-wa:hover { background: #065f46; color: #fff; }
         .ord-link { background: none; border: 0; padding: 10px 2px; color: #fcd34d; font-weight: 700; text-decoration: underline; cursor: pointer; font-size: inherit; }
@@ -4827,7 +4830,7 @@ service cloud.firestore {
         }
 
         // ---- Ventana: Pedidos y clientes ----
-        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null, phoneEditing: null };
+        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null, phoneEditing: null, creating: false };
         const friendSaved = {};   // última fecha de amistad guardada en Firestore, por cliente
         const friendTimers = {};  // guardado diferido (para los botones −1 / +1)
         function custKey(steamId, name) {
@@ -4893,13 +4896,15 @@ service cloud.firestore {
             const map = {};
             ordState.orders.forEach(o => {
                 const key = custKey(o.steamId, o.customerName);
-                const m = map[key] || (map[key] = { key, name: o.customerName, steamId: o.steamId || "", orders: 0, spent: 0, last: null });
+                const m = map[key] || (map[key] = { key, name: o.customerName, steamId: o.steamId || "", phone: "", orders: 0, spent: 0, last: null });
                 m.orders += 1;
                 if (isSale(o)) m.spent += Number(o.total) || 0;
-                if (!m.last || (o.createdAt && o.createdAt > m.last)) { m.last = o.createdAt; m.name = o.customerName || m.name; }
+                if (!m.last || (o.createdAt && o.createdAt > m.last)) { m.last = o.createdAt; m.name = o.customerName || m.name; if (o.phone) m.phone = o.phone; }
+                if (!m.phone && o.phone) m.phone = o.phone;
             });
             Object.values(ordState.customers).forEach(c => {
-                if (!map[c._id]) map[c._id] = { key: c._id, name: c.name || "", steamId: c.steamId || "", orders: 0, spent: 0, last: null };
+                if (!map[c._id]) map[c._id] = { key: c._id, name: c.name || "", steamId: c.steamId || "", phone: c.phone || "", orders: 0, spent: 0, last: null };
+                else if (c.phone) map[c._id].phone = c.phone;
             });
             return Object.values(map);
         }
@@ -4926,19 +4931,45 @@ service cloud.firestore {
             </div>`;
         }
         // Mensaje de "set entregado" que se abre en WhatsApp con el chat del cliente
-        function deliveryMessage(o) {
-            const sets = (o.items || []).map(it => `• ${it.qty > 1 ? it.qty + " × " : ""}${it.name}`).join("\n");
-            return `Hola ${o.customerName || ""}, ¡tu pedido ${o.code || o._id} de LitleJacob Store ya fue entregado! 🎮\n\n${sets}\n\nRevisa tu inventario en Dota 2. ¡Gracias por tu compra! Si tienes cualquier duda, escríbeme por aquí.`;
+        // Nombre con mayúscula inicial ("andi lima" -> "Andi Lima")
+        function titleName(n) { return String(n || "").trim().toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()); }
+        // WhatsApp del pedido o, si no tiene, el guardado en la ficha del cliente
+        function phoneFor(o) {
+            if (o.phone) return o.phone;
+            const c = ordState.customers[custKey(o.steamId, o.customerName)];
+            return (c && c.phone) || "";
         }
-        function deliveryLink(o) { return o.phone ? `https://wa.me/${o.phone}?text=${encodeURIComponent(deliveryMessage(o))}` : ""; }
+        // Emojis elegidos para que se vean bien en WhatsApp del celular y de la computadora
+        function deliveryMessage(o) {
+            const sets = (o.items || []).map(it => `⚡ ${it.qty > 1 ? it.qty + " × " : ""}${it.name}`).join("\n");
+            const name = titleName(o.customerName).split(" ")[0] || "";
+            return [
+                "✅ *¡PEDIDO ENTREGADO!* ✅",
+                "",
+                `Hola *${name}* ⚔️`,
+                `Tu pedido *${o.code || o._id}* de *LitleJacob Store* ya está en tu inventario de Dota 2 ✨`,
+                "",
+                "*Sets entregados:*",
+                sets,
+                "",
+                "➡️ Abre Dota 2, revisa tu inventario y equípalo.",
+                "⭐ Si te gustó la atención, recomiéndanos con tus amigos.",
+                "❤️ ¡Gracias por tu compra! Cualquier duda, escríbeme por aquí.",
+                "",
+                "— *LitleJacob Store* · litlejacob.trade"
+            ].join("\n");
+        }
+        function waSendLink(phone, text) { return `https://api.whatsapp.com/send?phone=${phone}` + (text ? `&text=${encodeURIComponent(text)}` : ""); }
+        function deliveryLink(o) { const ph = phoneFor(o); return ph ? waSendLink(ph, deliveryMessage(o)) : ""; }
         function phoneLineHtml(o) {
             if (ordState.phoneEditing === o._id) {
                 return `<div class="ord-phone-add"><input class="lj-input" data-f="phone" type="tel" inputmode="tel" maxlength="20" placeholder="WhatsApp del cliente (ej. 987 654 321)" value="${o.phone ? escapeHtml(fmtPhone(o.phone)) : ""}">
                     <button type="button" class="cust-save" data-act="phone-save">Guardar y avisar</button>
                     <button type="button" class="fr-btn" data-act="phone-cancel">Cancelar</button></div>`;
             }
-            return o.phone
-                ? `<div class="ord-cust-steam">📱 <a href="https://wa.me/${o.phone}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(o.phone))}</a></div>`
+            const ph = phoneFor(o);
+            return ph
+                ? `<div class="ord-cust-steam">📱 <a href="${waSendLink(ph)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(ph))}</a></div>`
                 : `<div class="ord-cust-steam">📱 sin WhatsApp · <button type="button" class="ord-link" data-act="phone-edit">Agregar número</button></div>`;
         }
         function orderCardHtml(o) {
@@ -4972,7 +5003,7 @@ service cloud.firestore {
             </article>`;
         }
         function openDelivery(o) {
-            if (!o.phone) { ordState.phoneEditing = o._id; renderOrders(); focusPhone(o); return false; }
+            if (!phoneFor(o)) { ordState.phoneEditing = o._id; renderOrders(); focusPhone(o); return false; }
             window.open(deliveryLink(o), "_blank", "noopener,noreferrer");
             return true;
         }
@@ -5001,6 +5032,7 @@ service cloud.firestore {
                     <div class="ord-id"><b class="cust-name">👤 ${escapeHtml(c.name || "Sin nombre")}</b></div>
                 </header>
                 <div class="ord-cust-steam">${steamLineHtml(c.steamId)}</div>
+                <div class="ord-cust-steam">📱 ${c.phone ? `<a href="${waSendLink(c.phone)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(c.phone))}</a>` : "sin WhatsApp"}</div>
                 <div class="cust-stats">
                     <div><b>${c.orders}</b><span>${c.orders === 1 ? "Pedido" : "Pedidos"}</span></div>
                     <div><b>${money(c.spent)}</b><span>Gastado</span></div>
@@ -5010,6 +5042,7 @@ service cloud.firestore {
                 ${ordState.editing === c.key ? `<div class="cust-edit">
                     <div><label class="lj-label">Nombre</label><input class="lj-input" data-f="name" type="text" maxlength="60" value="${escapeHtml(c.name || "")}"></div>
                     <div><label class="lj-label">ID de amigo de Steam</label><input class="lj-input" data-f="steam" type="text" inputmode="numeric" maxlength="80" value="${escapeHtml(c.steamId || "")}" placeholder="Ej. 123456789"></div>
+                    <div><label class="lj-label">WhatsApp</label><input class="lj-input" data-f="phone" type="tel" inputmode="tel" maxlength="20" value="${escapeHtml(fmtPhone(c.phone || ""))}" placeholder="Ej. 987 654 321"></div>
                     <div class="cust-edit-help">Se corregirá en ${c.orders === 1 ? "su pedido" : `sus ${c.orders} pedidos`}. La fecha de amistad se conserva.</div>
                     <div class="lj-error cust-edit-err"></div>
                     <div class="cust-actions">
@@ -5022,6 +5055,49 @@ service cloud.firestore {
                 </footer>`}
             </article>`;
         }
+        function newCustomerHtml() {
+            if (!ordState.creating) return `<div class="cust-new-bar"><button type="button" class="cust-save cust-new-btn" data-act="cust-new">➕ Nuevo cliente</button></div>`;
+            return `<article class="ord-card cust-card cust-new" data-key="__nuevo">
+                <header class="ord-head"><div class="ord-id"><b class="cust-name">➕ Nuevo cliente</b></div></header>
+                <div class="cust-edit">
+                    <div><label class="lj-label">Nombre</label><input class="lj-input" data-f="name" type="text" maxlength="60" placeholder="Ej. Andi Lima"></div>
+                    <div><label class="lj-label">ID de amigo de Steam</label><input class="lj-input" data-f="steam" type="text" inputmode="numeric" maxlength="80" placeholder="Ej. 123456789 (o enlace del perfil)"></div>
+                    <div><label class="lj-label">WhatsApp</label><input class="lj-input" data-f="phone" type="tel" inputmode="tel" maxlength="20" placeholder="Ej. 987 654 321"></div>
+                    <div><label class="lj-label">Amigos desde (opcional)</label><input class="lj-input fr-date" data-f="since" type="date"></div>
+                    <div class="lj-error cust-edit-err"></div>
+                    <div class="cust-actions">
+                        <button type="button" class="fr-btn cust-btn" data-act="cust-new-cancel">Cancelar</button>
+                        <button type="button" class="cust-save" data-act="cust-new-save">💾 Crear cliente</button>
+                    </div>
+                </div>
+            </article>`;
+        }
+        async function createCustomer(card) {
+            const err = card.querySelector(".cust-edit-err");
+            const name = card.querySelector('[data-f="name"]').value.trim().replace(/\s+/g, " ").slice(0, 60);
+            const steam = normalizeSteamId(card.querySelector('[data-f="steam"]').value);
+            const phone = normalizePhone(card.querySelector('[data-f="phone"]').value);
+            const since = card.querySelector('[data-f="since"]').value;
+            if (!name) { err.textContent = "Escribe el nombre del cliente."; return; }
+            if (steam === null) { err.textContent = "El ID de amigo de Steam son solo números (ej. 123456789)."; return; }
+            if (phone === null) { err.textContent = "Revisa el número de WhatsApp (ej. 987 654 321)."; return; }
+            if (since && !validIso(since)) { err.textContent = "Revisa la fecha de amistad."; return; }
+            const key = custKey(steam, name);
+            if (customersList().some(c => c.key === key)) { err.textContent = `Ya existe un cliente con ese ${steam ? "ID de Steam" : "nombre"}. Búscalo en la lista y edítalo.`; return; }
+            card.classList.add("is-busy");
+            const fields = { friendSince: since || "", name, steamId: steam || "", phone: phone || "", updatedAt: new Date() };
+            try {
+                await fsRequest(`customers/${encodeURIComponent(key)}`, { method: "PATCH", auth: true, query: maskQuery(Object.keys(fields)), body: { fields: fsFields(fields) } });
+                ordState.customers[key] = Object.assign({ _id: key }, fields);
+                friendSaved[key] = fields.friendSince;
+                ordState.creating = false;
+                showToast(`Cliente creado: ${name}.`, "Clientes");
+                renderOrders();
+            } catch (e) {
+                card.classList.remove("is-busy");
+                err.textContent = fsErrorText(e);
+            }
+        }
         function ordersOfKey(key) { return ordState.orders.filter(o => custKey(o.steamId, o.customerName) === key); }
 
         // Editar cliente: corrige nombre / ID de Steam en todos sus pedidos y conserva la fecha de amistad
@@ -5032,6 +5108,9 @@ service cloud.firestore {
             const steam = normalizeSteamId(steamRaw);
             if (!name) { err.textContent = "Escribe el nombre del cliente."; return; }
             if (steam === null) { err.textContent = "El ID de amigo de Steam son solo números (ej. 123456789)."; return; }
+            const phoneInp = card.querySelector('[data-f="phone"]');
+            const phone = phoneInp ? normalizePhone(phoneInp.value) : "";
+            if (phone === null) { err.textContent = "Revisa el número de WhatsApp (ej. 987 654 321)."; return; }
             const newKey = custKey(steam, name);
             const orders = ordersOfKey(key);
             const old = ordState.customers[key];
@@ -5047,7 +5126,7 @@ service cloud.firestore {
                 }
                 const tDoc = ordState.customers[newKey];
                 const friendSince = (tDoc && tDoc.friendSince) || (old && old.friendSince) || "";
-                const fields = { friendSince, name, steamId: steam, updatedAt: now };
+                const fields = { friendSince, name, steamId: steam, phone: phone || (tDoc && tDoc.phone) || (old && old.phone) || "", updatedAt: now };
                 await fsRequest(`customers/${encodeURIComponent(newKey)}`, { method: "PATCH", auth: true, query: maskQuery(Object.keys(fields)), body: { fields: fsFields(fields) } });
                 ordState.customers[newKey] = Object.assign(tDoc || { _id: newKey }, fields);
                 friendSaved[newKey] = friendSince;
@@ -5149,7 +5228,7 @@ service cloud.firestore {
             if (!isOrders) {
                 const rows = customers.filter(c => !q || normalizeText(`${c.name} ${c.steamId}`).includes(q))
                     .sort((a, b) => ordState.sort === "amount" ? b.spent - a.spent : (b.last || 0) - (a.last || 0));
-                list.innerHTML = rows.length ? rows.map(customerCardHtml).join("") : `<div class="ord-empty">${customers.length ? "Ningún cliente coincide con la búsqueda." : "Aún no hay clientes. Aparecerán cuando lleguen pedidos."}</div>`;
+                list.innerHTML = newCustomerHtml() + (rows.length ? rows.map(customerCardHtml).join("") : `<div class="ord-empty">${customers.length ? "Ningún cliente coincide con la búsqueda." : "Aún no hay clientes. Crea uno o aparecerán cuando lleguen pedidos."}</div>`);
                 return;
             }
             const rows = ordState.orders.filter(o => (ordState.filter === "all" || (o.status || "pendiente") === ordState.filter) &&
@@ -5176,13 +5255,13 @@ service cloud.firestore {
                 }
             }
             const announce = status === "entregado" && order.status !== "entregado";
-            if (announce && order.phone) openDelivery(Object.assign({}, order, fields));
+            if (announce && phoneFor(order)) openDelivery(Object.assign({}, order, fields));
             try {
                 await fsRequest(`orders/${encodeURIComponent(order._id)}`, { method: "PATCH", auth: true, query: maskQuery(keys), body: { fields: fsFields(fields) } });
                 Object.assign(order, fields);
                 if (stockChanged) commit();
-                showToast(`Pedido ${order.code || order._id}: ${statusMeta(status).txt}` + (announce && !order.phone ? ". Agrega su WhatsApp para avisarle." : ""), "Pedidos");
-                if (announce && !order.phone) ordState.phoneEditing = order._id;
+                showToast(`Pedido ${order.code || order._id}: ${statusMeta(status).txt}` + (announce && !phoneFor(order) ? ". Agrega su WhatsApp para avisarle." : ""), "Pedidos");
+                if (announce && !phoneFor(order)) ordState.phoneEditing = order._id;
             } catch (e) {
                 if (stockChanged) (order.items || []).forEach(it => { const s = findSet(it.id); if (s && s.stock != null) s.stock += (it.qty || 1); });
                 if (selectEl) selectEl.value = order.status;
@@ -5257,6 +5336,7 @@ service cloud.firestore {
             document.querySelectorAll("#ordersModal .ord-tab").forEach(b => b.addEventListener("click", () => {
                 ordState.tab = b.dataset.tab;
                 ordState.editing = null;
+                ordState.creating = false;
                 renderOrders();
             }));
             document.getElementById("ordRefresh").addEventListener("click", loadOrders);
@@ -5285,6 +5365,9 @@ service cloud.firestore {
                 const btn = e.target.closest("button[data-act]");
                 if (!btn || btn.disabled) return;
                 const act = btn.dataset.act;
+                if (act === "cust-new") { ordState.creating = true; renderOrders(); const i = list.querySelector('.cust-new [data-f="name"]'); if (i) i.focus(); return; }
+                if (act === "cust-new-cancel") { ordState.creating = false; renderOrders(); return; }
+                if (act === "cust-new-save") { createCustomer(btn.closest(".cust-card")); return; }
                 if (act.startsWith("cust-")) {
                     const card = btn.closest(".cust-card");
                     const key = card.dataset.key;
