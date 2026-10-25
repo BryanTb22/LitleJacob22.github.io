@@ -1202,6 +1202,14 @@
         .cust-edit-help { font-size: 11.5px; color: #a8a29e; line-height: 1.45; }
         .cust-save { min-height: 44px; border-radius: 10px; border: 1px solid #fff3b0; background: linear-gradient(180deg, #fde68a, #d99a22); color: #1a0d03; font-weight: 800; font-size: 14px; cursor: pointer; }
         .cust-card.is-busy { opacity: 0.6; pointer-events: none; }
+        .ord-wa { min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(37, 211, 102, .45); background: rgba(2, 44, 34, .55); color: #b7f5cc; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; }
+        .ord-wa:hover { background: #065f46; color: #fff; }
+        .ord-link { background: none; border: 0; padding: 10px 2px; color: #fcd34d; font-weight: 700; text-decoration: underline; cursor: pointer; font-size: inherit; }
+        .ord-phone-add { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; margin-top: 6px; }
+        .ord-phone-add .lj-input { min-height: 44px; font-size: 15px; }
+        .ord-phone-add .cust-save { padding: 0 14px; }
+        .ord-actions { flex-wrap: wrap; } .ord-status-wrap { flex-basis: 100%; } .ord-wa, .ord-del { flex: 1; }
+        @media (max-width: 600px) { .ord-phone-add { grid-template-columns: 1fr 1fr; } .ord-phone-add .lj-input { grid-column: 1 / -1; } }
         @media (max-width: 900px) {
             .ord-list { grid-template-columns: minmax(0, 1fr); }
         }
@@ -2330,6 +2338,10 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                         <label class="lj-label" for="custSteam">ID de amigo de Steam</label>
                         <input id="custSteam" class="lj-input" type="text" inputmode="numeric" maxlength="80" autocomplete="off" placeholder="Ej. 123456789">
                     </div>
+                </div>
+                <div class="lj-field">
+                    <label class="lj-label" for="custPhone">Tu WhatsApp</label>
+                    <input id="custPhone" class="lj-input" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="Ej. 987 654 321">
                 </div>
                 <div class="buy-customer-help">Tu ID de amigo está en Steam → Amigos → <b>Añadir un amigo</b> ("Tu código de amigo"). También puedes pegar el enlace de tu perfil.</div>
                 <div id="custError" class="lj-error"></div>
@@ -4512,8 +4524,8 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
 
         // ---- Datos del cliente y registro del pedido ----
         function loadCustomer() {
-            try { return Object.assign({ name: "", steam: "" }, JSON.parse(localStorage.getItem(CUSTOMER_KEY) || "{}")); }
-            catch (e) { return { name: "", steam: "" }; }
+            try { return Object.assign({ name: "", steam: "", phone: "" }, JSON.parse(localStorage.getItem(CUSTOMER_KEY) || "{}")); }
+            catch (e) { return { name: "", steam: "", phone: "" }; }
         }
         function saveCustomer(c) { try { localStorage.setItem(CUSTOMER_KEY, JSON.stringify(c)); } catch (e) { /* sin almacenamiento */ } }
         // Acepta el código de amigo (números) o un enlace de perfil de Steam
@@ -4524,6 +4536,23 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             if (long && typeof BigInt === "function") return (BigInt(long[0]) - BigInt("76561197960265728")).toString();
             const digits = v.replace(/[\s.-]/g, "");
             return /^\d{3,11}$/.test(digits) ? digits : null;
+        }
+        // Número de WhatsApp: 9 dígitos de Perú (se agrega 51) o número internacional
+        function normalizePhone(v) {
+            v = String(v || "").trim();
+            if (!v) return "";
+            let d = v.replace(/[^\d+]/g, "");
+            const plus = d.startsWith("+");
+            d = d.replace(/\+/g, "");
+            if (/^9\d{8}$/.test(d)) return "51" + d;
+            if (/^519\d{8}$/.test(d)) return d;
+            if (plus || d.length >= 10) return /^\d{8,15}$/.test(d) ? d : null;
+            return null;
+        }
+        function fmtPhone(d) {
+            if (!d) return "";
+            const m = /^51(9\d{2})(\d{3})(\d{3})$/.exec(d);
+            return m ? `+51 ${m[1]} ${m[2]} ${m[3]}` : "+" + d;
         }
         function steamProfileUrl(id) {
             if (!/^\d{1,11}$/.test(id || "") || typeof BigInt !== "function") return "";
@@ -4537,7 +4566,8 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
         function readCustomerForm() {
             const name = document.getElementById("custName").value.trim().replace(/\s+/g, " ").slice(0, 60);
             const steamRaw = document.getElementById("custSteam").value;
-            return { name, steamRaw, steam: normalizeSteamId(steamRaw) };
+            const phoneRaw = document.getElementById("custPhone").value;
+            return { name, steamRaw, steam: normalizeSteamId(steamRaw), phoneRaw, phone: normalizePhone(phoneRaw) };
         }
         function customerLines(st) {
             const c = readCustomerForm();
@@ -4560,8 +4590,10 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             const nameEl = document.getElementById("custName"), steamEl = document.getElementById("custSteam");
             if (!nameEl.value) nameEl.value = c.name;
             if (!steamEl.value) steamEl.value = c.steam;
+            const phoneEl = document.getElementById("custPhone");
+            if (!phoneEl.value && c.phone) phoneEl.value = fmtPhone(c.phone);
             document.getElementById("custError").textContent = "";
-            nameEl.classList.remove("is-invalid"); steamEl.classList.remove("is-invalid");
+            nameEl.classList.remove("is-invalid"); steamEl.classList.remove("is-invalid"); phoneEl.classList.remove("is-invalid");
             ljUpdateSendMsg();
         }
         function ljCustomerValid() {
@@ -4575,8 +4607,14 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                 err.textContent = c.steam === null ? "Tu ID de amigo de Steam son solo números (ej. 123456789)." : "Escribe tu ID de amigo de Steam para poder entregarte los sets.";
                 steamEl.focus(); return false;
             }
+            const phoneEl = document.getElementById("custPhone");
+            phoneEl.classList.toggle("is-invalid", !c.phone);
+            if (!c.phone) {
+                err.textContent = c.phone === null ? "Revisa tu número de WhatsApp (ej. 987 654 321)." : "Escribe tu WhatsApp para avisarte cuando entreguemos tu set.";
+                phoneEl.focus(); return false;
+            }
             err.textContent = "";
-            saveCustomer({ name: c.name, steam: c.steam });
+            saveCustomer({ name: c.name, steam: c.steam, phone: c.phone });
             ljUpdateSendMsg();
             return true;
         }
@@ -4598,7 +4636,13 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                 status: "pendiente",
                 createdAt: new Date()
             };
-            fsRequest("orders", { method: "POST", query: "documentId=" + encodeURIComponent(st.code), body: { fields: fsFields(doc) } })
+            if (c.phone) doc.phone = c.phone;
+            const post = (d) => fsRequest("orders", { method: "POST", query: "documentId=" + encodeURIComponent(st.code), body: { fields: fsFields(d) } });
+            post(doc)
+                .catch(e => {
+                    if (e && e.status === 403 && doc.phone) { const d2 = Object.assign({}, doc); delete d2.phone; return post(d2); }
+                    throw e;
+                })
                 .then(() => notifyNewOrder(st.code))
                 .catch(e => console.warn("No se pudo registrar el pedido:", e));
         }
@@ -4632,11 +4676,12 @@ service cloud.firestore {
     }
     function validOrder() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['code','customerName','steamId','items','count','subtotal','discount','total','status','createdAt'])
+      return d.keys().hasOnly(['code','customerName','steamId','phone','items','count','subtotal','discount','total','status','createdAt'])
         && d.status == 'pendiente'
         && d.code is string && d.code.size() <= 20
         && d.customerName is string && d.customerName.size() > 0 && d.customerName.size() <= 60
         && d.steamId is string && d.steamId.size() <= 20
+        && (!('phone' in d) || (d.phone is string && d.phone.size() <= 20))
         && d.items is list && d.items.size() > 0 && d.items.size() <= 80
         && d.count is int && d.total is number && d.total >= 0
         && d.createdAt is timestamp
@@ -4761,7 +4806,7 @@ service cloud.firestore {
             });
 
             // Datos del cliente en la ventana de pedido
-            ["custName", "custSteam"].forEach(id => document.getElementById(id).addEventListener("input", (e) => {
+            ["custName", "custSteam", "custPhone"].forEach(id => document.getElementById(id).addEventListener("input", (e) => {
                 e.target.classList.remove("is-invalid");
                 document.getElementById("custError").textContent = "";
                 ljUpdateSendMsg();
@@ -4782,7 +4827,7 @@ service cloud.firestore {
         }
 
         // ---- Ventana: Pedidos y clientes ----
-        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null };
+        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null, phoneEditing: null };
         const friendSaved = {};   // última fecha de amistad guardada en Firestore, por cliente
         const friendTimers = {};  // guardado diferido (para los botones −1 / +1)
         function custKey(steamId, name) {
@@ -4880,6 +4925,22 @@ service cloud.firestore {
                 </div>
             </div>`;
         }
+        // Mensaje de "set entregado" que se abre en WhatsApp con el chat del cliente
+        function deliveryMessage(o) {
+            const sets = (o.items || []).map(it => `• ${it.qty > 1 ? it.qty + " × " : ""}${it.name}`).join("\n");
+            return `Hola ${o.customerName || ""}, ¡tu pedido ${o.code || o._id} de LitleJacob Store ya fue entregado! 🎮\n\n${sets}\n\nRevisa tu inventario en Dota 2. ¡Gracias por tu compra! Si tienes cualquier duda, escríbeme por aquí.`;
+        }
+        function deliveryLink(o) { return o.phone ? `https://wa.me/${o.phone}?text=${encodeURIComponent(deliveryMessage(o))}` : ""; }
+        function phoneLineHtml(o) {
+            if (ordState.phoneEditing === o._id) {
+                return `<div class="ord-phone-add"><input class="lj-input" data-f="phone" type="tel" inputmode="tel" maxlength="20" placeholder="WhatsApp del cliente (ej. 987 654 321)" value="${o.phone ? escapeHtml(fmtPhone(o.phone)) : ""}">
+                    <button type="button" class="cust-save" data-act="phone-save">Guardar y avisar</button>
+                    <button type="button" class="fr-btn" data-act="phone-cancel">Cancelar</button></div>`;
+            }
+            return o.phone
+                ? `<div class="ord-cust-steam">📱 <a href="https://wa.me/${o.phone}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(o.phone))}</a></div>`
+                : `<div class="ord-cust-steam">📱 sin WhatsApp · <button type="button" class="ord-link" data-act="phone-edit">Agregar número</button></div>`;
+        }
         function orderCardHtml(o) {
             const key = custKey(o.steamId, o.customerName);
             const st = statusMeta(o.status);
@@ -4896,6 +4957,7 @@ service cloud.firestore {
                 <div class="ord-cust">
                     <div class="ord-cust-name">👤 ${escapeHtml(o.customerName || "Sin nombre")}</div>
                     <div class="ord-cust-steam">${steamLineHtml(o.steamId)}</div>
+                    ${phoneLineHtml(o)}
                 </div>
                 <ul class="ord-items">${items}</ul>
                 <div class="ord-total-row"><span class="ord-notes">${notes.join(" · ")}</span><b class="ord-total">${money(o.total)}</b></div>
@@ -4904,9 +4966,34 @@ service cloud.firestore {
                     <label class="ord-status-wrap"><span>Estado</span>
                         <select class="lj-input ord-status" data-act="status">${ORDER_STATUSES.map(s => `<option value="${s.key}" ${s.key === st.key ? "selected" : ""}>${s.txt}</option>`).join("")}</select>
                     </label>
+                    <button type="button" class="ord-wa" data-act="notify">📲 Avisar entrega</button>
                     <button type="button" class="ord-del" data-act="delete">🗑 Eliminar</button>
                 </footer>
             </article>`;
+        }
+        function openDelivery(o) {
+            if (!o.phone) { ordState.phoneEditing = o._id; renderOrders(); focusPhone(o); return false; }
+            window.open(deliveryLink(o), "_blank", "noopener,noreferrer");
+            return true;
+        }
+        function focusPhone(o) {
+            const inp = document.querySelector(`.ord-card[data-id="${CSS.escape(o._id)}"] [data-f="phone"]`);
+            if (inp) inp.focus();
+        }
+        async function savePhone(o, card) {
+            const phone = normalizePhone(card.querySelector('[data-f="phone"]').value);
+            if (!phone) { showToast("Revisa el número de WhatsApp (ej. 987 654 321).", "WhatsApp"); return; }
+            const win = window.open("about:blank", "_blank");
+            try {
+                await fsRequest(`orders/${encodeURIComponent(o._id)}`, { method: "PATCH", auth: true, query: maskQuery(["phone", "updatedAt"]), body: { fields: fsFields({ phone, updatedAt: new Date() }) } });
+                o.phone = phone;
+                ordState.phoneEditing = null;
+                if (win) win.location.href = deliveryLink(o); else window.open(deliveryLink(o), "_blank", "noopener,noreferrer");
+                renderOrders();
+            } catch (e) {
+                if (win) win.close();
+                showToast(fsErrorText(e), "Error");
+            }
         }
         function customerCardHtml(c) {
             return `<article class="ord-card cust-card" data-key="${escapeHtml(c.key)}">
@@ -5088,11 +5175,14 @@ service cloud.firestore {
                     stockChanged = true;
                 }
             }
+            const announce = status === "entregado" && order.status !== "entregado";
+            if (announce && order.phone) openDelivery(Object.assign({}, order, fields));
             try {
                 await fsRequest(`orders/${encodeURIComponent(order._id)}`, { method: "PATCH", auth: true, query: maskQuery(keys), body: { fields: fsFields(fields) } });
                 Object.assign(order, fields);
                 if (stockChanged) commit();
-                showToast(`Pedido ${order.code || order._id}: ${statusMeta(status).txt}`, "Pedidos");
+                showToast(`Pedido ${order.code || order._id}: ${statusMeta(status).txt}` + (announce && !order.phone ? ". Agrega su WhatsApp para avisarle." : ""), "Pedidos");
+                if (announce && !order.phone) ordState.phoneEditing = order._id;
             } catch (e) {
                 if (stockChanged) (order.items || []).forEach(it => { const s = findSet(it.id); if (s && s.stock != null) s.stock += (it.qty || 1); });
                 if (selectEl) selectEl.value = order.status;
@@ -5207,6 +5297,15 @@ service cloud.firestore {
                 if (act === "delete") {
                     const o = orderOf(btn);
                     if (o) deleteOrder(o);
+                    return;
+                }
+                if (act === "notify" || act === "phone-edit" || act === "phone-save" || act === "phone-cancel") {
+                    const o = orderOf(btn);
+                    if (!o) return;
+                    if (act === "notify") openDelivery(o);
+                    else if (act === "phone-edit") { ordState.phoneEditing = o._id; renderOrders(); focusPhone(o); }
+                    else if (act === "phone-cancel") { ordState.phoneEditing = null; renderOrders(); }
+                    else savePhone(o, btn.closest(".ord-card"));
                     return;
                 }
                 const box = btn.closest(".fr-edit");
