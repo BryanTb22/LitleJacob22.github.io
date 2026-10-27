@@ -110,7 +110,7 @@
   /* ---------- estado ---------- */
   const items = { lista: [], cargado: false, cargando: false, err: "" };
   const filtros = { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", limite: 48 };
-  const ven = { link: "", cargando: false, err: "", lista: null, noTrad: 0, sel: {}, precios: [], pCargado: false, pCargando: false, q: "" };
+  const ven = { link: "", cargando: false, err: "", lista: null, noTrad: 0, sel: {}, precios: [], pCargado: false, pCargando: false, q: "", f: { tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", min: "", max: "", orden: "mayor" } };
   const adm = { form: null, msg: "", guardando: false, subiendo: false, steamCargando: false, steamInfo: "", itemDel: null, cp: {} };
   const sec = { cargado: false, items: false };   // sección visible para clientes (rayas/estado → secciones.items)
   let modal = null;
@@ -454,19 +454,55 @@
       '<div class="itx-step"><button type="button" class="itx-btn ghost sm" data-itx="venMenos" data-i="' + idx + '" aria-label="Quitar uno"' + (c ? "" : " disabled") + ">−</button>" +
       "<span>" + c + '</span><button type="button" class="itx-btn ghost sm" data-itx="venMas" data-i="' + idx + '" aria-label="Agregar uno"' + (c >= g.n ? " disabled" : "") + ">+</button></div></div></article>";
   }
+  function venFiltrados() {
+    const f = ven.f, q = sinTildes(ven.q), mn = parseFloat(f.min), mx = parseFloat(f.max);
+    const vis = (ven.lista || []).map((g, i) => ({ g, i, p: precioCompra(g.name) })).filter((o) => {
+      const g = o.g;
+      if (q && sinTildes(g.name).indexOf(q) < 0) return false;
+      if (f.tipo && g.tipo !== f.tipo) return false;
+      if (f.heroe && g.heroe !== f.heroe) return false;
+      if (f.ranura && g.ranura !== f.ranura) return false;
+      if (f.rareza && g.rareza !== f.rareza) return false;
+      if (f.calidad && g.calidad !== f.calidad) return false;
+      if (isFinite(mn) && (o.p === null || o.p < mn)) return false;
+      if (isFinite(mx) && (o.p === null || o.p > mx)) return false;
+      return true;
+    });
+    vis.sort((a, b) => {
+      if (f.orden === "nombre") return a.g.name.localeCompare(b.g.name);
+      const pa = a.p === null ? -1 : a.p, pb = b.p === null ? -1 : b.p;
+      return f.orden === "menor" ? pa - pb : pb - pa;
+    });
+    return vis;
+  }
+  function venDistintos(k, base) {
+    const set = {}, out = [];
+    (base || []).concat((ven.lista || []).map((x) => x[k])).forEach((v) => { if (v && !set[v]) { set[v] = 1; out.push(v); } });
+    return out.sort((a, b) => a.localeCompare(b));
+  }
   function venderHtml() {
     if (!visible()) return cabecera("Tus items", "Vender", "items", "Esta sección estará disponible pronto.");
-    const q = sinTildes(ven.q);
     let cuerpo;
     if (ven.cargando) cuerpo = '<div class="itx-empty"><strong>Leyendo tu inventario…</strong><span>Puede tardar unos segundos.</span></div>';
     else if (ven.lista === null) cuerpo = '<div class="itx-empty"><strong>Pega tu trade link para empezar</strong><span>Verás tus items de Dota 2 que se pueden intercambiar y el precio al que te los compramos.</span></div>';
     else if (!ven.lista.length) cuerpo = '<div class="itx-empty"><strong>No hay items intercambiables</strong><span>Revisa que tu inventario de Dota 2 sea público y tenga items que puedas tradear.</span></div>';
     else {
-      const vis = ven.lista.map((g, i) => ({ g, i })).filter((o) => !q || sinTildes(o.g.name).indexOf(q) >= 0);
-      vis.sort((a, b) => { const pa = precioCompra(a.g.name), pb = precioCompra(b.g.name); return (pb === null ? -1 : pb) - (pa === null ? -1 : pa); });
-      const T = ventaTotales();
-      cuerpo = '<div class="itx-bar" style="grid-template-columns:minmax(0,1fr) auto"><input id="itv-q" type="search" placeholder="Buscar en tu inventario…" value="' + esc(ven.q) + '" autocomplete="off"><span class="itx-count">' + ven.lista.length + " tipos de item" + (ven.noTrad ? " · " + ven.noTrad + " no intercambiables" : "") + "</span></div>" +
-        '<div class="itx-grid">' + vis.map((o) => venderCardHtml(o.g, o.i)).join("") + "</div>" +
+      const f = ven.f, vis = venFiltrados(), T = ventaTotales();
+      const tabs = ['<button type="button" class="itx-tab' + (!f.tipo ? " on" : "") + '" data-itx="venTipo" data-v="">Todos</button>'].concat(ITEM_TIPOS.map((t) =>
+        '<button type="button" class="itx-tab' + (f.tipo === t ? " on" : "") + '" data-itx="venTipo" data-v="' + esc(t) + '">' + esc(t) + "</button>")).join("");
+      const filt = '<aside class="itx-filt"><details' + (window.innerWidth > 820 ? " open" : "") + "><summary>Filtros</summary>" +
+        '<div class="ff"><label>Precio (S/)</label><div class="ff2"><input id="itv-min" inputmode="decimal" placeholder="Desde" value="' + esc(f.min) + '"><input id="itv-max" inputmode="decimal" placeholder="Hasta" value="' + esc(f.max) + '"></div></div>' +
+        '<div class="ff"><label for="itv-heroe">Héroe</label><select id="itv-heroe">' + opciones(venDistintos("heroe", HEROES_DOTA), f.heroe, "Todos") + "</select></div>" +
+        '<div class="ff"><label for="itv-ranura">Ranura</label><select id="itv-ranura">' + opciones(venDistintos("ranura", SLOTS_DOTA), f.ranura, "Todas") + "</select></div>" +
+        '<div class="ff"><label for="itv-rareza">Rareza</label><select id="itv-rareza">' + opciones(LISTA_RAREZAS, f.rareza, "Todas") + "</select></div>" +
+        '<div class="ff"><label for="itv-calidad">Calidad</label><select id="itv-calidad">' + opciones(venDistintos("calidad", ITEM_CALIDADES), f.calidad, "Todas") + "</select></div>" +
+        '<button type="button" class="itx-btn ghost sm" data-itx="venReset" style="width:100%">Restablecer filtros</button></details></aside>';
+      cuerpo = '<div class="itx-tabs">' + tabs + "</div>" +
+        '<div class="itx-shop">' + filt + '<div class="itx-main"><div class="itx-bar"><input id="itv-q" type="search" placeholder="Buscar en tu inventario…" value="' + esc(ven.q) + '" autocomplete="off">' +
+        '<select id="itv-orden" aria-label="Ordenar">' + [["mayor", "Precio: mayor a menor"], ["menor", "Precio: menor a mayor"], ["nombre", "Nombre A-Z"]].map((o) => '<option value="' + o[0] + '"' + (f.orden === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
+        '<span class="itx-count">' + vis.length + " de " + ven.lista.length + " tipos de item" + (ven.noTrad ? " · " + ven.noTrad + " no intercambiables" : "") + "</span></div>" +
+        (vis.length ? '<div class="itx-grid">' + vis.map((o) => venderCardHtml(o.g, o.i)).join("") + "</div>" : '<div class="itx-empty"><strong>Ningún item coincide</strong><span>Prueba con otros filtros.</span></div>') +
+        "</div></div>" +
         '<div class="itx-vbar"><div><b>' + T.n + "</b> item" + (T.n === 1 ? "" : "s") + " elegido" + (T.n === 1 ? "" : "s") + (T.n ? " · Total: <b>" + fmtPrecio(T.tot) + "</b>" + (T.sinP ? " + " + T.sinP + " a consultar" : "") : "") + "</div>" +
         '<button class="itx-btn gold" type="button" data-itx="venWsp"' + (T.n ? "" : " disabled") + ">💬 Vender por WhatsApp</button></div>";
     }
@@ -595,6 +631,8 @@
       case "borrar": adm.itemDel = t.getAttribute("data-id"); renderTodo(); break;
       case "borrarSi": borrarItem(t.getAttribute("data-id")); break;
       case "venVer": verInventario(); break;
+      case "venTipo": ven.f.tipo = t.getAttribute("data-v") || ""; renderTodo(); break;
+      case "venReset": ven.f = { tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", min: "", max: "", orden: "mayor" }; ven.q = ""; renderTodo(); break;
       case "venMio": { const p = perfil(); if (p && p.tradelink) { ven.link = p.tradelink; renderTodo(); } break; }
       case "venMas": case "venMenos": {
         const g = (ven.lista || [])[Number(t.getAttribute("data-i"))]; if (!g) break;
@@ -615,6 +653,8 @@
     const mapa = { "itx-q": "q", "itx-min": "min", "itx-max": "max", "itx-heroe": "heroe", "itx-ranura": "ranura", "itx-rareza": "rareza", "itx-calidad": "calidad", "itx-orden": "orden" };
     if (mapa[el.id]) { filtros[mapa[el.id]] = el.value; filtros.limite = 48; pintarGrid(); return true; }
     if (el.id === "itv-link") { ven.link = el.value; return true; }
+    const VF = { "itv-min": "min", "itv-max": "max", "itv-heroe": "heroe", "itv-ranura": "ranura", "itv-rareza": "rareza", "itv-calidad": "calidad", "itv-orden": "orden" };
+    if (VF[el.id]) { ven.f[VF[el.id]] = el.value; renderTodo(); return true; }
     if (el.id === "itv-q") { ven.q = el.value; renderTodo(); return true; }
     if (el.id === "itc-nombre" || el.id === "itc-precio" || el.id === "itc-bulk") { adm.cp[el.id.slice(4)] = el.value; return true; }
     return formEvento(el);
