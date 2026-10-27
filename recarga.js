@@ -12,7 +12,7 @@
     url: "https://us-central1-" + PROJ + ".cloudfunctions.net/cobrar", urlOrden: "https://us-central1-" + PROJ + ".cloudfunctions.net/crearOrden", js: "https://checkout.culqi.com/js/v4",
     doc: "https://firestore.googleapis.com/v1/projects/" + PROJ + "/databases/(default)/documents/rayas/estado", wa: "51952997030" };
   var PACKS = [{ s: 10, b: 10 }, { s: 20, b: 20 }, { s: 50, b: 50, p: 55 }, { s: 100, b: 100, p: 110 }];
-  var m = { sel: 0, err: "", vista: "monto", info: null, pagosOn: false }, raiz = null, culqiCarga = null;
+  var m = { sel: 0, err: "", vista: "monto", info: null, pagosOn: false, yape: null, qrUrl: "" }, raiz = null, culqiCarga = null;
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function api() { return window.ljCuenta; }
@@ -20,6 +20,29 @@
   function creditosPara(s) {
     var pk = PACKS.filter(function (x) { return x.s === s; })[0];
     return pk && pk.p && perfil() && !perfil().promoUsada ? pk.p : s;
+  }
+  // Comisión de Culqi a cargo del comprador (misma fórmula que functions/packs.js; el servidor es quien cobra).
+  var COM = { pct: 0.0399, fijoUsd: 0.20, tc: 3.85, igv: 0 };
+  function totalTarjeta(soles) { var k = 1 + COM.igv; var t = (soles + COM.fijoUsd * COM.tc * k) / (1 - COM.pct * k); return Math.ceil(t * 100 - 1e-9) / 100; }
+  function fmtSol(n) { return (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, ""); }
+  function leerEstado() {
+    if (/[?&]pagotest=1(&|$)/.test(location.search)) return fetch(PAGOS.doc, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { return leerJson(d, true); }).catch(function () { return { on: true, yape: null }; });
+    return fetch(PAGOS.doc, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { return leerJson(d, false); }).catch(function () { return { on: false, yape: null }; });
+  }
+  function leerJson(d, forzar) {
+    var t = d && d.fields && d.fields.json && d.fields.json.stringValue, j = {};
+    try { j = t ? JSON.parse(t) : {}; } catch (e) { j = {}; }
+    var y = j.yape && typeof j.yape === "object" ? j.yape : null;
+    if (y && !(y.qr || y.numero)) y = null;
+    return { on: forzar || (j.pagos && j.pagos.culqi === true), yape: y };
+  }
+  function cargarQr() {
+    var q = m.yape && m.yape.qr, mm = /^fs:(img-[\w\-]+)$/.exec(q || "");
+    if (!mm) return;
+    fetch(PAGOS.doc.replace(/estado$/, mm[1]), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      var u = d && d.fields && d.fields.data && d.fields.data.stringValue;
+      if (u && /^data:image\/(webp|jpeg|png);base64,/.test(u)) { m.qrUrl = u; if (m.vista === "yape") pintar(); }
+    }).catch(function () {});
   }
   function leerToggle() {
     if (/[?&]pagotest=1(&|$)/.test(location.search)) return Promise.resolve(true);
@@ -57,6 +80,14 @@
     else if (m.vista === "ok") h = '<h3>¡Recarga lista! 🎉</h3><p class="rc-h">Se sumaron <b>' + m.info.creditos + '</b> créditos' + (m.info.promo ? ' (incluye tu regalo de primera recarga 🎁)' : '') +
       '. Ahora tienes <b>' + (p ? p.creditos : "") + '</b>.</p><button class="rc-btn gold" data-a="cerrar" type="button">Seguir comprando</button>';
     else if (m.vista === "error") h = '<h3>No se pudo completar</h3><p class="rc-h" role="alert">' + esc(m.err) + '</p><button class="rc-btn gold" data-a="volver" type="button">Volver</button><button class="rc-btn ghost" data-a="cerrar" type="button">Cerrar</button>';
+    else if (m.vista === "yape") {
+      var yp = m.yape || {};
+      h = '<h3>Pagar con Yape 💜</h3><p class="rc-h">Yapea <b>S/ ' + fmtSol(m.sel) + '</b> (sin comisión) y avísanos por WhatsApp con tu captura. Te cargamos <b>' + creditosPara(m.sel) + ' créditos</b>.</p>' +
+        (m.qrUrl ? '<div style="text-align:center"><img src="' + m.qrUrl + '" alt="QR de Yape" width="240" height="240" style="max-width:100%;height:auto;background:#fff;padding:8px;border-radius:12px"></div>' : (yp.qr ? '<p class="rc-note">Cargando QR…</p>' : '')) +
+        (yp.numero || yp.nombre ? '<p class="rc-note" style="text-align:center">' + (yp.numero ? 'Yape al <b>' + esc(yp.numero) + '</b>' : '') + (yp.nombre ? ' · a nombre de <b>' + esc(yp.nombre) + '</b>' : '') + '</p>' : '') +
+        '<p class="rc-note"><b>1.</b> Escanea el QR o yapea al número. <b>2.</b> Toca el botón y envía la captura por WhatsApp. <b>3.</b> Cargamos tus créditos (usa el mismo nombre/correo de tu cuenta).</p>' +
+        '<a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">✅ Ya pagué · enviar captura por WhatsApp</a><button class="rc-btn ghost" type="button" data-a="volver">← Cambiar monto</button>';
+    }
     else {
       var sel = m.sel;
       h = '<h3>Recargar créditos 💎</h3>' +
@@ -70,10 +101,13 @@
         '<div class="rc-otro"><label for="rcOtro">Otro monto (S/ ' + PAGOS.min + ' a S/ ' + PAGOS.max + ')</label><div class="rc-row"><input id="rcOtro" type="number" inputmode="numeric" min="' + PAGOS.min + '" max="' + PAGOS.max + '" step="1" placeholder="Ej. 30">' +
         '<button class="rc-btn ghost sm" type="button" data-a="otro">Usar</button></div></div>' +
         (m.err ? '<p class="rc-err" role="alert">' + esc(m.err) + '</p>' : '') +
-        (sel ? '<p class="rc-res">Pagas <b>S/ ' + sel + '</b> y recibes <b>' + creditosPara(sel) + ' créditos</b>' + (creditosPara(sel) > sel ? ' 🎁' : '') + '</p><p class="rc-h"><b>2.</b> Elige cómo quieres pagar</p>' : '') +
-        (sel && m.pagosOn ? '<button class="rc-btn red" type="button" data-a="pagar">💳 Pagar con tarjeta · al instante</button>' : '') +
-        (sel >= PAGOS.minYape && m.pagosOn ? '<button class="rc-btn gold" type="button" data-a="efectivo">💵 Efectivo / QR / billeteras</button>' : '') +
-        (sel ? '<a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">💬 Pagar por WhatsApp</a>' : '') +
+        (sel ? '<p class="rc-res">Recibes <b>' + creditosPara(sel) + ' créditos</b>' + (creditosPara(sel) > sel ? ' 🎁' : '') + '</p>' +
+          (m.pagosOn ? '<p class="rc-note">💳 Tarjeta / efectivo / QR: pagas <b>S/ ' + fmtSol(totalTarjeta(sel)) + '</b> (S/ ' + fmtSol(sel) + ' + S/ ' + fmtSol(totalTarjeta(sel) - sel) + ' de comisión de Culqi)</p>' : '') +
+          '<p class="rc-note">💜 Yape / WhatsApp: pagas <b>S/ ' + fmtSol(sel) + '</b>, <b>sin comisión</b></p><p class="rc-h"><b>2.</b> Elige cómo quieres pagar</p>' : '') +
+        (sel && m.pagosOn ? '<button class="rc-btn red" type="button" data-a="pagar">💳 Pagar con tarjeta · S/ ' + fmtSol(totalTarjeta(sel)) + '</button>' : '') +
+        (sel >= PAGOS.minYape && m.pagosOn ? '<button class="rc-btn gold" type="button" data-a="efectivo">💵 Efectivo / QR / billeteras · S/ ' + fmtSol(totalTarjeta(sel)) + '</button>' : '') +
+        (sel && m.yape ? '<button class="rc-btn red" type="button" data-a="yape">💜 Pagar con Yape · sin comisión</button>' : '') +
+        (sel ? '<a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">💬 Pagar por WhatsApp · sin comisión</a>' : '') +
         (m.pagosOn ? '<p class="rc-note">Tarjeta: pago seguro con Culqi desde S/ ' + PAGOS.min + ', tus créditos se suman solos. <b>Efectivo (PagoEfectivo), QR y billeteras: desde S/ ' + PAGOS.minYape + '</b>: te damos un código, pagas cuando quieras (hasta 24 h) y tus créditos se suman solos.</p>' +
           '<p class="rc-note">¿Montos menores a S/ ' + PAGOS.minYape + ' con Yape, o prefieres pagar con una persona? Elige <b>Pagar por WhatsApp</b> y te atiende el encargado, que carga tus créditos él mismo.</p>'
           : '<p class="rc-note">Elige el monto y pídelo por WhatsApp: el encargado carga tus créditos él mismo.</p>') +
@@ -103,6 +137,7 @@
       var b = t.closest("[data-a]"); if (!b) return; var a = b.getAttribute("data-a");
       if (a === "cerrar") cerrar();
       else if (a === "volver") { m.vista = "monto"; m.err = ""; pintar(); }
+      else if (a === "yape") { m.vista = "yape"; pintar(); cargarQr(); }
       else if (a === "monto") { m.sel = Number(b.getAttribute("data-s")); m.err = ""; pintar(); }
       else if (a === "otro") {
         var v = Number((raiz.querySelector("#rcOtro") || {}).value);
@@ -125,7 +160,7 @@
         else { m.vista = "error"; m.err = (C.error && (C.error.user_message || C.error.merchant_message)) || "No se pudo procesar el pago."; raiz.hidden = false; pintar(); }
       };
       C.publicKey = PAGOS.pk;
-      C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de créditos", amount: soles * 100 });
+      C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de créditos", amount: Math.round(totalTarjeta(soles) * 100) });
       C.options({ lang: "es", installments: false, paymentMethods: { tarjeta: true, yape: true, billetera: false, bancaMovil: false, agente: false, cuotealo: false } });
       raiz.hidden = true; C.open();
     }).catch(function (e) { m.vista = "error"; m.err = (e && e.message) || "No se pudo abrir el pago."; pintar(); });
@@ -141,7 +176,7 @@
           var C = window.Culqi;
           window.culqi = function () { /* en órdenes no hay token: el pago llega por aviso de Culqi */ };
           C.publicKey = PAGOS.pk;
-          C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de créditos", amount: soles * 100, order: x.j.ordenId });
+          C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de créditos", amount: Math.round(totalTarjeta(soles) * 100), order: x.j.ordenId });
           C.options({ lang: "es", installments: false, paymentMethods: { tarjeta: false, yape: false, billetera: true, bancaMovil: true, agente: true, cuotealo: false } });
           m.vista = "pendiente"; pintar(); C.open();
         });
@@ -165,7 +200,7 @@
     if (!a || !a.sesion()) { a && a.abrir("registro", "Para recargar primero crea tu cuenta (o entra si ya tienes una)."); return; }
     if (!perfil()) { a.abrir("perfil"); return; }
     m.sel = 0; m.err = ""; m.vista = "monto";
-    leerToggle().then(function (on) { m.pagosOn = on; pintar(); });
+    leerEstado().then(function (e) { m.pagosOn = e.on; m.yape = e.yape; m.qrUrl = ""; pintar(); });
     m.pagosOn = false; pintar(); raiz.hidden = false;
   }
   window.ljRecarga = { abrir: abrir };
