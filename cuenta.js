@@ -73,7 +73,8 @@
   function leerPerfil(d) {
     var f = (d && d.fields) || {}, sv = function (k) { return (f[k] && f[k].stringValue) || ""; };
     return { nombre: sv("nombre"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"), steam: sv("steam"),
-      creditos: f.creditos ? Number(f.creditos.integerValue || f.creditos.doubleValue || 0) : 0 };
+      creditos: f.creditos ? Number(f.creditos.integerValue || f.creditos.doubleValue || 0) : 0,
+      promoUsada: !!(f.promoUsada && f.promoUsada.booleanValue === true) };
   }
   function crearPerfil(ses, d) {
     return fs("rayas_users/" + encodeURIComponent(ses.uid) + "?currentDocument.exists=false", {
@@ -148,8 +149,9 @@
     boton.innerHTML = s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>' + p.creditos + ' créd.</small>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
     if (!recBtn && boton.parentNode) {
-      recBtn = document.createElement("a");
-      recBtn.id = "ljRecargarBtn"; recBtn.className = "ljc-navbtn ljc-recbtn"; recBtn.href = "rifas.html?recargar=1";
+      recBtn = document.createElement("button");
+      recBtn.id = "ljRecargarBtn"; recBtn.type = "button"; recBtn.className = "ljc-navbtn ljc-recbtn";
+      recBtn.addEventListener("click", function () { if (window.ljRecarga) window.ljRecarga.abrir(); });
       recBtn.textContent = "💎 Recargar";
       boton.parentNode.insertBefore(recBtn, boton);
     }
@@ -199,7 +201,7 @@
     } else if (st.modo === "perfil" && s) {
       titulo = "Mi cuenta";
       cuerpo = '<div class="ljc-body">' + (p
-        ? '<div class="ljc-saldo"><small>Tus créditos</small><b>' + p.creditos + '</b><a class="ljc-rec" href="rifas.html?recargar=1">💎 Recargar créditos</a><a href="rifas.html">Ir a las rifas →</a></div>' +
+        ? '<div class="ljc-saldo"><small>Tus créditos</small><b>' + p.creditos + '</b><a class="ljc-rec" href="#" data-a="recargar">💎 Recargar créditos</a><a href="rifas.html">Ir a las rifas →</a></div>' +
           '<form id="ljcPerfil" novalidate><h3>Mis datos</h3>' + camposCliente("ljp", p) +
           campo("ljp-email", "Correo", "disabled", "", p.email || s.email) +
           (p.steam ? "" : '<p class="ljc-hint warn">Agrega tu ID de Steam para que podamos agregarte y enviarte tus sets.</p>') +
@@ -247,6 +249,7 @@
     var acc = a.getAttribute("data-a");
     if (acc === "cerrar") { e.preventDefault(); cerrar(); }
     else if (acc === "login" || acc === "registro" || acc === "olvide") { e.preventDefault(); st.modo = acc; st.msg = ""; pintar(); }
+    else if (acc === "recargar") { e.preventDefault(); cerrar(); if (window.ljRecarga) window.ljRecarga.abrir(); }
     else if (acc === "salir") { guardarSesion(null); st.perfil = null; st.modo = "login"; st.msg = "Cerraste sesión."; st.tipo = ""; pintar(); pintarBoton(); }
   }
   function leerCliente(pre) {
