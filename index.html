@@ -2,7 +2,7 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="lj-build" content="2026-10-27-stock-neg">
+    <meta name="lj-build" content="2026-10-27-admin-cuenta">
     <title>LitleJacob Store · Sets Míticos de Dota 2 | Precios en soles</title>
     <meta name="description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y pide por WhatsApp. Pagas con Yape, Plin, PayPal o Binance.">
     <meta name="theme-color" content="#0b0505">
@@ -390,7 +390,6 @@
             backdrop-filter: blur(6px);
         }
         body.is-admin #adminBar { display: block; }
-        body.is-admin #loginOpenBtn { display: none; }
         .admin-bar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
         .admin-bar-actions { display: flex; flex-wrap: wrap; gap: 6px; }
         .admin-title { font-family: 'Cinzel', serif; font-weight: 800; color: #fff3b0; font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -401,7 +400,6 @@
         .draft-pill.ready { background: rgba(30, 58, 138, 0.75); border: 1px solid #93c5fd; color: #dbeafe; }
 
         /* Botón discreto de acceso */
-        #loginOpenBtn { font-size: 11.5px; padding: 5px 11px; }
 
         /* Tira de cofres */
         .cofre-strip {
@@ -1938,7 +1936,6 @@ html.ljc-lock { overflow: hidden; }
             </div>
             <div class="nav-right">
                 <a class="wa-pill wa-contact" href="https://wa.me/51952997030?text=Hola%20LitleJacob%2C%20vi%20tu%20tienda%20LitleJacob%20Store%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener noreferrer"><span class="wa-dot"></span>WhatsApp +51 952 997 030</a>
-                <button id="loginOpenBtn" type="button" class="lj-btn" title="Acceso de administrador">🔒 Admin</button>
             </div>
         </nav>
 
@@ -2827,7 +2824,7 @@ html.ljc-lock { overflow: hidden; }
         if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     </script>
-    <script src="cuenta.js?v=4" defer=""></script>
+    <script src="cuenta.js?v=5" defer=""></script>
     <script src="recarga.js?v=3" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
@@ -4301,40 +4298,39 @@ html.ljc-lock { overflow: hidden; }
             renderAll();
         }
 
+        // La cuenta de administrador (Firebase) activa el panel: cuenta.js llama a esto al entrar.
+        window.ljAdminEntrar = function (ses) {
+            const f = fbCfg();
+            if (!ses || !f) return;
+            fbSession = { email: ses.email, uid: ses.uid, refreshToken: ses.ref, idToken: ses.id, exp: ses.exp, projectId: f.projectId };
+            fbSaveSession();
+            if (!isAdmin) { setAdmin(true); showToast("Bienvenido, LitleJacob. Ya puedes editar el catálogo.", "Admin"); }
+            try { updateDbStatus(); } catch (e) { /* aún no existe */ }
+        };
+        window.ljAdminSalir = function () {
+            if (isAdmin) setAdmin(false);
+            fbSession = null; fbSaveSession();
+            try { updateDbStatus(); } catch (e) { /* aún no existe */ }
+        };
+
         function initLogin() {
             const form = document.getElementById("loginForm");
             const userEl = document.getElementById("loginUser");
             const passEl = document.getElementById("loginPass");
             const errEl = document.getElementById("loginError");
 
-            document.getElementById("loginOpenBtn").addEventListener("click", () => {
-                errEl.textContent = "";
-                passEl.value = "";
-                openModal("loginModal");
-                setTimeout(() => userEl.focus(), 50);
-            });
+            // El acceso de administrador ya no tiene botón propio: se entra con la cuenta de administrador
+            // desde "Entrar / Registrarme" (la identidad la valida Firebase, no esta página).
             document.getElementById("passToggle").addEventListener("click", (e) => {
                 const show = passEl.type === "password";
                 passEl.type = show ? "text" : "password";
                 e.target.textContent = show ? "OCULTAR" : "VER";
             });
-            form.addEventListener("submit", (e) => {
-                e.preventDefault();
-                const user = userEl.value.replace(/\s+/g, "").toLowerCase();
-                const pass = passEl.value.trim();
-                if (sha256Hex(user) === ADMIN_USER_HASH && sha256Hex(pass) === ADMIN_PASS_HASH) {
-                    closeModal("loginModal");
-                    passEl.value = "";
-                    setAdmin(true);
-                    showToast("Bienvenido, LitleJacob. Ya puedes editar el catálogo.", "Admin");
-                } else {
-                    errEl.textContent = "Usuario o contraseña incorrectos.";
-                    passEl.select();
-                }
-            });
+            form.addEventListener("submit", (e) => { e.preventDefault(); });
             document.getElementById("adminLogoutBtn").addEventListener("click", () => {
                 const pending = hasDraftChanges() && draftInfo.exportedAt < draftInfo.savedAt;
                 setAdmin(false);
+                try { if (window.ljCuenta) window.ljCuenta.salir(); } catch (er) { /* nada */ }
                 showToast(pending ? "Sesión cerrada. Tus cambios siguen guardados en este navegador; recuerda tocar 🚀 Publicar." : "Sesión de administrador cerrada.", "Admin");
             });
 
@@ -5426,7 +5422,7 @@ service cloud.firestore {
                 liveFetch();
                 if (new URLSearchParams(location.search).get("panel") === "pedidos") {
                     if (isAdmin) openOrders();
-                    else document.getElementById("loginOpenBtn").click();
+                    else if (window.ljCuenta) window.ljCuenta.abrir("login", "Entra con tu cuenta de administrador para abrir los pedidos.");
                 }
             });
             setInterval(() => { if (document.visibilityState === "visible") liveFetch(); }, 60000);

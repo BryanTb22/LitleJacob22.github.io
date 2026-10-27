@@ -10,6 +10,7 @@
   var FB = { apiKey: "AIzaSyDbyLi7IK3ikwUp7A0VzRRqPucqRXPpL3E", projectId: "litlejacob-store" };
   var BASE = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents/";
   var SES_KEY = "lj_rifas_ses";
+  var ADMIN_UID = "eLEZkdXiG5b0PpxHQCCei8D0Qxy1";   // la cuenta de administrador (el servidor y las reglas usan el mismo dato)
   var CUSTOMER_KEY = "litlejacob_customer_v1";   // lo usa el formulario de pedido de la tienda
   var GOOGLE_CLIENT_ID = "547624378539-m3dct3sir3r9vbe51hm6q1ojejg1i14q.apps.googleusercontent.com";
 
@@ -106,9 +107,13 @@
   }
 
   /* ---------- carga del perfil ---------- */
+  function esAdmin(s) { s = s || leerSesion(); return !!s && s.uid === ADMIN_UID; }
+  // Entrando con la cuenta de administrador se activa solo el panel de edición de la tienda.
+  function entrarAdmin() { try { if (window.ljAdminEntrar) window.ljAdminEntrar(leerSesion()); } catch (e) { /* la tienda aún no carga */ } }
   function cargarPerfil() {
     var s = leerSesion();
     if (!s) { st.perfil = null; pintarBoton(); return Promise.resolve(); }
+    if (esAdmin(s)) { st.perfil = null; st.modo = "admin"; st.cargando = false; entrarAdmin(); pintar(); pintarBoton(); return Promise.resolve(); }
     st.cargando = true; pintar();
     return fs("rayas_users/" + encodeURIComponent(s.uid)).then(function (r) {
       if (r.status === 404) { st.perfil = null; st.modo = "completar"; return; }
@@ -146,7 +151,8 @@
   function pintarBoton() {
     if (!boton) return;
     var s = leerSesion(), p = st.perfil;
-    boton.innerHTML = s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>' + p.creditos + ' créd.</small>' : "Mi cuenta") : "Entrar / Registrarme";
+    if (recBtn) recBtn.hidden = esAdmin(s);
+    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>' + p.creditos + ' créd.</small>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
     if (!recBtn && boton.parentNode) {
       recBtn = document.createElement("button");
@@ -162,6 +168,7 @@
     else if (!leerSesion()) st.modo = st.modo === "registro" ? "registro" : "login";
     else if (!st.perfil && !st.cargando) { st.modo = "perfil"; cargarPerfil(); }
     else st.modo = st.perfil ? "perfil" : st.modo;
+    if (esAdmin()) { st.modo = "admin"; entrarAdmin(); }
     raiz.hidden = false; document.documentElement.classList.add("ljc-lock");
     pintar();
     requestAnimationFrame(function () { raiz.classList.add("open"); var f = raiz.querySelector("input:not([disabled])"); if (f) f.focus(); });
@@ -208,6 +215,12 @@
           '<button class="ljc-btn silver" type="submit">Guardar cambios</button>' + mensaje() + '</form>'
         : '<p class="ljc-hint">' + (st.cargando ? "Cargando tu cuenta…" : esc(st.msg || "")) + '</p>') +
         '<button class="ljc-btn ghost sm" type="button" data-a="salir">Cerrar sesión</button></div>';
+    } else if (st.modo === "admin" && s) {
+      titulo = "Administrador";
+      cuerpo = '<div class="ljc-body"><div class="ljc-saldo"><small>Sesión de administrador</small><b style="font-size:30px">🔧 Panel activo</b><span style="color:#8b9097;font-size:13px">' + esc(s.email || "") + '</span></div>' +
+        '<p class="ljc-hint">Ya puedes editar el catálogo, el stock y los pedidos desde la barra de abajo.</p>' +
+        '<button class="ljc-btn silver" type="button" data-a="cerrar">Ir al panel</button>' +
+        '<button class="ljc-btn ghost sm" type="button" data-a="salir">Cerrar sesión</button></div>';
     } else if (st.modo === "olvide") {
       titulo = "Recuperar contraseña";
       cuerpo = '<form class="ljc-body" id="ljcOlvide" novalidate>' + campo("ljo-email", "Tu correo", 'type="email" autocomplete="email" required') +
@@ -250,7 +263,7 @@
     if (acc === "cerrar") { e.preventDefault(); cerrar(); }
     else if (acc === "login" || acc === "registro" || acc === "olvide") { e.preventDefault(); st.modo = acc; st.msg = ""; pintar(); }
     else if (acc === "recargar") { e.preventDefault(); cerrar(); if (window.ljRecarga) window.ljRecarga.abrir(); }
-    else if (acc === "salir") { guardarSesion(null); st.perfil = null; st.modo = "login"; st.msg = "Cerraste sesión."; st.tipo = ""; pintar(); pintarBoton(); }
+    else if (acc === "salir") { try { if (window.ljAdminSalir) window.ljAdminSalir(); } catch (er) { /* nada */ } guardarSesion(null); st.perfil = null; st.modo = "login"; st.msg = "Cerraste sesión."; st.tipo = ""; pintar(); pintarBoton(); }
   }
   function leerCliente(pre) {
     var v = function (id) { var el = document.getElementById(pre + "-" + id); return el ? el.value.trim() : ""; };
@@ -323,7 +336,8 @@
     perfil: function () { return st.perfil; },
     token: token,
     abrir: function (modo, msg) { if (msg) { st.msg = msg; st.tipo = ""; } abrir(modo); },
-    recargar: cargarPerfil
+    recargar: cargarPerfil,
+    salir: function () { try { if (window.ljAdminSalir) window.ljAdminSalir(); } catch (er) { /* nada */ } guardarSesion(null); st.perfil = null; st.modo = "login"; pintarBoton(); pintar(); }
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar); else montar();
