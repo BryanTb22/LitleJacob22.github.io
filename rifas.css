@@ -780,3 +780,16 @@ html, body { overflow-x: clip; max-width: 100%; }
 .otrorow input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: inherit; font: inherit; }
 .resumen { margin: 0; text-align: center; font-size: 1.05rem; }
 .resumen b { color: var(--yellow); }
+
+/* Encabezado: sin textos partidos en dos líneas */
+@media (min-width: 761px) {
+  .nav { gap: 14px; }
+  .nav a.navlink { white-space: nowrap; font-size: 13px; letter-spacing: .06em; }
+  .nav .lock { white-space: nowrap; }
+  .nav .lock.me { max-width: none; }
+}
+@media (min-width: 761px) and (max-width: 1280px) {
+  .nav .lock.me .nm { display: none; }
+  .nav { gap: 10px; }
+  .nav a.navlink { font-size: 12px; letter-spacing: .04em; }
+}
