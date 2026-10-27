@@ -2,7 +2,7 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="lj-build" content="2026-10-27-cuentas">
+    <meta name="lj-build" content="2026-10-27-vendidos">
     <title>LitleJacob Store · Sets Míticos de Dota 2 | Precios en soles</title>
     <meta name="description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y pide por WhatsApp. Pagas con Yape, Plin, PayPal o Binance.">
     <meta name="theme-color" content="#0b0505">
@@ -1823,6 +1823,36 @@ body.is-admin #toastNotification { bottom: 110px !important; }
 
 </style>
 <style id="ljCuentaCss" data-keep>
+/* Stock: pestañas y últimos vendidos */
+#stockModal .stk-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+#stockModal .stk-tab { flex: 1; padding: 11px 14px; border: 0; cursor: pointer; font: 800 12px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase;
+  color: #c4c8ce; background: #1b1b1f; box-shadow: inset 0 0 0 1px #3d3f45; clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 9px 100%, 0 50%); }
+#stockModal .stk-tab.active { color: #fff; background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16); box-shadow: none; }
+#stkSold .sold-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+#stkSold .sold-bar select { flex: 1; }
+#stkSold .sold-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+#stkSold .sold-stats div { display: grid; justify-items: center; padding: 12px 6px; border: 1px solid #3d3f45; background: linear-gradient(180deg, #1b1b1f, #131316); }
+#stkSold .sold-stats b { font-family: "Oswald", Impact, sans-serif; font-size: 26px; color: #fff; line-height: 1.1; }
+#stkSold .sold-stats span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #8b9097; }
+#stkSold .sold-h { margin: 14px 0 8px; font-family: "Oswald", Impact, sans-serif; font-size: 17px; letter-spacing: .05em; text-transform: uppercase; color: #e6e8eb; }
+#stkSold .sold-top { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+#stkSold .sold-top-it { display: grid; gap: 4px; padding: 8px; border: 1px solid #3d3f45; background: #131316; text-align: center; }
+#stkSold .sold-top-it img, #stkSold .sold-top-it span { width: 100%; height: 76px; object-fit: contain; display: grid; place-items: center; font-size: 28px; }
+#stkSold .sold-top-it b { font-size: 12.5px; color: #fff; line-height: 1.25; }
+#stkSold .sold-top-it small { font-size: 11px; color: #8b9097; }
+#stkSold .sold-list { display: grid; gap: 6px; max-height: 46vh; overflow-y: auto; padding-right: 4px; }
+#stkSold .sold-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border: 1px solid #26272b; background: rgba(19,19,22,.9); }
+#stkSold .sold-thumb { width: 46px; height: 46px; flex: none; display: grid; place-items: center; background: #0c0c0e; }
+#stkSold .sold-thumb img { width: 100%; height: 100%; object-fit: contain; }
+#stkSold .sold-info { flex: 1; min-width: 0; display: grid; }
+#stkSold .sold-info b { font-size: 13.5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#stkSold .sold-info small { font-size: 11.5px; color: #8b9097; }
+#stkSold .sold-price { display: grid; justify-items: end; gap: 3px; font-family: "Oswald", Impact, sans-serif; font-size: 17px; color: #fff; }
+#stkSold .sold-st { font: 700 10px Inter, system-ui, sans-serif; padding: 2px 8px; border-radius: 999px; background: rgba(196,200,206,.12); color: #c4c8ce; }
+#stkSold .sold-st.ok { background: rgba(16,185,129,.14); color: #6ee7b7; }
+#stkSold .sold-empty, #stkSold .sold-note { font-size: 13px; color: #8b9097; margin: 10px 0 0; }
+#stkSold .sold-note b, #stkSold .sold-empty b { color: #c4c8ce; }
+@media (max-width: 560px) { #stkSold .sold-stats b { font-size: 20px; } #stockModal .stk-tab { font-size: 10.5px; padding: 10px 8px; } }
 /* ===== Cuentas de clientes (cuenta.js) — estilo Rifas ===== */
 .ljc-navbtn { display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; white-space: nowrap;
   font: 800 11.5px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; padding: 9px 16px; color: #fff;
@@ -2726,6 +2756,12 @@ html.ljc-lock { overflow: hidden; }
                 <h2 id="stockTitle" class="lj-panel-title gold-gradient-text">📦 Stock de sets</h2>
                 <button type="button" class="lj-close" data-close="stockModal" aria-label="Cerrar">×</button>
             </div>
+            <div class="stk-tabs" role="tablist">
+                <button type="button" class="stk-tab active" data-stk="inv" role="tab" aria-selected="true">📦 Inventario</button>
+                <button type="button" class="stk-tab" data-stk="sold" role="tab" aria-selected="false">🧾 Últimos vendidos</button>
+            </div>
+            <div id="stkSold" hidden></div>
+            <div id="stkInv">
             <div id="stockStats" class="stock-stats"></div>
             <div class="stock-controls">
                 <input id="stockSearch" class="lj-input" type="text" placeholder="Buscar set...">
@@ -2739,8 +2775,9 @@ html.ljc-lock { overflow: hidden; }
                 </select>
             </div>
             <div id="stockList" class="stock-list"></div>
+            </div>
             <div class="lj-footer">
-                <span style="font-size:12px;color:#a8a29e;">Se guarda solo. Con 0 unidades el set aparece como AGOTADO. Descarga el index.html para publicar.</span>
+                <span style="font-size:12px;color:#a8a29e;">Se guarda y se publica solo. Con 0 unidades el set aparece como AGOTADO.</span>
                 <div class="lj-footer-right">
                     <button type="button" class="lj-btn lj-btn-gold" data-close="stockModal">Listo</button>
                 </div>
@@ -4059,7 +4096,76 @@ html.ljc-lock { overflow: hidden; }
             renderStockList();
             openModal("stockModal");
         }
+        // ---- Últimos vendidos (sale de los pedidos Pagados / Entregados) ----
+        const soldState = { tab: "inv", days: "30", orders: null, loading: false, error: "" };
+        function stockTab(tab) {
+            soldState.tab = tab;
+            document.querySelectorAll("#stockModal .stk-tab").forEach(b => { const on = b.dataset.stk === tab; b.classList.toggle("active", on); b.setAttribute("aria-selected", String(on)); });
+            document.getElementById("stkInv").hidden = tab !== "inv";
+            document.getElementById("stkSold").hidden = tab !== "sold";
+            if (tab === "sold") loadSold();
+        }
+        async function loadSold(force) {
+            if (!fbCfg() || !fbSession) { soldState.error = "Para ver tus ventas, entra a la base de datos: Más opciones → 🗄️ Base de datos."; renderSold(); return; }
+            if (soldState.orders && !force) { renderSold(); return; }
+            soldState.loading = true; soldState.error = ""; renderSold();
+            try {
+                const o = await fsRequest("orders", { auth: true, query: "pageSize=300&orderBy=" + encodeURIComponent("createdAt desc") });
+                soldState.orders = ((o && o.documents) || []).map(fsDoc);
+            } catch (e) { soldState.error = fsErrorText(e); }
+            soldState.loading = false; renderSold();
+        }
+        function soldItems() {
+            const lim = soldState.days === "all" ? 0 : Date.now() - Number(soldState.days) * 864e5;
+            const out = [];
+            (soldState.orders || []).filter(isSale).forEach(o => {
+                const t = o.createdAt instanceof Date ? o.createdAt.getTime() : 0;
+                if (lim && t < lim) return;
+                (o.items || []).forEach(it => out.push({ id: parseInt(it.id, 10), name: it.name, qty: Number(it.qty) || 1, price: Number(it.price) || 0, when: o.createdAt, who: o.customerName || "", status: o.status, code: o.code || o._id }));
+            });
+            return out.sort((a, b) => (b.when ? b.when.getTime() : 0) - (a.when ? a.when.getTime() : 0));
+        }
+        function renderSold() {
+            const box = document.getElementById("stkSold");
+            if (!box || box.hidden) return;
+            if (soldState.loading) { box.innerHTML = `<p class="sold-empty">Cargando ventas…</p>`; return; }
+            if (soldState.error) { box.innerHTML = `<p class="sold-empty">${escapeHtml(soldState.error)}</p>`; return; }
+            const items = soldItems();
+            const units = items.reduce((n, it) => n + it.qty, 0);
+            const total = items.reduce((n, it) => n + it.qty * it.price, 0);
+            const top = {};
+            items.forEach(it => { const k = it.id || it.name; (top[k] = top[k] || { id: it.id, name: it.name, qty: 0 }).qty += it.qty; });
+            const tops = Object.values(top).sort((a, b) => b.qty - a.qty).slice(0, 5);
+            const thumb = (id) => { const st = getSet(id); return st && st.img ? `<img src="${escapeHtml(st.img)}" alt="" loading="lazy">` : `<span>🎁</span>`; };
+            const left = (id) => { const st = getSet(id); return !st ? "ya no está en el catálogo" : st.soldOut ? "agotado" : st.stock == null ? "stock sin registrar" : `quedan ${st.stock}`; };
+            box.innerHTML = `
+                <div class="sold-bar">
+                    <select id="soldDays" class="lj-input">
+                        ${[["7", "Últimos 7 días"], ["30", "Últimos 30 días"], ["90", "Últimos 3 meses"], ["all", "Todo"]].map(([v, t]) => `<option value="${v}" ${soldState.days === v ? "selected" : ""}>${t}</option>`).join("")}
+                    </select>
+                    <button type="button" class="lj-btn lj-btn-sm" id="soldReload">↻ Actualizar</button>
+                </div>
+                <div class="sold-stats">
+                    <div><b>${units}</b><span>${units === 1 ? "set vendido" : "sets vendidos"}</span></div>
+                    <div><b>${money(total)}</b><span>en ventas</span></div>
+                    <div><b>${new Set(items.map(i => i.code)).size}</b><span>pedidos</span></div>
+                </div>
+                ${tops.length ? `<h3 class="sold-h">🔥 Más vendidos</h3><div class="sold-top">${tops.map(t => `<div class="sold-top-it">${thumb(t.id)}<b>${escapeHtml(t.name)}</b><small>× ${t.qty} · ${escapeHtml(left(t.id))}</small></div>`).join("")}</div>` : ""}
+                <h3 class="sold-h">🧾 Últimos vendidos</h3>
+                ${items.length ? `<div class="sold-list">${items.slice(0, 80).map(it => `
+                    <div class="sold-row">
+                        <div class="sold-thumb">${thumb(it.id)}</div>
+                        <div class="sold-info"><b>${escapeHtml(it.name)}${it.qty > 1 ? ` × ${it.qty}` : ""}</b>
+                            <small>${escapeHtml(it.who || "Cliente")} · ${it.when ? it.when.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) + " " + it.when.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : ""} · ${escapeHtml(left(it.id))}</small></div>
+                        <div class="sold-price">${money(it.price * it.qty)}<span class="sold-st ${it.status === "entregado" ? "ok" : ""}">${it.status === "entregado" ? "Entregado" : "Pagado"}</span></div>
+                    </div>`).join("")}</div>` : `<p class="sold-empty">No hay ventas en este periodo. Las ventas salen de los pedidos marcados como <b>Pagado</b> o <b>Entregado</b>.</p>`}
+                <p class="sold-note">¿Vendiste algo por fuera de la web? Regístralo en <b>Pedidos → Clientes → 🛒 Agregar compra</b> y aparecerá aquí (también descuenta el stock).</p>`;
+            document.getElementById("soldDays").addEventListener("change", (e) => { soldState.days = e.target.value; renderSold(); });
+            document.getElementById("soldReload").addEventListener("click", () => loadSold(true));
+        }
+
         function initStock() {
+            document.querySelectorAll("#stockModal .stk-tab").forEach(b => b.addEventListener("click", () => stockTab(b.dataset.stk)));
             document.getElementById("adminStockBtn").addEventListener("click", openStockPanel);
             ["stockSearch", "stockCofre", "stockFilter"].forEach(id => document.getElementById(id).addEventListener(id === "stockSearch" ? "input" : "change", renderStockList));
             const list = document.getElementById("stockList");
