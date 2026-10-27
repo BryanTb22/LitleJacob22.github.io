@@ -2,7 +2,7 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="lj-build" content="2026-10-27-pedidos-compacto">
+    <meta name="lj-build" content="2026-10-27-entregar-hoy">
     <title>LitleJacob Store · Sets Míticos de Dota 2 | Precios en soles</title>
     <meta name="description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y pide por WhatsApp. Pagas con Yape, Plin, PayPal o Binance.">
     <meta name="theme-color" content="#0b0505">
@@ -1959,6 +1959,9 @@ html.ljc-lock { overflow: hidden; }
 .ord-row .ord-code { font-family: var(--font-head, "Oswald", sans-serif) !important; font-size: 14px !important; letter-spacing: .04em; color: #c4c8ce !important; white-space: nowrap; }
 .ord-who { font-weight: 800; font-size: 14px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ord-sub { font-size: 11.5px; color: #8b9097; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ord-chip.chip-entregar:not(.active) .chip-n { background: rgba(16,185,129,.25) !important; color: #6ee7b7 !important; }
+.ord-flag.ok { color: #6ee7b7; }
+.ord-summary { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
 .ord-flag { font-style: normal; color: #ffb4b8; font-weight: 800; }
 .ord-row .ord-badge { padding: 2px 8px !important; font-size: 10.5px !important; border-radius: 2px !important; white-space: nowrap; }
 .ord-amt { font-family: var(--font-head, "Oswald", sans-serif); font-size: 17px; color: #fff; white-space: nowrap; text-align: right; }
@@ -5536,6 +5539,12 @@ service cloud.firestore {
             if (left <= 0) return { txt: "✓ Entrega inmediata", cls: "fr-ok", since };
             return { txt: `Entrega desde ${ready.toLocaleDateString("es-PE")}, faltan ${left} ${left === 1 ? "día" : "días"}`, cls: "fr-wait", since };
         }
+        // Pedido pagado, sin entregar, cuyo cliente ya cumplió los 30 días de amistad
+        function dueToday(o) {
+            if (o.status !== "pagado") return false;
+            const fi = friendInfo(custKey(o.steamId, o.customerName));
+            return !!fi.since && fi.cls === "fr-ok";
+        }
         function findSet(id) { return DATA.sets.find(s => String(s.id) === String(id)); }
         function isSale(o) { return o.status === "pagado" || o.status === "entregado"; }
         function statusMeta(key) { return ORDER_STATUSES.find(s => s.key === key) || ORDER_STATUSES[0]; }
@@ -5678,7 +5687,7 @@ service cloud.firestore {
                 <button type="button" class="ord-row" data-act="toggle" aria-expanded="${isOpen}">
                     <span class="ord-code">${escapeHtml(o.code || o._id)}</span>
                     <span class="ord-who">${escapeHtml(o.customerName || "Sin nombre")}</span>
-                    <span class="ord-sub">${fmtDate(o.createdAt)} · ${setsLabel(nSets)}${needsReserve(o) ? ` <i class="ord-flag">⚠ por confirmar</i>` : ""}</span>
+                    <span class="ord-sub">${fmtDate(o.createdAt)} · ${setsLabel(nSets)}${needsReserve(o) ? ` <i class="ord-flag">⚠ por confirmar</i>` : ""}${dueToday(o) ? ` <i class="ord-flag ok">🚚 entregar hoy</i>` : ""}</span>
                     <span class="ord-badge st-${escapeHtml(st.key)}">${st.txt}</span>
                     <b class="ord-amt">${money(o.total)}</b>
                     <span class="ord-chev" aria-hidden="true">▾</span>
@@ -6032,6 +6041,7 @@ service cloud.firestore {
             document.getElementById("ordStats").innerHTML = `
                 <div class="ord-sum warn"><b>${pending}</b><span>Pendientes</span></div>
                 <div class="ord-sum warn"><b>${ordState.orders.filter(needsReserve).length}</b><span>Por confirmar</span></div>
+                <div class="ord-sum warn"><b>${ordState.orders.filter(dueToday).length}</b><span>Entregar hoy</span></div>
                 <div class="ord-sum"><b>${today}</b><span>Pedidos hoy</span></div>
                 <div class="ord-sum ok"><b>${money(month)}</b><span>Ventas del mes</span></div>
                 <div class="ord-sum"><b>${customers.length}</b><span>Clientes</span></div>`;
@@ -6039,8 +6049,8 @@ service cloud.firestore {
             const chips = document.getElementById("ordChips");
             chips.hidden = !isOrders;
             if (isOrders) {
-                const count = k => k === "all" ? ordState.orders.length : k === "porconfirmar" ? ordState.orders.filter(needsReserve).length : ordState.orders.filter(o => (o.status || "pendiente") === k).length;
-                const defs = [{ key: "all", txt: "Todos" }, { key: "porconfirmar", txt: "📌 Por confirmar" }, { key: "pendiente", txt: "Pendientes" }, { key: "pagado", txt: "Pagados" }, { key: "entregado", txt: "Entregados" }, { key: "cancelado", txt: "Cancelados" }];
+                const count = k => k === "all" ? ordState.orders.length : k === "porconfirmar" ? ordState.orders.filter(needsReserve).length : k === "entregar" ? ordState.orders.filter(dueToday).length : ordState.orders.filter(o => (o.status || "pendiente") === k).length;
+                const defs = [{ key: "all", txt: "Todos" }, { key: "entregar", txt: "🚚 Entregar hoy" }, { key: "porconfirmar", txt: "📌 Por confirmar" }, { key: "pendiente", txt: "Pendientes" }, { key: "pagado", txt: "Pagados" }, { key: "entregado", txt: "Entregados" }, { key: "cancelado", txt: "Cancelados" }];
                 chips.innerHTML = defs.map(d => `<button type="button" class="ord-chip chip-${d.key} ${ordState.filter === d.key ? "active" : ""}" data-filter="${d.key}" aria-pressed="${ordState.filter === d.key}">${d.txt}<span class="chip-n">${count(d.key)}</span></button>`).join("");
             }
             const sortSel = document.getElementById("ordSort");
@@ -6059,7 +6069,7 @@ service cloud.firestore {
                 list.innerHTML = newCustomerHtml() + (rows.length ? rows.map(customerCardHtml).join("") : `<div class="ord-empty">${customers.length ? "Ningún cliente coincide con la búsqueda." : "Aún no hay clientes. Crea uno o aparecerán cuando lleguen pedidos."}</div>`);
                 return;
             }
-            const rows = ordState.orders.filter(o => (ordState.filter === "all" || (ordState.filter === "porconfirmar" ? needsReserve(o) : (o.status || "pendiente") === ordState.filter)) &&
+            const rows = ordState.orders.filter(o => (ordState.filter === "all" || (ordState.filter === "entregar" ? dueToday(o) : ordState.filter === "porconfirmar" ? needsReserve(o) : (o.status || "pendiente") === ordState.filter)) &&
                 (!q || normalizeText(`${o.code || o._id} ${o.customerName} ${o.steamId}`).includes(q)))
                 .sort((a, b) => ordState.sort === "amount" ? (Number(b.total) || 0) - (Number(a.total) || 0) : (b.createdAt || 0) - (a.createdAt || 0));
             list.innerHTML = rows.length ? rows.map(orderCardHtml).join("") : `<div class="ord-empty">${ordState.orders.length ? "No hay pedidos con ese filtro." : "Aún no hay pedidos. Aparecerán aquí cuando tus clientes envíen uno."}</div>`;
