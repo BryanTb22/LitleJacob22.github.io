@@ -1120,7 +1120,10 @@
       (admin.uMsg ? '<p class="hint" style="color:var(--danger)">' + esc(admin.uMsg) + '</p>' : '') +
       '<div class="ulist">' + (lista.length ? lista.map(function (u) {
         var id = esc(u.uid);
-        return '<div class="urow"><div class="t"><b>' + esc(u.nombre || "(sin nombre)") + '</b><span>WhatsApp: ' + esc(u.whatsapp) + '</span><span>' + esc(u.email) + '</span>' +
+        var abierto = !!(admin.uOpen && admin.uOpen[u.uid]) || admin.fichaU === "u_" + u.uid || (admin.editU && admin.editU === u.uid) || admin.delU === u.uid;
+        return '<div class="urow' + (abierto ? ' open' : '') + '"><button type="button" class="urow-sum" data-a="abrirU" data-uid="' + id + '" aria-expanded="' + abierto + '">' +
+          '<b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="ucr">' + (Number(u.creditos) || 0) + ' créd.</span><i aria-hidden="true">▾</i></button>' +
+          '<div class="urow-body"><div class="t"><span>WhatsApp: ' + esc(u.whatsapp) + '</span><span>' + esc(u.email) + '</span>' +
           (tradeValido(u.tradelink) ? '<span><a href="' + esc(u.tradelink) + '" target="_blank" rel="noopener">Abrir trade link ↗</a></span>' : '<span style="color:var(--fuchsia)">Sin trade link</span>') + '</div>' +
           '<div class="ucred">' +
           '<button class="iconbtn" type="button" data-a="cred" data-uid="' + id + '" data-d="-1" aria-label="Quitar 1 crédito">−</button>' +
@@ -1135,7 +1138,7 @@
             ? '<div class="hint" style="color:var(--danger)">¿Eliminar a <b>' + esc(u.nombre || u.email) + '</b> y sus participaciones? <button class="btn btn-ghost btn-sm" type="button" data-a="delUSi" data-uid="' + id + '">Sí, eliminar</button> <button class="btn btn-ghost btn-sm" type="button" data-a="delUNo">No</button></div>'
             : '<button type="button" class="btn btn-ghost btn-sm" data-a="delU" data-uid="' + id + '">🗑 Eliminar cuenta</button>')) +
           '<button type="button" class="pbtn" data-a="verFicha" data-key="u_' + id + '"><span>' + (admin.fichaU === "u_" + u.uid ? "Ocultar ficha" : "Ver ficha completa") + '</span><i>' + (admin.fichaU === "u_" + u.uid ? "▴" : "▾") + '</i></button>' +
-          (admin.fichaU === "u_" + u.uid ? detalleUsuario(u.uid) : '') + '</div>';
+          (admin.fichaU === "u_" + u.uid ? detalleUsuario(u.uid) : '') + '</div></div>';
       }).join("") : '<p class="hint">' + (f ? "Nadie coincide con la búsqueda." : "Todavía nadie se ha registrado.") + '</p>') + '</div>' +
       '<p class="hint">Los créditos se guardan al instante (no hace falta "Guardar y publicar").</p>' +
       '<button class="btn btn-ghost btn-sm" type="button" data-a="recargarU">Actualizar lista</button></div>';
@@ -1521,6 +1524,7 @@
       case "registro": ev.preventDefault(); cuenta.modo = "registro"; cuenta.msg = t.getAttribute("data-need") ? "Para participar primero crea una cuenta en la página." : ""; cuenta.msgTipo = t.getAttribute("data-need") ? "err" : ""; render(); break;
       case "misRifas": cuenta.modo = "rifas"; cuenta.msg = ""; render(); cargarParts(); break;
       case "miCuenta": cuenta.modo = "perfil"; cuenta.msg = ""; render(); cargarPerfil(); break;
+      case "abrirU": admin.uOpen = admin.uOpen || {}; var ku = t.getAttribute("data-uid"); if (admin.uOpen[ku]) delete admin.uOpen[ku]; else admin.uOpen[ku] = true; render(); break;
       case "verFicha": var kf = t.getAttribute("data-key"); admin.fichaU = admin.fichaU === kf ? null : kf; admin.editU = null; admin.uMsg = ""; render(); break;
       case "editRapido": admin.fichaU = "u_" + t.getAttribute("data-uid"); admin.editU = t.getAttribute("data-uid"); admin.uMsg = ""; render(); break;
       case "cantPart": var xq = (partes[t.getAttribute("data-id")] || []).filter(function (y) { return y.uid === t.getAttribute("data-uid"); })[0]; if (xq) guardarCantidad(t.getAttribute("data-id"), xq.uid, xq.cantidad + Number(t.getAttribute("data-d"))); break;
