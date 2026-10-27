@@ -36,6 +36,13 @@
     if (y && !(y.qr || y.numero)) y = null;
     return { on: forzar || (j.pagos && j.pagos.culqi === true), yape: y };
   }
+  function bajarQr(img) {
+    try {
+      var src = img && img.getAttribute("src"); if (!src || src.indexOf("data:image/") !== 0) return false;
+      var a = document.createElement("a"); a.href = src; a.download = "yape-qr.png"; a.rel = "noopener";
+      document.body.appendChild(a); a.click(); a.remove(); return true;
+    } catch (e) { return false; }
+  }
   function cargarQr() {
     var q = m.yape && m.yape.qr, mm = /^fs:(img-[\w\-]+)$/.exec(q || "");
     if (!mm) return;
@@ -86,7 +93,7 @@
         (m.qrUrl ? '<div style="text-align:center"><img src="' + m.qrUrl + '" alt="QR de Yape" width="240" height="240" style="max-width:100%;height:auto;background:#fff;padding:8px;border-radius:12px"></div>' : (yp.qr ? '<p class="rc-note">Cargando QR…</p>' : '')) +
         (yp.numero || yp.nombre ? '<p class="rc-note" style="text-align:center">' + (yp.numero ? 'Yape al <b>' + esc(yp.numero) + '</b>' : '') + (yp.nombre ? ' · a nombre de <b>' + esc(yp.nombre) + '</b>' : '') + '</p>' : '') +
         '<p class="rc-note"><b>1.</b> Escanea el QR o yapea al número. <b>2.</b> Toca el botón y envía la captura por WhatsApp. <b>3.</b> Cargamos tus créditos (usa el mismo nombre/correo de tu cuenta).</p>' +
-        '<a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">✅ Ya pagué · enviar captura por WhatsApp</a><button class="rc-btn ghost" type="button" data-a="volver">← Cambiar monto</button>';
+        '<button class="rc-btn ghost" type="button" data-a="bajarqr">⬇ Descargar QR</button><a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">✅ Ya pagué · enviar captura por WhatsApp</a><button class="rc-btn ghost" type="button" data-a="volver">← Cambiar monto</button>';
     }
     else {
       var sel = m.sel;
@@ -137,6 +144,7 @@
       var b = t.closest("[data-a]"); if (!b) return; var a = b.getAttribute("data-a");
       if (a === "cerrar") cerrar();
       else if (a === "volver") { m.vista = "monto"; m.err = ""; pintar(); }
+      else if (a === "bajarqr") { var qi = raiz.querySelector(".rc-box img"); bajarQr(qi); }
       else if (a === "yape") { m.vista = "yape"; pintar(); cargarQr(); }
       else if (a === "monto") { m.sel = Number(b.getAttribute("data-s")); m.err = ""; pintar(); }
       else if (a === "otro") {
