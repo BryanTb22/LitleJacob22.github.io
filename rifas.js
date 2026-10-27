@@ -3,7 +3,7 @@
 
   /* ================= Firebase (mismo proyecto de la tienda; cuentas y créditos compartidos con Rayas) ================= */
   var FB = { apiKey: "AIzaSyDbyLi7IK3ikwUp7A0VzRRqPucqRXPpL3E", projectId: "litlejacob-store" };
-  var DOC_URL = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents/rayas/lj-estado";
+  var DOC_URL = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents/rayas/estado";
   var SES_KEY = "lj_rifas_ses";
   var ADMIN_UID = "eLEZkdXiG5b0PpxHQCCei8D0Qxy1";
   var BASE = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents/";
@@ -134,6 +134,9 @@
       nt[k] = typeof t[k] === "string" && t[k].trim() ? t[k] : TEXTOS_BASE[k];
     });
     nt.reglas = Array.isArray(t.reglas) && t.reglas.length ? t.reglas.filter(function (x) { return typeof x === "string" && x.trim(); }) : TEXTOS_BASE.reglas.slice();
+    st._marca = { logo1: typeof t.logo1 === "string" ? t.logo1 : "", logo2: typeof t.logo2 === "string" ? t.logo2 : "", fotos: st.fotos };
+    nt.logo1 = TEXTOS_BASE.logo1; nt.logo2 = TEXTOS_BASE.logo2;
+    st.fotos = { logo: "", hero: "", lava: "", sombra: "" };
     st.textos = nt;
     return st;
   }
@@ -1240,6 +1243,11 @@
     estado.textos.reglas = estado.textos.reglas.filter(function (x) { return x && x.trim(); });
     estado.premios.forEach(function (p) { if (p.estado !== "cerrada" && p.estado !== "oculta" && !p.inicio) p.inicio = new Date().toISOString(); });
     var copia = clone(estado);
+    var mk = (publicado && publicado._marca) || {};
+    if (mk.logo1) copia.textos.logo1 = mk.logo1; else delete copia.textos.logo1;
+    if (mk.logo2) copia.textos.logo2 = mk.logo2; else delete copia.textos.logo2;
+    if (mk.fotos) copia.fotos = mk.fotos;
+    delete copia._marca;
     token().then(function (tk) {
       return fetch(DOC_URL + "?updateMask.fieldPaths=json&updateMask.fieldPaths=actualizado", {
         method: "PATCH",
@@ -1249,7 +1257,7 @@
     }).then(function (r) {
       if (r.status === 401 || r.status === 403) throw new Error("PERM");
       if (!r.ok) throw new Error("HTTP " + r.status);
-      publicado = copia; sucio = false;
+      copia._marca = mk; publicado = copia; sucio = false;
       admin.msg = "Publicado. Ya lo ven todos los visitantes."; admin.msgTipo = "ok"; render();
     }).catch(function (e) {
       var m = e && e.message;
