@@ -2009,6 +2009,8 @@ html.ljc-lock { overflow: hidden; }
             <div class="nav-links">
                 <a href="#inicio" class="nav-link" data-route="inicio">Inicio</a>
                 <a href="#sets-cache" class="nav-link" data-route="sets-cache">Sets Caché</a>
+                <a href="#items" class="nav-link" data-route="items" data-itx-nav="" data-itx-label="Comprar items" hidden="">Comprar items</a>
+                <a href="#vender" class="nav-link" data-route="vender" data-itx-nav="" data-itx-label="Vender items" hidden="">Vender items</a>
                 <a href="#compro" class="nav-link" data-route="compro">Compro</a>
                 <a href="rifas.html" class="nav-link nav-link-rifas">Rifas</a>
             </div>
@@ -2404,6 +2406,12 @@ html.ljc-lock { overflow: hidden; }
             <span class="sets-foot-dim">No afiliado a Valve. Dota 2 es una marca de Valve Corporation.</span>
         </footer>
         </div><!-- /view-sets -->
+
+        <!-- =================== VISTA: COMPRAR ITEMS (items.js) =================== -->
+        <div id="view-items" class="view" hidden=""><div id="itemsRoot" class="itx"></div></div>
+
+        <!-- =================== VISTA: VENDER ITEMS (items.js) =================== -->
+        <div id="view-vender" class="view" hidden=""><div id="venderRoot" class="itx"></div></div>
 
         <!-- =================== VISTA: COMPRO INVENTARIOS Y CUENTAS =================== -->
         <div id="view-compro" class="view" hidden="">
@@ -2904,6 +2912,8 @@ html.ljc-lock { overflow: hidden; }
     </script>
     <script src="cuenta.js?v=5" defer=""></script>
     <script src="recarga.js?v=5" defer=""></script>
+    <link rel="stylesheet" href="items.css?v=1">
+    <script src="items.js?v=1" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
     <script>
@@ -4014,7 +4024,7 @@ html.ljc-lock { overflow: hidden; }
         // =======================================================================
         // PÁGINA DE INICIO Y NAVEGACIÓN (#inicio | #sets-cache)
         // =======================================================================
-        const ROUTES = { "inicio": "view-home", "sets-cache": "view-sets", "compro": "view-compro" };
+        const ROUTES = { "inicio": "view-home", "sets-cache": "view-sets", "items": "view-items", "vender": "view-vender", "compro": "view-compro" };
         function currentRoute() {
             const h = location.hash.replace(/^#\/?/, "");
             return ROUTES[h] ? h : "inicio";
@@ -4023,7 +4033,7 @@ html.ljc-lock { overflow: hidden; }
             const route = currentRoute();
             Object.entries(ROUTES).forEach(([r, id]) => { document.getElementById(id).hidden = r !== route; });
             document.querySelectorAll(".nav-link[data-route]").forEach(a => a.classList.toggle("active", a.dataset.route === route));
-            document.title = route === "sets-cache" ? "Sets Caché • LitleJacob Store" : route === "compro" ? "Compro inventarios y cuentas • LitleJacob Store" : "LitleJacob Store • Sets de Dota 2";
+            document.title = route === "items" ? "Comprar items • LitleJacob Store" : route === "vender" ? "Vender items • LitleJacob Store" : route === "sets-cache" ? "Sets Caché • LitleJacob Store" : route === "compro" ? "Compro inventarios y cuentas • LitleJacob Store" : "LitleJacob Store • Sets de Dota 2";
             const hint = document.getElementById("adminHint");
             if (hint) hint.textContent = route === "inicio"
                 ? "Toca los espacios a los lados del nombre para subir tus logos. Usa “Editar comunidad” para el grupo de WhatsApp."
