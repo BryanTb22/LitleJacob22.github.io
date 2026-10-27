@@ -1607,6 +1607,168 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
 .nav-link.active { color: #fff !important; box-shadow: inset 0 -2px 0 var(--blood-hi, #e0202a) !important; background: none !important; }
 @media (max-width: 720px) { .nav-brand { font-size: 19px !important; } .nav-brand img { width: 36px; height: 36px; } .nav-links { margin-left: 0; width: 100%; justify-content: space-between; } .nav-link { flex: 1; padding: 8px 6px !important; font-size: 12px !important; } }
 </style>
+<style id="ljSetsModern">
+/* =====================================================================
+   SETS CACHÉ — diseño moderno (mismo lenguaje que la página de Rifas)
+   Solo afecta a #view-sets. Se carga al final y manda sobre lo anterior.
+   ===================================================================== */
+#view-sets { --m-red: #c8161f; --m-red-dk: #8e0f16; --m-silver: #c4c8ce; --m-silver-hi: #eef0f3;
+  --m-panel: #131316; --m-raised: #1b1b1f; --m-line: #3d3f45; --m-muted: #8b9097; --m-notch: 14px; }
+
+/* ---------- Piezas comunes ---------- */
+#view-sets .m-kicker { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px;
+  font-family: var(--font-head); font-weight: 500; font-size: clamp(15px, 2vw, 20px); letter-spacing: .16em; text-transform: uppercase; line-height: 1; color: var(--m-red); }
+#view-sets .m-kicker::before { content: ""; width: 34px; height: 2px; background: linear-gradient(90deg, var(--m-red), var(--m-silver)); }
+#view-sets .m-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; cursor: pointer;
+  font-family: Inter, system-ui, sans-serif; font-weight: 800; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; padding: 14px 26px;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%); transition: filter .15s, transform .15s; }
+#view-sets .m-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+#view-sets .m-btn-silver { background: linear-gradient(180deg, var(--m-silver-hi), var(--m-silver) 55%, #8b9097); color: #0b0b0d; }
+#view-sets .m-btn-red { background: linear-gradient(180deg, #e0343d, var(--m-red) 55%, var(--m-red-dk)); color: #fff; }
+#view-sets .m-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+#view-sets .m-badge { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 8px 14px; color: #eef0f3;
+  background: rgba(19,19,22,.85); border: 1px solid var(--m-line); }
+#view-sets .m-badge b { color: var(--m-silver); margin-right: 6px; }
+#view-sets .m-sec-title { text-align: center; margin: 64px 0 28px; }
+#view-sets .m-sec-title .m-kicker { justify-content: center; margin-bottom: 8px; }
+#view-sets .m-sec-title .m-kicker::after { content: ""; width: 34px; height: 2px; background: linear-gradient(90deg, var(--m-silver), var(--m-red)); }
+#view-sets .m-sec-title h2 { margin: 0; font-family: var(--font-head); font-weight: 700; text-transform: uppercase; letter-spacing: .02em; line-height: 1.05;
+  font-size: clamp(32px, 6vw, 58px); color: #fff; text-shadow: 0 0 30px rgba(196,200,206,.2), 0 4px 0 rgba(0,0,0,.45); }
+#view-sets .m-sec-title h2 span { background: linear-gradient(180deg, #f4f5f7, var(--m-silver) 45%, #6f747b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#view-sets .m-sec-sub { margin: 10px auto 0; color: var(--m-muted); max-width: 52ch; font-size: 15px; }
+#view-sets .m-orn { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; color: var(--m-silver); font-size: 11px; }
+#view-sets .m-orn::before, #view-sets .m-orn::after { content: ""; height: 1px; width: min(140px, 25vw); background: linear-gradient(90deg, transparent, var(--m-line), var(--m-silver)); }
+#view-sets .m-orn::after { transform: scaleX(-1); }
+
+/* ---------- Portada ---------- */
+#view-sets .crumb { margin-bottom: 14px; }
+#view-sets .sets-hero { position: relative; overflow: hidden; isolation: isolate; min-height: clamp(380px, 46vw, 520px);
+  display: flex; align-items: center; border: 1px solid var(--m-line); margin-bottom: 8px;
+  clip-path: polygon(var(--m-notch) 0, calc(100% - var(--m-notch)) 0, 100% var(--m-notch), 100% calc(100% - var(--m-notch)), calc(100% - var(--m-notch)) 100%, var(--m-notch) 100%, 0 calc(100% - var(--m-notch)), 0 var(--m-notch)); }
+#view-sets .sets-hero-art { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 60% 25%; filter: saturate(1.05) contrast(1.05); }
+#view-sets .sets-hero::before { content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(90deg, #08080a 0%, rgba(8,8,10,.9) 34%, rgba(8,8,10,.35) 72%, rgba(8,8,10,.55) 100%),
+              linear-gradient(0deg, #08080a 0%, transparent 40%),
+              radial-gradient(60% 80% at 75% 40%, rgba(200,22,31,.2), transparent 70%); }
+#view-sets .sets-hero-in { padding: clamp(36px, 6vw, 64px) clamp(20px, 5vw, 56px); max-width: 680px; }
+#view-sets .sets-hero-title { margin: 0; font-family: var(--font-head); font-weight: 700; text-transform: uppercase; letter-spacing: .02em;
+  font-size: clamp(42px, 7.2vw, 84px); line-height: 1; color: #fff; text-shadow: 0 4px 30px rgba(0,0,0,.6); }
+#view-sets .sets-hero-title span { background: linear-gradient(180deg, #f4f5f7, var(--m-silver) 45%, #6f747b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#view-sets .sets-hero-lead { max-width: 46ch; color: #c4c8ce; font-size: clamp(15px, 1.6vw, 18px); margin: 20px 0 28px; text-shadow: 0 2px 12px rgba(0,0,0,.7); }
+#view-sets .sets-hero-lead b { color: #fff; }
+#view-sets .sets-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ---------- Promoción ---------- */
+#view-sets .promo-mega { margin-top: 56px; padding: 8px clamp(16px, 4vw, 40px) 30px !important;
+  clip-path: polygon(var(--m-notch) 0, calc(100% - var(--m-notch)) 0, 100% var(--m-notch), 100% calc(100% - var(--m-notch)), calc(100% - var(--m-notch)) 100%, var(--m-notch) 100%, 0 calc(100% - var(--m-notch)), 0 var(--m-notch)); }
+#view-sets .promo-mega .m-sec-title { margin-top: 34px; }
+#view-sets .promo-card { clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+  transition: transform .18s ease, filter .18s ease; }
+#view-sets .promo-card:hover { transform: translateY(-4px); filter: drop-shadow(0 14px 26px rgba(200,22,31,.3)); }
+#view-sets .promo-card.best { overflow: visible; }
+#view-sets .promo-badge { clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); padding-inline: 18px !important; }
+#view-sets .promo-req { clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); border: 0 !important; background: var(--m-raised) !important; padding-inline: 22px !important; }
+
+/* ---------- Cofres (pestañas) ---------- */
+#view-sets .cofre-strip { gap: 12px; }
+#view-sets .cofre-tile { border: 1px solid var(--m-line) !important; background: linear-gradient(180deg, var(--m-raised), var(--m-panel)) !important; transition: transform .18s, border-color .18s, filter .18s;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px); }
+#view-sets .cofre-tile::before, #view-sets .cofre-tile::after { display: none !important; }
+#view-sets .cofre-tile:hover { transform: translateY(-3px); border-color: var(--m-muted) !important; }
+#view-sets .cofre-tile.active { border-color: var(--m-red) !important; background: linear-gradient(180deg, rgba(200,22,31,.28), var(--m-panel) 70%) !important; box-shadow: inset 0 -3px 0 var(--m-red) !important; }
+#view-sets .cofre-name { font-family: var(--font-head) !important; letter-spacing: .05em !important; }
+
+/* ---------- Buscador y filtros ---------- */
+#view-sets .sets-tools { border: 1px solid var(--m-line) !important; border-radius: 0 !important; background: linear-gradient(180deg, rgba(27,27,31,.92), rgba(19,19,22,.92)) !important;
+  clip-path: polygon(var(--m-notch) 0, calc(100% - var(--m-notch)) 0, 100% var(--m-notch), 100% calc(100% - var(--m-notch)), calc(100% - var(--m-notch)) 100%, var(--m-notch) 100%, 0 calc(100% - var(--m-notch)), 0 var(--m-notch)); }
+#view-sets .sets-tools input, #view-sets .sets-tools select { border-radius: 10px !important; border-color: var(--m-line) !important; background: #0c0c0e !important; color: #eef0f3 !important; }
+#view-sets .sets-tools input:focus, #view-sets .sets-tools select:focus { border-color: var(--m-silver) !important; box-shadow: 0 0 0 2px rgba(196,200,206,.15) !important; }
+#view-sets .sets-tools svg { color: var(--m-muted) !important; }
+#view-sets .sets-tools .border-t { border-color: var(--m-line) !important; }
+#view-sets .filter-btn { border-radius: 999px !important; padding: 7px 16px !important; background: #0c0c0e !important; border: 1px solid var(--m-line) !important; color: var(--m-silver) !important; box-shadow: none !important; transition: border-color .15s, background .15s; }
+#view-sets .filter-btn:hover { border-color: var(--m-muted) !important; }
+#view-sets .filter-btn.active, #view-sets .filter-btn[aria-pressed="true"] { background: linear-gradient(180deg, #e0343d, var(--m-red) 55%, var(--m-red-dk)) !important; border-color: transparent !important; color: #fff !important; }
+#view-sets #resultsSummary { color: var(--m-muted) !important; }
+
+/* ---------- Encabezado de cada cofre ---------- */
+#view-sets .cofre-section { margin-top: 38px; }
+#view-sets .cofre-header { background: linear-gradient(90deg, rgba(200,22,31,.22), rgba(19,19,22,.9) 45%, rgba(19,19,22,.6)) !important; border: 1px solid var(--m-line) !important; border-left: 3px solid var(--m-red) !important;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); }
+#view-sets .cofre-header-title { font-family: var(--font-head) !important; font-weight: 700 !important; letter-spacing: .03em !important; }
+
+/* ---------- Tarjetas de sets ---------- */
+#view-sets .dota-card { --r: #a855f7; position: relative; padding: 2px !important; border: 0 !important; border-radius: 0 !important; overflow: hidden;
+  background: linear-gradient(160deg, var(--r), #3d3f45 32%, #26272b 68%, color-mix(in srgb, var(--r) 65%, #000)) !important;
+  box-shadow: none !important; filter: drop-shadow(0 10px 24px rgba(0,0,0,.55));
+  clip-path: polygon(var(--m-notch) 0, calc(100% - var(--m-notch)) 0, 100% var(--m-notch), 100% calc(100% - var(--m-notch)), calc(100% - var(--m-notch)) 100%, var(--m-notch) 100%, 0 calc(100% - var(--m-notch)), 0 var(--m-notch));
+  transition: transform .2s ease, filter .2s ease !important; }
+#view-sets .dota-card.card-immortal { --r: #f59e0b; }
+#view-sets .dota-card.card-arcana { --r: #ade55c; }
+#view-sets .dota-card::before { content: "" !important; position: absolute !important; left: 0; right: 0; top: 0; height: 4px; z-index: 25; border: 0 !important; width: auto !important;
+  background: linear-gradient(90deg, transparent, var(--r), #fff8, var(--r), transparent) !important; box-shadow: 0 0 18px var(--r); pointer-events: none; }
+#view-sets .dota-card::after { display: none !important; }
+#view-sets .dota-card:hover { transform: translateY(-6px) !important; filter: drop-shadow(0 18px 34px color-mix(in srgb, var(--r) 40%, transparent)) !important; box-shadow: none !important; }
+#view-sets .dota-card.in-cart { background: linear-gradient(160deg, #e0343d, #3d3f45 32%, #26272b 68%, var(--m-red)) !important; box-shadow: none !important; filter: drop-shadow(0 0 18px rgba(200,22,31,.55)); }
+#view-sets .dota-card .armory-stage { clip-path: polygon(calc(var(--m-notch) - 2px) 0, calc(100% - var(--m-notch) + 2px) 0, 100% calc(var(--m-notch) - 2px), 100% 100%, 0 100%, 0 calc(var(--m-notch) - 2px)); }
+#view-sets .dota-card .card-info-bar { border-top: 1px solid rgba(255,255,255,.06) !important; padding: 14px 16px !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--r) 10%, #16161a), #0e0e11 60%) !important;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--m-notch) + 2px), calc(100% - var(--m-notch) + 2px) 100%, calc(var(--m-notch) - 2px) 100%, 0 calc(100% - var(--m-notch) + 2px)); }
+#view-sets .dota-card .card-info-bar h2 { font-family: var(--font-head) !important; font-weight: 600 !important; font-size: clamp(16px, 1.5vw, 19px) !important; letter-spacing: .03em !important; color: #fff !important; }
+
+/* Precio: placa plateada */
+#view-sets .price-badge { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; color: #0b0b0d !important;
+  background: linear-gradient(180deg, var(--m-silver-hi), var(--m-silver) 55%, #8b9097) !important; font-family: var(--font-head) !important;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+#view-sets .price-badge, #view-sets .price-badge * { -webkit-text-fill-color: #0b0b0d !important; }
+#view-sets .dota-card:not(.card-soldout):hover .price-badge { transform: none !important; filter: brightness(1.08); }
+#view-sets .soldout-badge { clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+
+/* Botón Agregar */
+#view-sets .cart-add-btn { border: 0 !important; border-radius: 0 !important; padding: 9px 18px !important; font-size: 12px !important; font-weight: 800 !important; letter-spacing: .1em !important;
+  background: linear-gradient(180deg, #e0343d, var(--m-red) 55%, var(--m-red-dk)) !important; color: #fff !important; box-shadow: none !important;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
+#view-sets .cart-add-btn:hover { transform: translateY(-1px) !important; filter: brightness(1.12) drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
+#view-sets .cart-add-btn.in-cart { background: linear-gradient(180deg, var(--m-silver-hi), var(--m-silver) 55%, #8b9097) !important; color: #0b0b0d !important; }
+
+/* Etiquetas de rareza */
+#view-sets .rarity-chip, #view-sets .tier-chip { border-radius: 999px !important; padding-inline: 10px !important; }
+
+/* ---------- Estado vacío ---------- */
+#view-sets #emptyState { border-color: var(--m-line) !important; border-radius: 0 !important; background: linear-gradient(180deg, var(--m-raised), var(--m-panel)) !important; }
+#view-sets #emptyState h3 { font-family: var(--font-head) !important; color: #fff !important; }
+#view-sets #resetFiltersBtn { border: 0 !important; border-radius: 0 !important; background: linear-gradient(180deg, #e0343d, var(--m-red) 55%, var(--m-red-dk)) !important; color: #fff !important;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); padding: 10px 22px !important; text-transform: uppercase; letter-spacing: .08em; }
+
+/* ---------- Pie ---------- */
+#view-sets .sets-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 22px; margin: 64px 0 24px; padding: 22px 0; border-top: 1px solid var(--m-line);
+  font-size: 13px; color: var(--m-silver); }
+#view-sets .sets-foot b { color: #fff; }
+#view-sets .sets-foot-brand { font-family: var(--font-head); font-size: 18px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; }
+#view-sets .sets-foot-brand b { color: var(--m-red); }
+#view-sets .sets-foot-dim { color: var(--m-muted); font-size: 12px; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 640px) {
+  #view-sets { --m-notch: 10px; }
+  #view-sets .sets-hero { min-height: 0; }
+  #view-sets .sets-hero::before { background: linear-gradient(0deg, #08080a 0%, rgba(8,8,10,.82) 45%, rgba(8,8,10,.45) 100%); }
+  #view-sets .sets-hero-actions .m-btn { flex: 1 1 140px; }
+  #view-sets .m-sec-title { margin-top: 48px; }
+  #view-sets .sets-foot { justify-content: center; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #view-sets .dota-card, #view-sets .m-btn, #view-sets .cofre-tile, #view-sets .promo-card { transition: none !important; }
+}
+
+/* Ajustes finos */
+#view-sets .sets-hero, #view-sets .sets-tools { border: 0 !important; box-shadow: inset 0 0 0 1px var(--m-line) !important; }
+#view-sets .promo-mega { border: 0 !important; box-shadow: inset 0 0 0 1px var(--m-line), inset 0 3px 0 var(--m-red) !important; }
+#view-sets .sets-hero::after, #view-sets .promo-mega::before, #view-sets .promo-mega::after { display: none !important; }
+#view-sets .promo-card { clip-path: none !important; }
+#view-sets .m-btn { white-space: nowrap; }
+@media (max-width: 640px) { #view-sets .m-btn { padding: 13px 18px; font-size: 12px; } }
+
+</style>
 </head>
 <body class="relative selection:bg-amber-500 selection:text-black">
 
@@ -1887,39 +2049,32 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
         <div id="view-sets" class="view" hidden="">
         <div class="crumb"><a href="#inicio">Inicio</a> <span>›</span> <span>Sets Caché</span></div>
 
-        <div class="catalog-banner" aria-hidden="true"><img src="img/art-dota2.jpg" alt=""></div>
-        <!-- ENCABEZADO ÉPICO -->
-        <header class="text-center mb-8 sm:mb-10">
-            <div class="inline-flex items-center justify-center w-12 h-12 mb-2 rounded-lg bg-gradient-to-b from-red-950/90 to-black border border-amber-500/50 shadow-lg shadow-red-950/50">
-                <svg class="w-7 h-7 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 3h18v18H3V3zm2.5 2.5v13h13v-13h-13zm2.2 1.8l8.5 8.5-1.5 1.5-8.5-8.5 1.5-1.5zm-.2 7.2l3 3H7.5v-3zm9-6l-3-3h3v3z"></path>
-                </svg>
+        <!-- PORTADA (estilo Rifas) -->
+        <header class="sets-hero">
+            <img class="sets-hero-art" src="img/art-dota2.jpg" alt="" aria-hidden="true">
+            <div class="sets-hero-in">
+                <p class="m-kicker">Sets caché de Dota 2</p>
+                <h1 class="sets-hero-title">Sets <span>míticos</span><br>e inmortales</h1>
+                <p class="sets-hero-lead">Agrega al carrito los sets que quieras y envíanos tu pedido por WhatsApp (<b>+51 952 997 030</b>). Atención inmediata y entrega por Steam.</p>
+                <div class="sets-hero-actions">
+                    <button type="button" class="m-btn m-btn-silver" data-scroll="setsCatalogo">Ver catálogo</button>
+                    <button type="button" class="m-btn m-btn-red" data-scroll="setsPromo">Ver descuentos</button>
+                </div>
+                <div class="m-badges">
+                    <span class="m-badge"><b>◆</b>10% desde 3 sets</span>
+                    <span class="m-badge"><b>◆</b>15% desde 6 sets</span>
+                    <span class="m-badge"><b>◆</b>Entrega por Steam</span>
+                </div>
             </div>
-
-            <h1 class="font-cinzel font-extrabold text-2xl sm:text-4xl md:text-5xl tracking-wider gold-gradient-text uppercase leading-tight">
-                CATÁLOGO DE SETS<br class="sm:hidden"> MÍTICOS E INMORTALES
-            </h1>
-
-            <div class="ornamental-divider">
-                <div class="ornamental-dot"></div>
-                <div class="ornamental-line-left"></div>
-                <div class="ornamental-diamond"></div>
-                <div class="ornamental-line-right"></div>
-                <div class="ornamental-dot"></div>
-            </div>
-
-            <p class="font-cinzel text-xs sm:text-sm md:text-base tracking-[0.28em] text-amber-100/90 uppercase font-semibold">
-                COLECCIÓN EXCLUSIVA • LITLEJACOB
-            </p>
-            <p class="mt-2 text-xs sm:text-sm text-stone-300 max-w-xl mx-auto">
-                Agrega al carrito 🛒 los sets que quieras y envíanos tu pedido por WhatsApp (<strong class="text-emerald-400">+51 952 997 030</strong>) con atención inmediata.
-            </p>
         </header>
 
         <!-- PROMOCIÓN POR CANTIDAD -->
-        <section class="promo-mega" aria-label="Descuentos por cantidad">
-            <div class="promo-ribbon">🔥 Promoción 🔥</div>
-            <h2 class="promo-title gold-gradient-text">Mientras más sets, más ahorras</h2>
+        <section class="promo-mega" id="setsPromo" aria-label="Descuentos por cantidad">
+            <div class="m-sec-title">
+                <p class="m-kicker">Promoción</p>
+                <h2>Más sets, <span>más ahorras</span></h2>
+                <div class="m-orn">◆</div>
+            </div>
             <div class="promo-cards">
                 <div class="promo-card">
                     <div class="promo-pct"><span class="num">10</span><span class="sym">%</span></div>
@@ -1938,12 +2093,18 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
         </section>
 
         <!-- COFRES -->
+        <div class="m-sec-title" id="setsCatalogo">
+            <p class="m-kicker">Catálogo</p>
+            <h2>Elige tu <span>cofre</span></h2>
+            <p class="m-sec-sub">Toca un cofre para ver solo sus sets, o busca por nombre.</p>
+            <div class="m-orn">◆</div>
+        </div>
         <section class="mb-8" aria-label="Cofres">
             <div id="cofreStrip" class="cofre-strip"></div>
         </section>
 
         <!-- BARRA DE BÚSQUEDA, FILTROS Y ORDENAMIENTO -->
-        <section class="mb-8 bg-black/55 backdrop-blur-md border border-amber-500/35 rounded-xl p-4 sm:p-5 shadow-2xl">
+        <section class="sets-tools mb-8 bg-black/55 backdrop-blur-md border border-amber-500/35 rounded-xl p-4 sm:p-5 shadow-2xl">
             <div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
                 <div class="relative flex-1">
                     <svg class="w-5 h-5 text-amber-400/80 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2004,21 +2165,11 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             </div>
         </main>
 
-        <!-- PIE DE PÁGINA OFICIAL -->
-        <footer class="mt-14 mb-6 text-center">
-            <div class="ornamental-divider">
-                <div class="ornamental-dot"></div>
-                <div class="ornamental-line-left"></div>
-                <div class="ornamental-diamond"></div>
-                <div class="ornamental-line-right"></div>
-                <div class="ornamental-dot"></div>
-            </div>
-            <p class="font-cinzel text-xs sm:text-sm md:text-base tracking-[0.22em] text-amber-100 uppercase font-semibold mt-2">
-                PRECIOS EN SOLES (S/) • CONSULTA DISPONIBILIDAD • WHATSAPP +51 952 997 030
-            </p>
-            <p class="text-xs text-stone-500 mt-2">
-                Catálogo Interactivo Dota 2 • Colección Exclusiva LitleJacob
-            </p>
+        <!-- PIE -->
+        <footer class="sets-foot">
+            <span class="sets-foot-brand">LitleJacob <b>Store</b></span>
+            <span>Precios en soles (S/) · Consulta disponibilidad · WhatsApp <b>+51 952 997 030</b></span>
+            <span class="sets-foot-dim">No afiliado a Valve. Dota 2 es una marca de Valve Corporation.</span>
         </footer>
         </div><!-- /view-sets -->
 
@@ -5809,4 +5960,12 @@ service cloud.firestore {
         const draftReady = loadDraft();
         initDb(draftReady);
         initEmberParticles();
-    </script></body></html>
+    </script><script>
+document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-scroll]");
+    if (!b) return;
+    var t = document.getElementById(b.getAttribute("data-scroll"));
+    if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+</script>
+</body></html>
