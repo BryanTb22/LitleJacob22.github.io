@@ -308,5 +308,14 @@
     } catch (er) { falla(er); }
   }
 
+  // API para la tienda (pagar el carrito con créditos)
+  window.ljCuenta = {
+    sesion: leerSesion,
+    perfil: function () { return st.perfil; },
+    token: token,
+    abrir: function (modo, msg) { if (msg) { st.msg = msg; st.tipo = ""; } abrir(modo); },
+    recargar: cargarPerfil
+  };
+
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar); else montar();
 })();
