@@ -9,7 +9,7 @@
   "use strict";
   var PROJ = "litlejacob-store";
   var PAGOS = { pk: "pk_test_iK8JCBNB6dJmRlUZ", min: 3, max: 500, minYape: 6,
-    url: "https://us-central1-" + PROJ + ".cloudfunctions.net/cobrar", js: "https://checkout.culqi.com/js/v4",
+    url: "https://us-central1-" + PROJ + ".cloudfunctions.net/cobrar", urlOrden: "https://us-central1-" + PROJ + ".cloudfunctions.net/crearOrden", js: "https://checkout.culqi.com/js/v4",
     doc: "https://firestore.googleapis.com/v1/projects/" + PROJ + "/databases/(default)/documents/rayas/estado", wa: "51952997030" };
   var PACKS = [{ s: 10, b: 10 }, { s: 20, b: 20 }, { s: 50, b: 50, p: 55 }, { s: 100, b: 100, p: 110 }];
   var m = { sel: 0, err: "", vista: "monto", info: null, pagosOn: false }, raiz = null, culqiCarga = null;
@@ -48,6 +48,8 @@
     if (!raiz) return;
     var p = perfil(), primera = !!(p && !p.promoUsada), h = "";
     if (m.vista === "cargando") h = '<h3>Procesando…</h3><p class="rc-h">Un momento por favor. No cierres esta ventana.</p>';
+    else if (m.vista === "pendiente") h = '<h3>Código de pago listo 💵</h3><p class="rc-h">Se abrió tu código de pago por <b>S/ ' + m.sel + '</b>. Págalo en un agente, banco, app bancaria o con QR (vale 24 horas). Cuando Culqi lo confirme tus créditos se suman solos; puede tardar unos minutos.</p><p class="rc-h">Tienes <b>' + (p ? p.creditos : "") + '</b> créditos ahora.</p>' +
+      '<button class="rc-btn red" data-a="refrescar" type="button">🔄 Ya pagué · actualizar mi saldo</button><button class="rc-btn ghost" data-a="cerrar" type="button">Cerrar</button>';
     else if (m.vista === "ok") h = '<h3>¡Recarga lista! 🎉</h3><p class="rc-h">Se sumaron <b>' + m.info.creditos + '</b> créditos' + (m.info.promo ? ' (incluye tu regalo de primera recarga 🎁)' : '') +
       '. Ahora tienes <b>' + (p ? p.creditos : "") + '</b>.</p><button class="rc-btn gold" data-a="cerrar" type="button">Seguir comprando</button>';
     else if (m.vista === "error") h = '<h3>No se pudo completar</h3><p class="rc-h" role="alert">' + esc(m.err) + '</p><button class="rc-btn gold" data-a="volver" type="button">Volver</button><button class="rc-btn ghost" data-a="cerrar" type="button">Cerrar</button>';
@@ -66,8 +68,9 @@
         (m.err ? '<p class="rc-err" role="alert">' + esc(m.err) + '</p>' : '') +
         (sel ? '<p class="rc-res">Pagas <b>S/ ' + sel + '</b> y recibes <b>' + creditosPara(sel) + ' créditos</b>' + (creditosPara(sel) > sel ? ' 🎁' : '') + '</p><p class="rc-h"><b>2.</b> Elige cómo quieres pagar</p>' : '') +
         (sel && m.pagosOn ? '<button class="rc-btn red" type="button" data-a="pagar">💳 Pagar con tarjeta · al instante</button>' : '') +
+        (sel >= PAGOS.minYape && m.pagosOn ? '<button class="rc-btn gold" type="button" data-a="efectivo">💵 Efectivo / QR / billeteras</button>' : '') +
         (sel ? '<a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">💬 Pagar por WhatsApp</a>' : '') +
-        (m.pagosOn ? '<p class="rc-note">Tarjeta: pago seguro con Culqi desde S/ ' + PAGOS.min + ', tus créditos se suman solos. <b>Yape / QR: desde S/ ' + PAGOS.minYape + '</b> (si no te aparece en el pago, usa tarjeta o WhatsApp).</p>' +
+        (m.pagosOn ? '<p class="rc-note">Tarjeta: pago seguro con Culqi desde S/ ' + PAGOS.min + ', tus créditos se suman solos. <b>Efectivo (PagoEfectivo), QR y billeteras: desde S/ ' + PAGOS.minYape + '</b>: te damos un código, pagas cuando quieras (hasta 24 h) y tus créditos se suman solos.</p>' +
           '<p class="rc-note">¿Montos menores a S/ ' + PAGOS.minYape + ' con Yape, o prefieres pagar con una persona? Elige <b>Pagar por WhatsApp</b> y te atiende el encargado, que carga tus créditos él mismo.</p>'
           : '<p class="rc-note">Elige el monto y pídelo por WhatsApp: el encargado carga tus créditos él mismo.</p>') +
         '<button class="rc-btn ghost" type="button" data-a="cerrar">Cerrar</button>';
@@ -103,6 +106,8 @@
         else { m.sel = v; m.err = ""; }
         pintar();
       } else if (a === "pagar") pagar(m.sel);
+      else if (a === "efectivo") efectivo(m.sel);
+      else if (a === "refrescar") { api().recargar().then(function () { pintar(); }); }
     });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !raiz.hidden) cerrar(); });
   }
@@ -120,6 +125,23 @@
       C.options({ lang: "es", installments: false, paymentMethods: { tarjeta: true, yape: true, billetera: false, bancaMovil: false, agente: false, cuotealo: false } });
       raiz.hidden = true; C.open();
     }).catch(function (e) { m.vista = "error"; m.err = (e && e.message) || "No se pudo abrir el pago."; pintar(); });
+  }
+  function efectivo(soles) {
+    m.vista = "cargando"; pintar();
+    api().token().then(function (tk) {
+      return fetch(PAGOS.urlOrden, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ soles: soles }) });
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        if (!x.ok || !x.j.ok) throw new Error(x.j.error || "No se pudo generar el código de pago.");
+        return cargarCulqi().then(function () {
+          var C = window.Culqi;
+          window.culqi = function () { /* en órdenes no hay token: el pago llega por aviso de Culqi */ };
+          C.publicKey = PAGOS.pk;
+          C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de créditos", amount: soles * 100, order: x.j.ordenId });
+          C.options({ lang: "es", installments: false, paymentMethods: { tarjeta: false, yape: false, billetera: true, bancaMovil: true, agente: true, cuotealo: false } });
+          m.vista = "pendiente"; pintar(); C.open();
+        });
+      }).catch(function (e) { m.vista = "error"; m.err = (e && e.message) || "No se pudo generar el código de pago."; pintar(); });
   }
   function cobrar(soles, tokenId) {
     raiz.hidden = false; m.vista = "cargando"; pintar();
