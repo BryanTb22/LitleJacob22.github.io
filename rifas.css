@@ -804,3 +804,7 @@ html, body { overflow-x: clip; max-width: 100%; }
 .urow.open .urow-sum i { transform: rotate(180deg); color: #fff; }
 .urow-body { display: none; gap: 8px; padding: 4px 12px 12px; border-top: 1px solid var(--line); }
 .urow.open .urow-body { display: grid; padding-top: 10px; }
+
+/* QR de Yape centrado */
+.yapeqr { display: flex; justify-content: center; margin: 10px 0; }
+.yapeqr img { width: 240px; max-width: 100%; height: auto; border-radius: 8px; }
