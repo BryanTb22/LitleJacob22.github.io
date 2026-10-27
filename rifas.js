@@ -1874,8 +1874,14 @@
     setTimeout(mostrar, 900);
   })();
   render();
-  cargarRemoto();
+  var quiereRecarga = /[?&]recargar=1(&|$)/.test(location.search);
+  var pRemoto = cargarRemoto();
   cargarParts();
   revisarHash();
-  if (leerSesion() && !admin.puede) cargarPerfil();
+  var pPerfil = (leerSesion() && !admin.puede) ? cargarPerfil() : Promise.resolve();
+  // Llegas desde la tienda con ?recargar=1: abre directo la ventana de recarga.
+  if (quiereRecarga) {
+    try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) { /* nada */ }
+    Promise.all([pRemoto, pPerfil]).then(function () { abrirRecarga(); });
+  }
 })();

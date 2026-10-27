@@ -2,7 +2,7 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="lj-build" content="2026-10-27-creditos">
+    <meta name="lj-build" content="2026-10-27-recarga">
     <title>LitleJacob Store · Sets Míticos de Dota 2 | Precios en soles</title>
     <meta name="description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y pide por WhatsApp. Pagas con Yape, Plin, PayPal o Binance.">
     <meta name="theme-color" content="#0b0505">
@@ -1872,6 +1872,8 @@ body.is-admin #toastNotification { bottom: 110px !important; }
 .ljc-navbtn.on { background: #1b1b1f; box-shadow: inset 0 0 0 1px #3d3f45; text-transform: none; letter-spacing: .02em; font-size: 13px; }
 .ljc-navbtn small { color: #c4c8ce; font-weight: 700; margin-left: 4px; }
 .ljc-navbtn:hover { filter: brightness(1.15); }
+.ljc-recbtn { text-decoration: none; background: linear-gradient(180deg,#e8c26a,#b98a2a); color: #1a1205; }
+.ljc-rec { display: inline-block; margin: 6px 10px 0 0; padding: 8px 14px; background: linear-gradient(180deg,#e8c26a,#b98a2a); color: #1a1205 !important; font-weight: 800; text-decoration: none; }
 html.ljc-lock { overflow: hidden; }
 .ljc { position: fixed; inset: 0; z-index: 120; }
 .ljc[hidden] { display: none; }
@@ -3476,7 +3478,7 @@ html.ljc-lock { overflow: hidden; }
             if (!p) return "";
             return p.creditos >= cost
                 ? `<div class="row note cred-note ok"><span>💎 Tienes <b>${p.creditos}</b> créditos · pagando con créditos te quedan <b>${p.creditos - cost}</b></span></div>`
-                : `<div class="row note cred-note"><span>💎 Tienes <b>${p.creditos}</b> créditos · te faltan <b>${cost - p.creditos}</b>. <a href="rifas.html">Recargar créditos</a></span></div>`;
+                : `<div class="row note cred-note"><span>💎 Tienes <b>${p.creditos}</b> créditos · te faltan <b>${cost - p.creditos}</b>. <a href="rifas.html?recargar=1">Recargar créditos</a></span></div>`;
         }
         async function payWithCredits() {
             const t = cartTotals();
@@ -3487,7 +3489,7 @@ html.ljc-lock { overflow: hidden; }
             const p = api.perfil();
             if (!p) { closeModal("cartModal"); api.abrir(); return; }
             const cost = creditCost(t);
-            if (p.creditos < cost) { showToast(`Te faltan ${cost - p.creditos} créditos. Recárgalos en Rifas → Recargar créditos.`, "Créditos"); return; }
+            if (p.creditos < cost) { showToast(`Te faltan ${cost - p.creditos} créditos. Pulsa «💎 Recargar» arriba para recargar.`, "Créditos"); return; }
             if (!(await confirmDialog(`¿Pagar ${cost} créditos por ${setsLabel(t.count)}? Te quedarán ${p.creditos - cost} créditos.`, "💎 Pagar"))) return;
             creditPaying = true; renderCartModal();
             try {
@@ -6338,5 +6340,5 @@ document.addEventListener("click", function (e) {
     if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 </script>
-<script src="cuenta.js?v=2" defer></script>
+<script src="cuenta.js?v=3" defer></script>
 </body></html>

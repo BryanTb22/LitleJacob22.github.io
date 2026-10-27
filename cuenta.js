@@ -121,7 +121,7 @@
   function trasEntrar() { st.msg = ""; st.modo = "perfil"; return cargarPerfil(); }
 
   /* ---------- interfaz ---------- */
-  var raiz, boton;
+  var raiz, boton, recBtn;
   function montar() {
     var nav = document.querySelector(".site-nav .nav-right");
     if (nav && !document.getElementById("ljCuentaBtn")) {
@@ -147,6 +147,12 @@
     var s = leerSesion(), p = st.perfil;
     boton.innerHTML = s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>' + p.creditos + ' créd.</small>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
+    if (!recBtn && boton.parentNode) {
+      recBtn = document.createElement("a");
+      recBtn.id = "ljRecargarBtn"; recBtn.className = "ljc-navbtn ljc-recbtn"; recBtn.href = "rifas.html?recargar=1";
+      recBtn.textContent = "💎 Recargar";
+      boton.parentNode.insertBefore(recBtn, boton);
+    }
   }
   function abrir(modo) {
     st.abierto = true;
@@ -193,7 +199,7 @@
     } else if (st.modo === "perfil" && s) {
       titulo = "Mi cuenta";
       cuerpo = '<div class="ljc-body">' + (p
-        ? '<div class="ljc-saldo"><small>Tus créditos</small><b>' + p.creditos + '</b><a href="rifas.html">Ir a las rifas →</a></div>' +
+        ? '<div class="ljc-saldo"><small>Tus créditos</small><b>' + p.creditos + '</b><a class="ljc-rec" href="rifas.html?recargar=1">💎 Recargar créditos</a><a href="rifas.html">Ir a las rifas →</a></div>' +
           '<form id="ljcPerfil" novalidate><h3>Mis datos</h3>' + camposCliente("ljp", p) +
           campo("ljp-email", "Correo", "disabled", "", p.email || s.email) +
           (p.steam ? "" : '<p class="ljc-hint warn">Agrega tu ID de Steam para que podamos agregarte y enviarte tus sets.</p>') +
