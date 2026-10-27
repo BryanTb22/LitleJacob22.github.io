@@ -2,7 +2,7 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="lj-build" content="2026-10-27-admin">
+    <meta name="lj-build" content="2026-10-27-cuentas">
     <title>LitleJacob Store · Sets Míticos de Dota 2 | Precios en soles</title>
     <meta name="description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y pide por WhatsApp. Pagas con Yape, Plin, PayPal o Binance.">
     <meta name="theme-color" content="#0b0505">
@@ -1820,6 +1820,56 @@ body.is-admin #toastNotification { bottom: 110px !important; }
   #adminBar .adm-menu { right: 0; left: auto; min-width: min(280px, calc(100vw - 32px)); }
   body.is-admin #toastNotification { bottom: 160px !important; }
 }
+
+</style>
+<style id="ljCuentaCss" data-keep>
+/* ===== Cuentas de clientes (cuenta.js) — estilo Rifas ===== */
+.ljc-navbtn { display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; white-space: nowrap;
+  font: 800 11.5px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; padding: 9px 16px; color: #fff;
+  background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16); clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); }
+.ljc-navbtn.on { background: #1b1b1f; box-shadow: inset 0 0 0 1px #3d3f45; text-transform: none; letter-spacing: .02em; font-size: 13px; }
+.ljc-navbtn small { color: #c4c8ce; font-weight: 700; margin-left: 4px; }
+.ljc-navbtn:hover { filter: brightness(1.15); }
+html.ljc-lock { overflow: hidden; }
+.ljc { position: fixed; inset: 0; z-index: 120; }
+.ljc[hidden] { display: none; }
+.ljc-back { position: absolute; inset: 0; background: rgba(0,0,0,.72); opacity: 0; transition: opacity .2s; }
+.ljc-panel { position: absolute; top: 0; right: 0; bottom: 0; width: min(460px, 100%); overflow-y: auto; background: #131316; border-left: 1px solid #3d3f45;
+  box-shadow: -20px 0 50px rgba(0,0,0,.6); transform: translateX(30px); opacity: 0; transition: transform .22s, opacity .22s; color: #e6e8eb; font-family: Inter, system-ui, sans-serif; }
+.ljc.open .ljc-back { opacity: 1; } .ljc.open .ljc-panel { transform: none; opacity: 1; }
+.ljc-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; background: #131316; border-bottom: 1px solid #3d3f45; }
+.ljc-head h2 { margin: 0; font-family: "Oswald", Impact, sans-serif; font-weight: 700; font-size: 24px; text-transform: uppercase; letter-spacing: .03em; color: #fff; }
+.ljc-body { display: grid; gap: 14px; padding: 20px; }
+.ljc-body h3 { margin: 6px 0 2px; font-family: "Oswald", Impact, sans-serif; font-size: 20px; text-transform: uppercase; letter-spacing: .04em; color: #c8161f; }
+.ljc-body form, #ljcPerfil { display: grid; gap: 14px; }
+.ljc-field { display: grid; gap: 6px; }
+.ljc-field label { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #c4c8ce; }
+.ljc-field input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #3d3f45; background: #0c0c0e; color: #fff; font-size: 15px; }
+.ljc-field input:focus { outline: none; border-color: #c4c8ce; box-shadow: 0 0 0 2px rgba(196,200,206,.15); }
+.ljc-field input:disabled { opacity: .6; }
+.ljc-hint { margin: 0; font-size: 12.5px; color: #8b9097; line-height: 1.45; }
+.ljc-hint b { color: #c4c8ce; } .ljc-hint a { color: #ff6b73; }
+.ljc-hint.warn { color: #ffb4b8; }
+.ljc-msg { margin: 0; min-height: 1.2em; font-size: 13px; color: #c4c8ce; }
+.ljc-msg.err { color: #ff6b73; }
+.ljc-btn { display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; font: 800 13px Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase;
+  padding: 14px 22px; clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%); transition: filter .15s; }
+.ljc-btn:hover { filter: brightness(1.12); }
+.ljc-btn.red { background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16); color: #fff; }
+.ljc-btn.silver { background: linear-gradient(180deg, #eef0f3, #c4c8ce 55%, #8b9097); color: #0b0b0d; }
+.ljc-btn.ghost { background: #1b1b1f; color: #eef0f3; box-shadow: inset 0 0 0 1px #3d3f45; }
+.ljc-btn.sm { padding: 9px 16px; font-size: 11.5px; }
+.ljc-saldo { display: grid; justify-items: center; gap: 2px; padding: 18px; border: 1px solid #3d3f45; background: linear-gradient(180deg, #1b1b1f, #131316); }
+.ljc-saldo small { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #8b9097; }
+.ljc-saldo b { font-family: "Oswald", Impact, sans-serif; font-size: 52px; line-height: 1; background: linear-gradient(180deg, #f4f5f7, #c4c8ce 45%, #6f747b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ljc-saldo a { font-size: 13px; color: #ff6b73; font-weight: 700; }
+.ljc-g { min-height: 44px; display: flex; justify-content: center; }
+.ljc-sep { display: flex; align-items: center; gap: 10px; color: #8b9097; font-size: 12px; }
+.ljc-sep::before, .ljc-sep::after { content: ""; flex: 1; height: 1px; background: #3d3f45; }
+@media (max-width: 760px) { .ljc-navbtn { padding: 8px 12px; font-size: 10.5px; } .ljc-navbtn small { display: none; } }
+/* Cuenta registrada en la lista de clientes del admin */
+.cust-acc { margin-top: 6px; padding: 8px 10px; font-size: 12.5px; line-height: 1.5; border: 1px solid rgba(16,185,129,.35); background: rgba(16,185,129,.08); color: #c9f5e2; }
+.cust-acc b { color: #6ee7b7; } .cust-acc a { color: #9ad8ff; }
 
 </style>
 </head>
@@ -5226,10 +5276,12 @@ service cloud.firestore {
             ordState.loading = true; ordState.error = "";
             renderOrders();
             try {
-                const [o, c] = await Promise.all([
+                const [o, c, u] = await Promise.all([
                     fsRequest("orders", { auth: true, query: "pageSize=300&orderBy=" + encodeURIComponent("createdAt desc") }),
-                    fsRequest("customers", { auth: true, query: "pageSize=300" })
+                    fsRequest("customers", { auth: true, query: "pageSize=300" }),
+                    fsRequest("rayas_users", { auth: true, query: "pageSize=300" }).catch(e => { console.warn("Cuentas de clientes:", e); return null; })
                 ]);
+                ordState.accounts = ((u && u.documents) || []).map(fsDoc);
                 ordState.orders = ((o && o.documents) || []).map(fsDoc);
                 ordState.customers = {};
                 ((c && c.documents) || []).forEach(d => {
@@ -5256,6 +5308,15 @@ service cloud.firestore {
             Object.values(ordState.customers).forEach(c => {
                 if (!map[c._id]) map[c._id] = { key: c._id, name: c.name || "", steamId: c.steamId || "", phone: c.phone || "", orders: 0, spent: 0, last: null };
                 else if (c.phone) map[c._id].phone = c.phone;
+            });
+            // Clientes con cuenta en la web (misma cuenta que Rifas / Rayas Store)
+            (ordState.accounts || []).forEach(a => {
+                const steam = normalizeSteamId(a.steam || "") || "";
+                const key = custKey(steam, a.nombre);
+                const m = map[key] || (map[key] = { key, name: a.nombre || "", steamId: steam, phone: "", orders: 0, spent: 0, last: null });
+                m.account = { email: a.email || "", tradelink: a.tradelink || "", creditos: Number(a.creditos) || 0 };
+                if (!m.phone && a.whatsapp) m.phone = normalizePhone(a.whatsapp) || a.whatsapp;
+                if (!m.name) m.name = a.nombre || "";
             });
             return Object.values(map);
         }
@@ -5393,6 +5454,7 @@ service cloud.firestore {
                     <div class="ord-id"><b class="cust-name">👤 ${escapeHtml(c.name || "Sin nombre")}</b></div>
                 </header>
                 <div class="ord-cust-steam">${steamLineHtml(c.steamId)}</div>
+                ${c.account ? `<div class="cust-acc">✅ <b>Cuenta registrada</b> · ${escapeHtml(c.account.email)} · ${c.account.creditos} créditos${c.account.tradelink ? ` · <a href="${escapeHtml(c.account.tradelink)}" target="_blank" rel="noopener noreferrer">Trade link</a>` : " · sin trade link"}</div>` : ""}
                 <div class="ord-cust-steam">📱 ${c.phone ? (isWaUser(c.phone) ? `<b>${escapeHtml(c.phone)}</b>` : `<a href="${waSendLink(c.phone)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(c.phone))}</a>`) : "sin WhatsApp"}</div>
                 <div class="cust-stats">
                     <div><b>${c.orders}</b><span>${c.orders === 1 ? "Pedido" : "Pedidos"}</span></div>
@@ -6096,4 +6158,5 @@ document.addEventListener("click", function (e) {
     if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 </script>
+<script src="cuenta.js?v=1" defer></script>
 </body></html>
