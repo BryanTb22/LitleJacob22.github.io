@@ -2,7 +2,7 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="lj-build" content="2026-10-27-reserva">
+    <meta name="lj-build" content="2026-10-27-stock-neg">
     <title>LitleJacob Store · Sets Míticos de Dota 2 | Precios en soles</title>
     <meta name="description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y pide por WhatsApp. Pagas con Yape, Plin, PayPal o Binance.">
     <meta name="theme-color" content="#0b0505">
@@ -2633,7 +2633,7 @@ html.ljc-lock { overflow: hidden; }
             <div class="lj-field">
                 <label class="lj-label" for="setStockInput">Stock (unidades)</label>
                 <div class="styles-head">
-                    <input id="setStockInput" class="lj-input" type="number" min="0" step="1" placeholder="—">
+                    <input id="setStockInput" class="lj-input" type="number" step="1" placeholder="—">
                     <span>Cuántos tienes de este set (solo lo ves tú). Déjalo vacío si no llevas control. Con 0 se marca como AGOTADO.</span>
                 </div>
             </div>
@@ -2794,7 +2794,7 @@ html.ljc-lock { overflow: hidden; }
             <div id="stockList" class="stock-list"></div>
             </div>
             <div class="lj-footer">
-                <span style="font-size:12px;color:#a8a29e;">Se guarda y se publica solo. Con 0 unidades el set aparece como AGOTADO.</span>
+                <span style="font-size:12px;color:#a8a29e;">Se guarda y se publica solo. Con 0 o menos unidades el set aparece como AGOTADO (puedes poner números negativos: son sets que ya vendiste y aún debes sacar).</span>
                 <div class="lj-footer-right">
                     <button type="button" class="lj-btn lj-btn-gold" data-close="stockModal">Listo</button>
                 </div>
@@ -3854,7 +3854,7 @@ html.ljc-lock { overflow: hidden; }
             }
             if (isAdmin) {
                 overlay += `<div class="admin-card-tools">
-                        <span class="admin-stock ${s.stock === 0 ? "zero" : ""}" title="Stock">📦 ${s.stock == null ? "—" : s.stock}</span>
+                        <span class="admin-stock ${s.stock <= 0 ? "zero" : ""}" title="Stock">📦 ${s.stock == null ? "—" : s.stock}</span>
                         <button type="button" class="admin-tool" data-action="move-prev" title="Mover antes">◀</button>
                         <button type="button" class="admin-tool" data-action="move-next" title="Mover después">▶</button>
                         <button type="button" class="admin-tool edit" data-action="edit-set" title="Editar">✏️ Editar</button>
@@ -4125,6 +4125,7 @@ html.ljc-lock { overflow: hidden; }
         let stockDirty = false;
         function stockStatus(s) {
             if (s.stock == null) return { cls: "st-none", txt: "Sin registrar", key: "none" };
+            if (s.stock < 0) return { cls: "st-zero", txt: "Debes " + Math.abs(s.stock), key: "zero" };
             if (s.stock === 0) return { cls: "st-zero", txt: "Agotado", key: "zero" };
             if (s.stock <= 2) return { cls: "st-low", txt: "Pocas", key: "low" };
             return { cls: "st-ok", txt: "En stock", key: "ok" };
@@ -4133,7 +4134,7 @@ html.ljc-lock { overflow: hidden; }
             const reg = DATA.sets.filter(s => s.stock != null);
             const units = reg.reduce((n, s) => n + s.stock, 0);
             const value = reg.reduce((t, s) => t + (s.price != null ? Number(s.price) * s.stock : 0), 0);
-            const zero = reg.filter(s => s.stock === 0).length;
+            const zero = reg.filter(s => s.stock <= 0).length;
             const low = reg.filter(s => s.stock > 0 && s.stock <= 2).length;
             document.getElementById("stockStats").innerHTML = `
                 <div class="stock-stat"><b>${reg.length}/${DATA.sets.length}</b><span>Sets registrados</span></div>
@@ -4152,7 +4153,7 @@ html.ljc-lock { overflow: hidden; }
                     <div class="stock-meta">${escapeHtml(s.rarity)}${cofre ? " • " + escapeHtml(cofre.name) : ""} • ${s.price != null ? money(s.price) : "sin precio"}</div>
                 </div>
                 <span class="stock-status ${st.cls}">${st.txt}</span>
-                <div class="qty stock-qty"><button type="button" data-stock="dec" aria-label="Menos">−</button><input type="number" min="0" step="1" value="${s.stock == null ? "" : s.stock}" placeholder="—" aria-label="Stock de ${escapeHtml(s.name)}"><button type="button" data-stock="inc" aria-label="Más">+</button></div>
+                <div class="qty stock-qty"><button type="button" data-stock="dec" aria-label="Menos">−</button><input type="number" step="1" value="${s.stock == null ? "" : s.stock}" placeholder="—" aria-label="Stock de ${escapeHtml(s.name)}"><button type="button" data-stock="inc" aria-label="Más">+</button></div>
             </div>`;
         }
         function renderStockList() {
@@ -4170,8 +4171,8 @@ html.ljc-lock { overflow: hidden; }
         function setStock(s, val) {
             const prev = s.stock;
             s.stock = val;
-            if (val === 0) s.soldOut = true;
-            else if (val > 0 && (prev === 0 || prev == null) && s.soldOut && s.price != null && prev === 0) s.soldOut = false;
+            if (val !== null && val <= 0) s.soldOut = true;
+            else if (val > 0 && prev !== null && prev !== undefined && prev <= 0 && s.soldOut && s.price != null) s.soldOut = false;
             stockDirty = true;
             scheduleSave();
             const row = document.querySelector(`.stock-row[data-id="${s.id}"]`);
@@ -4270,14 +4271,14 @@ html.ljc-lock { overflow: hidden; }
                 if (!btn) return;
                 const s = getSet(parseInt(btn.closest(".stock-row").dataset.id, 10));
                 const cur = s.stock == null ? 0 : s.stock;
-                setStock(s, btn.dataset.stock === "inc" ? cur + 1 : Math.max(0, cur - 1));
+                setStock(s, btn.dataset.stock === "inc" ? cur + 1 : cur - 1);
             });
             list.addEventListener("input", (e) => {
                 if (e.target.tagName !== "INPUT") return;
                 const s = getSet(parseInt(e.target.closest(".stock-row").dataset.id, 10));
                 const v = e.target.value.trim();
                 const n = parseInt(v, 10);
-                setStock(s, v === "" || isNaN(n) ? null : Math.max(0, n));
+                setStock(s, v === "" || isNaN(n) ? null : n);
             });
         }
 
@@ -4465,11 +4466,11 @@ html.ljc-lock { overflow: hidden; }
                     styles: Math.min(10, Math.max(1, parseInt(document.getElementById("setStylesInput").value, 10) || 1)),
                     tier: document.getElementById("setTierSelect").value,
                     price: price !== null && !isNaN(price) ? price : null,
-                    stock: (() => { const v = document.getElementById("setStockInput").value.trim(); const n = parseInt(v, 10); return v === "" || isNaN(n) ? null : Math.max(0, n); })(),
+                    stock: (() => { const v = document.getElementById("setStockInput").value.trim(); const n = parseInt(v, 10); return v === "" || isNaN(n) ? null : n; })(),
                     soldOut,
                 };
                 const cofreId = document.getElementById("setCofreSelect").value;
-                if (fields.stock === 0) fields.soldOut = true;
+                if (fields.stock !== null && fields.stock <= 0) fields.soldOut = true;
                 fields.styleImgs = Array.from({ length: fields.styles - 1 }, (_, k) => pendingStyleImgs[k] || "");
 
                 if (editingSetId == null) {
@@ -5765,7 +5766,7 @@ service cloud.firestore {
             if (isSale({ status })) {
                 const tracked = lines.filter(it => { const st = findSet(it.id); return st && st.stock != null; });
                 if (tracked.length && await confirmDialog(`¿Descontar del stock los sets de esta compra (${tracked.map(it => it.name).join(", ")})?`, "Descontar", "No descontar")) {
-                    tracked.forEach(it => { const st = findSet(it.id); st.stock = Math.max(0, st.stock - it.qty); if (st.stock === 0) st.soldOut = true; });
+                    tracked.forEach(it => { const st = findSet(it.id); st.stock = st.stock - it.qty; if (st.stock <= 0) st.soldOut = true; });
                     order.stockApplied = true;
                     commit();
                 }
@@ -5989,8 +5990,8 @@ service cloud.firestore {
             if (!(await confirmDialog(`¿Confirmar la reserva del pedido ${order.code || order._id} y descontar del stock? ${lines}`, "✅ Confirmar y descontar"))) return;
             tracked.forEach(it => {
                 const s = findSet(it.id);
-                s.stock = Math.max(0, s.stock - (it.qty || 1));
-                if (s.stock === 0) s.soldOut = true;
+                s.stock = s.stock - (it.qty || 1);
+                if (s.stock <= 0) s.soldOut = true;
             });
             const fields = { stockApplied: true, updatedAt: new Date() };
             if (btn) btn.disabled = true;
@@ -6016,8 +6017,8 @@ service cloud.firestore {
                 if (tracked.length && await confirmDialog(`¿Descontar del stock los sets de este pedido (${tracked.map(it => it.name).join(", ")})?`, "Descontar")) {
                     tracked.forEach(it => {
                         const s = findSet(it.id);
-                        s.stock = Math.max(0, s.stock - (it.qty || 1));
-                        if (s.stock === 0) s.soldOut = true;
+                        s.stock = s.stock - (it.qty || 1);
+                        if (s.stock <= 0) s.soldOut = true;
                     });
                     fields.stockApplied = true; keys.push("stockApplied");
                     stockChanged = true;
