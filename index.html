@@ -2,6 +2,7 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="lj-build" content="2026-10-27-admin">
     <title>LitleJacob Store · Sets Míticos de Dota 2 | Precios en soles</title>
     <meta name="description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y pide por WhatsApp. Pagas con Yape, Plin, PayPal o Binance.">
     <meta name="theme-color" content="#0b0505">
@@ -1607,7 +1608,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
 .nav-link.active { color: #fff !important; box-shadow: inset 0 -2px 0 var(--blood-hi, #e0202a) !important; background: none !important; }
 @media (max-width: 720px) { .nav-brand { font-size: 19px !important; } .nav-brand img { width: 36px; height: 36px; } .nav-links { margin-left: 0; width: 100%; justify-content: space-between; } .nav-link { flex: 1; padding: 8px 6px !important; font-size: 12px !important; } }
 </style>
-<style id="ljSetsModern">
+<style id="ljSetsModern" data-keep>
 /* =====================================================================
    SETS CACHÉ — diseño moderno (mismo lenguaje que la página de Rifas)
    Solo afecta a #view-sets. Se carga al final y manda sobre lo anterior.
@@ -1769,6 +1770,58 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
 @media (max-width: 640px) { #view-sets .m-btn { padding: 13px 18px; font-size: 12px; } }
 
 </style>
+<style id="ljAdminModern" data-keep>
+/* =====================================================================
+   PANEL ADMIN — barra inferior moderna (mismo estilo que el panel de Rifas)
+   ===================================================================== */
+body.is-admin { padding-bottom: 96px; }
+#adminBar { position: fixed !important; left: 0; right: 0; bottom: 0; top: auto !important; z-index: 60; margin: 0 !important; padding: 0 !important;
+  border: 0 !important; border-top: 1px solid #3d3f45 !important; border-radius: 0 !important;
+  background: linear-gradient(180deg, rgba(27,27,31,.97), rgba(13,13,16,.98)) !important; box-shadow: 0 -14px 40px rgba(0,0,0,.6) !important;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+#adminBar::before, #adminBar::after { display: none !important; }
+#adminBar .adm-wrap { max-width: 1240px; margin: 0 auto; padding: 12px max(16px, env(safe-area-inset-left, 0px)) calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; justify-content: space-between; gap: 10px 18px; flex-wrap: wrap; }
+#adminBar .adm-left { min-width: 0; }
+#adminBar .adm-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-family: var(--font-head, "Oswald", sans-serif); font-weight: 700;
+  font-size: 18px; letter-spacing: .04em; text-transform: uppercase; color: #fff; }
+#adminBar .adm-title::before { content: ""; width: 4px; height: 20px; background: linear-gradient(180deg, #e0343d, #8e0f16); }
+#adminBar .admin-hint { margin-top: 3px; font-size: 12px; color: #8b9097 !important; max-width: 60ch; }
+#adminBar .draft-pill { margin: 0 !important; border-radius: 999px !important; font-family: Inter, system-ui, sans-serif; font-size: 11px !important; font-weight: 700;
+  letter-spacing: .02em; text-transform: none; padding: 4px 10px !important; }
+#adminBar .draft-pill.clean { background: rgba(16,185,129,.12) !important; border: 1px solid rgba(16,185,129,.45) !important; color: #6ee7b7 !important; }
+#adminBar .draft-pill.ready { background: rgba(196,200,206,.1) !important; border: 1px solid rgba(196,200,206,.4) !important; color: #e6e8eb !important; }
+#adminBar .draft-pill.dirty { background: rgba(200,22,31,.14) !important; border: 1px solid rgba(224,52,61,.55) !important; color: #ffb4b8 !important; }
+#adminBar .adm-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+#adminBar .adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; cursor: pointer; white-space: nowrap;
+  font-family: Inter, system-ui, sans-serif; font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; padding: 11px 18px;
+  color: #eef0f3; background: #1b1b1f; box-shadow: inset 0 0 0 1px #3d3f45;
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 9px 100%, 0 50%); transition: filter .15s, transform .15s; }
+#adminBar .adm-btn:hover { filter: brightness(1.18); transform: translateY(-1px); }
+#adminBar .adm-silver { background: linear-gradient(180deg, #eef0f3, #c4c8ce 55%, #8b9097); color: #0b0b0d; box-shadow: none; }
+#adminBar .adm-red { background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16); color: #fff; box-shadow: none; }
+#adminBar .adm-more { position: relative; }
+#adminBar .adm-menu { position: absolute; right: 0; bottom: calc(100% + 10px); min-width: 250px; padding: 6px; display: grid; gap: 2px;
+  background: #131316; border: 1px solid #3d3f45; box-shadow: 0 18px 44px rgba(0,0,0,.7); }
+#adminBar .adm-menu[hidden] { display: none; }
+#adminBar .adm-menu button { text-align: left; padding: 11px 12px; border: 0; background: transparent; color: #e6e8eb; font: 600 14px Inter, system-ui, sans-serif; cursor: pointer; }
+#adminBar .adm-menu button:hover, #adminBar .adm-menu button:focus-visible { background: #1f1f24; color: #fff; outline: none; }
+#adminBar .adm-menu button.danger { color: #ff8a90; }
+#adminBar .adm-menu button:disabled { opacity: .4; cursor: not-allowed; background: transparent; }
+body.is-admin #cartBar { display: none !important; }
+body.is-admin #toastNotification { bottom: 110px !important; }
+@media (max-width: 760px) {
+  body.is-admin { padding-bottom: 150px; }
+  #adminBar .admin-hint { display: none; }
+  #adminBar .adm-title { font-size: 16px; }
+  #adminBar .adm-actions { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #adminBar .adm-btn { padding: 10px 8px; font-size: 11px; letter-spacing: .06em; width: 100%; }
+  #adminBar .adm-more { grid-column: span 2; }
+  #adminBar .adm-menu { right: 0; left: auto; min-width: min(280px, calc(100vw - 32px)); }
+  body.is-admin #toastNotification { bottom: 160px !important; }
+}
+
+</style>
 </head>
 <body class="relative selection:bg-amber-500 selection:text-black">
 
@@ -1795,22 +1848,30 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
 
         <!-- BARRA DEL ADMINISTRADOR (solo visible tras iniciar sesión) -->
         <div id="adminBar">
-            <div class="admin-bar-row">
-                <div>
-                    <div class="admin-title">👑 Modo Administrador <span id="draftStatus" class="draft-pill clean">✓ Sin cambios</span><span id="dbPill" class="draft-pill dirty">🗄️ BD sin configurar</span></div>
+            <div class="adm-wrap">
+                <div class="adm-left">
+                    <div class="adm-title">Panel admin
+                        <span id="draftStatus" class="draft-pill clean">✓ Todo publicado</span>
+                        <span id="dbPill" class="draft-pill dirty">🗄️ BD sin configurar</span>
+                    </div>
                     <div id="adminHint" class="admin-hint">Toca cualquier set para cambiar su foto, nombre, precio o cofre.</div>
                 </div>
-                <div class="admin-bar-actions">
-                    <button id="adminNewSetBtn" type="button" class="lj-btn lj-btn-sm">➕ Nuevo set</button>
-                    <button id="adminOrdersBtn" type="button" class="lj-btn lj-btn-sm lj-btn-green">📋 Pedidos</button>
-                    <button id="adminStockBtn" type="button" class="lj-btn lj-btn-sm">📦 Stock</button>
-                    <button id="adminCofresBtn" type="button" class="lj-btn lj-btn-sm">🗃️ Gestionar cofres</button>
-                    <button id="adminPublishBtn" type="button" class="lj-btn lj-btn-sm lj-btn-gold">🚀 Publicar en la web</button>
-                    <button id="adminGhCfgBtn" type="button" class="lj-btn lj-btn-sm" title="Configurar conexión con GitHub">⚙️ GitHub</button>
-                    <button id="adminDbBtn" type="button" class="lj-btn lj-btn-sm" title="Configurar la base de datos">🗄️ Base de datos</button>
-                    <button id="adminExportBtn" type="button" class="lj-btn lj-btn-sm lj-btn-green">💾 Descargar index.html</button>
-                    <button id="adminDiscardBtn" type="button" class="lj-btn lj-btn-sm lj-btn-danger">↺ Descartar cambios</button>
-                    <button id="adminLogoutBtn" type="button" class="lj-btn lj-btn-sm">Salir</button>
+                <div class="adm-actions">
+                    <button id="adminNewSetBtn" type="button" class="adm-btn adm-silver">＋ Nuevo set</button>
+                    <button id="adminOrdersBtn" type="button" class="adm-btn adm-red">Pedidos</button>
+                    <button id="adminStockBtn" type="button" class="adm-btn">Stock</button>
+                    <button id="adminCofresBtn" type="button" class="adm-btn">Cofres</button>
+                    <div class="adm-more">
+                        <button id="adminMoreBtn" type="button" class="adm-btn" aria-expanded="false" aria-controls="adminMoreMenu">Más opciones ▾</button>
+                        <div id="adminMoreMenu" class="adm-menu" hidden>
+                            <button id="adminPublishBtn" type="button">🚀 Publicar ahora</button>
+                            <button id="adminGhCfgBtn" type="button">⚙️ Conexión con GitHub</button>
+                            <button id="adminDbBtn" type="button">🗄️ Base de datos</button>
+                            <button id="adminExportBtn" type="button">💾 Descargar index.html</button>
+                            <button id="adminDiscardBtn" type="button" class="danger">↺ Descartar cambios</button>
+                            <button id="adminLogoutBtn" type="button">Salir</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2808,6 +2869,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
         function scheduleSave() {
             if (typeof ljLiveQueue === "function") ljLiveQueue();
             draftInfo.savedAt = Date.now();
+            if (typeof autoPublishQueue === "function") autoPublishQueue();
             updateDraftStatus();
             clearTimeout(saveTimer);
             saveTimer = setTimeout(async () => {
@@ -2841,12 +2903,21 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
         function updateDraftStatus() {
             const pill = document.getElementById("draftStatus");
             if (!pill) return;
+            const ap = typeof apState === "undefined" ? "" : apState;
             if (!hasDraftChanges()) {
-                pill.className = "draft-pill clean"; pill.textContent = "✓ Sin cambios";
+                pill.className = "draft-pill clean"; pill.textContent = "✓ Todo publicado";
             } else if (draftInfo.exportedAt >= draftInfo.savedAt) {
-                pill.className = "draft-pill ready"; pill.textContent = "⬆ Publicado o descargado";
+                pill.className = "draft-pill ready"; pill.textContent = "✓ Publicado · se ve en 1–2 min";
+            } else if (ap === "busy") {
+                pill.className = "draft-pill ready"; pill.textContent = "⏳ Publicando…";
+            } else if (ap === "nogh") {
+                pill.className = "draft-pill dirty"; pill.textContent = "● Conecta GitHub para publicar solo";
+            } else if (ap === "stale") {
+                pill.className = "draft-pill dirty"; pill.textContent = "⚠ Recarga la página (Ctrl+F5)";
+            } else if (ap === "err") {
+                pill.className = "draft-pill dirty"; pill.textContent = "⚠ No se pudo publicar · reintentando";
             } else {
-                pill.className = "draft-pill dirty"; pill.textContent = "● Cambios sin publicar";
+                pill.className = "draft-pill ready"; pill.textContent = "● Guardado · se publica solo";
             }
             document.getElementById("adminDiscardBtn").disabled = !hasDraftChanges();
         }
@@ -4321,7 +4392,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
 
             const doc = PRISTINE_DOC.cloneNode(true);
             // Quita estilos que el navegador inyecta solo (se regeneran al abrir la página)
-            doc.querySelectorAll("style:not(#appStyles):not(#twSnapshot):not(#ljTheme)").forEach(el => el.remove());
+            doc.querySelectorAll("style:not(#appStyles):not(#twSnapshot):not(#ljTheme):not([data-keep])").forEach(el => el.remove());
             doc.querySelector("#catalogData").textContent = JSON.stringify(out).replace(/</g, "\\u003c");
             return { html: "<!DOCTYPE html>\n" + doc.outerHTML, version };
         }
@@ -4441,6 +4512,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                 if (fbSession) livePush();
                 showToast(`¡Publicado! ${r.photos ? `Se subieron ${r.photos} ${r.photos === 1 ? "foto" : "fotos"} a img/. ` : ""}En 1 o 2 minutos tus clientes verán los cambios (si no, recarga con Ctrl + F5).`, "Listo");
             } catch (e) {
+                if (e && e.stale) { apState = "stale"; updateDraftStatus(); showToast("Hay una versión más nueva de la página. Recarga con Ctrl+F5; tus cambios se guardan y se publican solos.", "Recarga"); return; }
                 const msg = e && e.status ? ghErrorText(e.status, e.data) : "No se pudo conectar con GitHub. Revisa tu internet e inténtalo otra vez.";
                 if (e && (e.status === 401 || e.status === 403 || e.status === 404)) openGhModal(msg);
                 else showToast(msg, "Error");
@@ -4449,7 +4521,56 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
                 btn.textContent = label; btn.classList.remove("is-loading");
             }
         }
+        // ---- Publicación automática: cada cambio se publica solo unos segundos después ----
+        var LJ_BUILD = (document.querySelector('meta[name="lj-build"]') || {}).content || "";
+        var apState = "", apTimer = null;
+        function apPending() { return hasDraftChanges() && draftInfo.exportedAt < draftInfo.savedAt; }
+        function autoPublishQueue(delay) {
+            if (!isAdmin || apState === "stale") return;
+            if (!ghReady(ghConfig())) { apState = "nogh"; return; }
+            if (apState !== "busy") apState = "wait";
+            clearTimeout(apTimer);
+            apTimer = setTimeout(autoPublish, delay || 5000);
+        }
+        async function autoPublish() {
+            if (!isAdmin || apState === "stale" || !apPending()) { if (apState !== "stale") apState = ""; updateDraftStatus(); return; }
+            const c = ghConfig();
+            if (!ghReady(c)) { apState = "nogh"; updateDraftStatus(); return; }
+            if (ghBusy) { apTimer = setTimeout(autoPublish, 3000); return; }
+            ghBusy = true; apState = "busy"; updateDraftStatus();
+            const started = draftInfo.savedAt;
+            try {
+                const r = await ghPublishCommit(c);
+                if (draftInfo.savedAt === started) markExported(r.version);
+                else { draftInfo.exportedAt = Math.max(draftInfo.exportedAt, r.version); }
+                if (fbSession) livePush();
+                apState = "";
+            } catch (e) {
+                console.warn("Publicación automática:", e);
+                if (e && e.stale) apState = "stale";
+                else if (e && (e.status === 401 || e.status === 403 || e.status === 404)) { apState = "nogh"; showToast(ghErrorText(e.status, e.data), "GitHub"); }
+                else apState = "err";
+            } finally {
+                ghBusy = false;
+                updateDraftStatus();
+                if (apState === "" && apPending()) autoPublishQueue(2000);
+            }
+        }
+        setInterval(() => { if (isAdmin && apPending() && (apState === "" || apState === "err")) autoPublishQueue(1000); }, 30000);
+
+        function initAdminMenu() {
+            const btn = document.getElementById("adminMoreBtn"), menu = document.getElementById("adminMoreMenu");
+            if (!btn || !menu) return;
+            const set = (open) => { menu.hidden = !open; btn.setAttribute("aria-expanded", String(open)); };
+            btn.addEventListener("click", (e) => { e.stopPropagation(); set(menu.hidden); });
+            menu.addEventListener("click", () => set(false));
+            document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target)) set(false); });
+            document.addEventListener("keydown", (e) => { if (e.key === "Escape") set(false); });
+        }
+
         function initGithubPublish() {
+            initAdminMenu();
+            setTimeout(() => { if (isAdmin && apPending()) autoPublishQueue(1500); }, 2500);
             document.getElementById("adminPublishBtn").addEventListener("click", publishToGithub);
             document.getElementById("adminGhCfgBtn").addEventListener("click", () => openGhModal());
             document.getElementById("ghTestBtn").addEventListener("click", ghTest);
@@ -4531,6 +4652,13 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events
             const parent = await ghApi(c, `/git/commits/${parentSha}`);
             const baseTree = await ghApi(c, `/git/trees/${parent.tree.sha}?recursive=1`);
             const existing = new Set((baseTree.tree || []).map(t => t.path));
+            const remoteHtml = (baseTree.tree || []).find(t => t.path === c.path);
+            if (remoteHtml) {
+                const rb = await ghApi(c, `/git/blobs/${remoteHtml.sha}`);
+                const head = atob(String(rb.content || "").replace(/\s+/g, "")).slice(0, 4000);
+                const m = /<meta name="lj-build" content="([^"]*)"/.exec(head);
+                if ((m ? m[1] : "") !== LJ_BUILD) throw { stale: true };
+            }
 
             const entries = [];
             for (const [path, b64] of images) {
