@@ -41,6 +41,10 @@
     var p = perfil() || {}, s = m.sel;
     var t = "¡Hola! 👋 Soy *" + (p.nombre || "cliente") + "* (📧 " + (p.email || "") + ").\n\n💎 Quiero recargar créditos en *LitleJacob Store*" +
       (s ? ": *S/ " + s + "* (" + creditosPara(s) + " créditos)." : ".") + "\n\n¿Me ayudas con mi recarga? 🙏";
+    // La app de WhatsApp para Windows daña los emojis del enlace: en PC se envía sin emojis.
+    if (!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+      t = t.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "").replace(/\( +/g, "(").replace(/[ \t]+/g, " ").replace(/^ +| +$/gm, "").replace(/\n{3,}/g, "\n\n").trim();
+    }
     return "https://wa.me/" + PAGOS.wa + "?text=" + encodeURIComponent(t);
   }
 

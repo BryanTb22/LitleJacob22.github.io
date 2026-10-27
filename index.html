@@ -2826,7 +2826,7 @@ html.ljc-lock { overflow: hidden; }
     });
     </script>
     <script src="cuenta.js?v=4" defer></script>
-    <script src="recarga.js?v=2" defer></script>
+    <script src="recarga.js?v=3" defer></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
     <script>
@@ -3175,7 +3175,13 @@ html.ljc-lock { overflow: hidden; }
             const cofreTxt = cofre ? ` del cofre ${cofre.name}` : "";
             return `Hola LitleJacob, vi tu catálogo y quiero comprar el set ${s.name} (${categoryLabel(s)})${cofreTxt} de ${formatPrice(s)}. ¿Está disponible?`;
         }
-        function waLink(msg) { return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`; }
+        function waLink(msg) {
+            // La app de WhatsApp para Windows daña los emojis del enlace: en PC se envía sin emojis.
+            if (!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+                msg = String(msg).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "").replace(/\( +/g, "(").replace(/[ \t]+/g, " ").replace(/^ +| +$/gm, "").replace(/\n{3,}/g, "\n\n").trim();
+            }
+            return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+        }
         function fileSlug(str) { return normalizeText(str).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "set"; }
 
         // WhatsApp no permite adjuntar fotos desde un enlace. Por eso se prepara la foto del set
