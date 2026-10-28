@@ -573,7 +573,7 @@
       '<div class="stk-qty"><button type="button" data-itx="stkMenos" aria-label="Menos">−</button><input type="number" min="0" step="1" value="' + it.stock + '" id="stk-in-' + esc(it.id) + '" data-stk-in="' + esc(it.id) + '" aria-label="Stock de ' + esc(it.nombre) + '"><button type="button" data-itx="stkMas" aria-label="Más">+</button></div></div>' + (stk.ed && stk.ed.id === it.id ? stkEdHtml() : "");
   }
   function stkEdHtml() {
-    const F = stk.ed.F, nEst = Number(F.estilos) || 0, f = (id, lab, inner) => '<div class="field"><label for="sk-' + id + '">' + lab + "</label>" + inner + "</div>";
+    const F = stk.ed.F, G = stk.ed.G || (stk.ed.G = gemasDe(F)), nEst = Number(F.estilos) || 0, f = (id, lab, inner) => '<div class="field"><label for="sk-' + id + '">' + lab + "</label>" + inner + "</div>";
     return '<div class="stk-ed" data-ed="' + esc(stk.ed.id) + '">' +
       '<div class="stk-ed-foto">' + (F.img ? '<div class="itx-fotoprev">' + imgTag(F.img, "", ' width="140"') + "</div>" : "") +
       '<label class="itx-btn ghost sm" for="sk-file">' + (stk.ed.subiendo ? "Subiendo…" : (F.img ? "Cambiar foto" : "Subir foto")) + '</label><input id="sk-file" type="file" accept="image/*" hidden>' +
@@ -590,7 +590,10 @@
       f("estilos", "Estilos", '<select id="sk-estilos">' + ["0", "2", "3", "4", "5", "6"].map((v) => '<option value="' + v + '"' + (String(F.estilos || 0) === v ? " selected" : "") + ">" + (v === "0" ? "Sin estilos" : v + " estilos") + "</option>").join("") + "</select>") +
       "</div>" +
       (nEst > 0 ? '<div class="field"><label>Estilos que SÍ tiene</label><div class="itx-estchk">' + (() => { let o = ""; const ok = estilosOkLista(F); for (let k = 1; k <= nEst; k++) o += '<label class="itx-chk"><input type="checkbox" id="sk-est-' + k + '"' + (ok.indexOf(k) >= 0 ? " checked" : "") + "> " + k + "</label>"; return o; })() + "</div></div>" : "") +
-      f("desc", "Gemas / descripción (una por línea)", '<textarea id="sk-desc" rows="3" maxlength="600">' + esc(F.descripcion || "") + "</textarea>") +
+      '<div class="field gform"><label>💎 Gemas (cada versión con distinta gema lleva su propio precio)</label><datalist id="itx-dl-gtipo2">' + GEMA_TIPOS.map((t) => '<option value="' + esc(t) + '">').join("") + "</datalist>" +
+      (G.length ? G.map((g, i) => '<div class="grow-f"><input id="sk-gt-' + i + '" list="itx-dl-gtipo2" maxlength="30" placeholder="Tipo (Unusual Effect Gem)" value="' + esc(g.t) + '"><input id="sk-gv-' + i + '" maxlength="60" placeholder="Nombre (Candy Caster)" value="' + esc(g.v) + '">' +
+        '<button type="button" class="itx-btn ghost sm" data-itx="stkGemaDel" data-i="' + i + '" aria-label="Quitar gema">✕</button></div>').join("") : '<p class="itx-hint">Sin gemas.</p>') +
+      '<div class="cav"><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="Unusual Effect Gem">+ Efecto Unusual</button><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="Prismatic Gem">+ Prismatic</button><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="Ethereal Gem">+ Etérea</button><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="Kinetic Gem">+ Cinética</button><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="">+ Otra gema</button></div></div>' +
       '<label class="itx-chk"><input type="checkbox" id="sk-activo"' + (F.activo ? " checked" : "") + "> Visible para los clientes</label>" +
       (stk.ed.msg ? '<p class="itx-hint" style="color:#ff6b6b">' + esc(stk.ed.msg) + "</p>" : "") +
       '<div class="cav"><button type="button" class="itx-btn gold sm" data-itx="stkEdGuardar">' + (stk.ed.guardando ? "Guardando…" : "💾 Guardar cambios") + '</button><button type="button" class="itx-btn ghost sm" data-itx="stkEdCerrar">Cancelar</button></div></div>';
@@ -598,7 +601,7 @@
   function stkEdAbrir(id) {
     if (stk.ed && stk.ed.id === id) { stk.ed = null; pintarStock(); return; }
     const it = itemPorId(id); if (!it) return;
-    stk.ed = { id, F: Object.assign({}, it, { precio: String(it.precio || ""), stock: String(it.stock), estilos: String(it.estilos || 0) }), msg: "", guardando: false, subiendo: false };
+    stk.ed = { id, F: Object.assign({}, it, { precio: String(it.precio || ""), stock: String(it.stock), estilos: String(it.estilos || 0) }), G: gemasDe(it), msg: "", guardando: false, subiendo: false };
     pintarStock();
     const e = document.querySelector(".stk-ed"); if (e && e.scrollIntoView) e.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
@@ -613,6 +616,8 @@
   function stkEdCampo(el) {
     const ed = stk.ed, F = ed.F, m = { "sk-nombre": "nombre", "sk-precio": "precio", "sk-stock": "stock", "sk-tipo": "tipo", "sk-heroe": "heroe", "sk-ranura": "ranura", "sk-rareza": "rareza", "sk-calidad": "calidad", "sk-desc": "descripcion" };
     if (el.id === "sk-activo") { F.activo = el.checked; return; }
+    const mg = /^sk-g([tv])-(\d+)$/.exec(el.id);
+    if (mg) { const gi = parseInt(mg[2], 10); if (ed.G && ed.G[gi]) ed.G[gi][mg[1]] = el.value; return; }
     if (el.id === "sk-estilos") {
       F.estilos = el.value; const nn = Number(el.value) || 0; let oks = estilosOkLista(F).filter((x) => x <= nn);
       if (nn > 0 && !oks.length) oks = [1]; F.estOk = oks.join(","); pintarStock(); return;
@@ -632,7 +637,7 @@
     if (!isFinite(precio) || precio <= 0) return fallo("Pon un precio mayor a 0.");
     if (!isFinite(stock) || stock < 0) stock = 0;
     const it = Object.assign({}, F, { id: ed.id, nombre: String(F.nombre).trim(), precio: Math.round(precio * 100) / 100, stock, heroe: String(F.heroe || "").trim(), ranura: String(F.ranura || "").trim(), calidad: String(F.calidad || "").trim(),
-      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: String(F.descripcion || "").trim().slice(0, 600), activo: F.activo !== false });
+      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: gemasAString((ed.G || gemasDe(F)).filter((g) => String(g.v || "").trim())).slice(0, 600), activo: F.activo !== false });
     ed.guardando = true; ed.msg = ""; pintarStock();
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Vuelve a entrar." : "No se pudo guardar (" + r.status + ").");
@@ -1272,6 +1277,8 @@
       case "impTraer": impTraer(); break;
       case "impTodos": case "impNinguno": { const onT = a === "impTodos"; imp.sel = {}; imp.selR = {}; (imp.lista || []).forEach((g, k) => { imp.sel[k] = onT; }); (imp.repo || []).forEach((r, k) => { imp.selR[k] = onT; }); renderTodo(); break; }
       case "impSubir": impSubir(); break;
+      case "stkGemaMas": if (stk.ed) { (stk.ed.G || (stk.ed.G = gemasDe(stk.ed.F))).push({ t: t.getAttribute("data-t") || "", v: "" }); pintarStock(); } break;
+      case "stkGemaDel": if (stk.ed && stk.ed.G) { stk.ed.G.splice(parseInt(t.getAttribute("data-i"), 10), 1); pintarStock(); } break;
       case "stkEd": { const row = t.closest(".stk-row"); if (row) stkEdAbrir(row.getAttribute("data-id")); break; }
       case "stkEdCerrar": stk.ed = null; pintarStock(); break;
       case "stkEdGuardar": stkEdGuardar(); break;
