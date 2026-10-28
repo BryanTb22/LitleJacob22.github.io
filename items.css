@@ -114,3 +114,9 @@
 .itx-pager .itx-btn { min-width: 40px; }
 .itx-dots { color: var(--itx-muted); padding: 0 4px; }
 #itxGrid { scroll-margin-top: 90px; }
+
+/* Gemas y detalles del item */
+.itx-desc { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--itx-line); border-radius: 8px; background: rgba(0,0,0,.35); text-align: left; font-size: 14px; line-height: 1.5; }
+.itx-desc b { display: block; margin-bottom: 4px; }
+.itx-desc .gk { color: var(--itx-gold-l); font-weight: 700; }
+.itx-meta .gem { color: #9ee8ff; }

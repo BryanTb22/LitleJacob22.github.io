@@ -131,14 +131,14 @@
     const nv = (k) => (f[k] ? Number(f[k].doubleValue !== undefined ? f[k].doubleValue : (f[k].integerValue || 0)) : 0);
     return { id: d.name.split("/").pop(), nombre: sv("nombre"), img: sv("img"), precio: nv("precio"), stock: f.stock ? nv("stock") : 1,
       tipo: sv("tipo"), heroe: sv("heroe"), ranura: sv("ranura"), rareza: sv("rareza"), calidad: sv("calidad"),
-      estilos: nv("estilos"), estOk: sv("estOk"),
+      estilos: nv("estilos"), estOk: sv("estOk"), descripcion: sv("descripcion"),
       activo: f.activo ? f.activo.booleanValue !== false : true, creado: (f.creado && f.creado.timestampValue) || "" };
   }
   function itemAFields(it) {
     const s = (v) => ({ stringValue: String(v || "") });
     return { fields: { nombre: s(it.nombre), img: s(it.img), precio: { doubleValue: Number(it.precio) }, stock: { integerValue: String(Math.max(0, Math.floor(Number(it.stock) || 0))) },
       tipo: s(it.tipo), heroe: s(it.heroe), ranura: s(it.ranura), rareza: s(it.rareza), calidad: s(it.calidad),
-      estilos: { integerValue: String(Math.max(0, Math.min(8, Math.floor(Number(it.estilos) || 0)))) }, estOk: s(it.estOk),
+      estilos: { integerValue: String(Math.max(0, Math.min(8, Math.floor(Number(it.estilos) || 0)))) }, estOk: s(it.estOk), descripcion: s(it.descripcion),
       activo: { booleanValue: it.activo !== false }, creado: { timestampValue: it.creado || new Date().toISOString() } } };
   }
   function cargarItems(forzar) {
@@ -204,7 +204,7 @@
       (admin ? '<div class="itx-admb"><button type="button" class="itx-btn ghost sm" data-itx="editar" data-id="' + esc(it.id) + '" aria-label="Editar">✎</button>' +
         (adm.itemDel === it.id ? '<button type="button" class="itx-btn sm del" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar">🗑</button>') + "</div>" : "") +
       '<div class="itx-body"><h4>' + esc(it.nombre) + "</h4>" +
-      '<div class="itx-meta">' + (it.rareza ? '<span style="color:' + col + '">' + esc(it.rareza) + "</span>" : "") + (it.calidad ? "<span>" + esc(it.calidad) + "</span>" : "") + (it.heroe ? "<span>" + esc(it.heroe) + "</span>" : "") + "</div>" +
+      '<div class="itx-meta">' + (it.rareza ? '<span style="color:' + col + '">' + esc(it.rareza) + "</span>" : "") + (it.calidad ? "<span>" + esc(it.calidad) + "</span>" : "") + (it.heroe ? "<span>" + esc(it.heroe) + "</span>" : "") + (it.descripcion ? '<span class="gem">💎 ' + lineasDesc(it).length + "</span>" : "") + "</div>" +
       '<div class="itx-price"><b>' + fmtPrecio(it.precio) + '</b><span class="itx-buy">' + (agot ? "Agotado" : "Comprar") + "</span></div></div></article>";
   }
   function gridHtml() {
@@ -266,7 +266,7 @@
   }
 
   /* ---------- Admin: formulario de item ---------- */
-  const nuevoForm = () => ({ id: "", nombre: "", img: "", precio: "", stock: "1", tipo: "Wearable", heroe: "", ranura: "", rareza: "", calidad: "", estilos: "0", estOk: "1", activo: true, creado: "", link: "" });
+  const nuevoForm = () => ({ id: "", nombre: "", img: "", precio: "", stock: "1", tipo: "Wearable", heroe: "", ranura: "", rareza: "", calidad: "", estilos: "0", estOk: "1", descripcion: "", activo: true, creado: "", link: "" });
   function formHtml() {
     const F = adm.form; if (!F) return "";
     const nEst = Number(F.estilos) || 0;
@@ -285,6 +285,7 @@
       '<div class="field"><label for="itf-ranura">Ranura (Weapon, Head, Back…)</label><input id="itf-ranura" list="itx-dl-ranura" maxlength="40" value="' + esc(F.ranura) + '"><datalist id="itx-dl-ranura">' + distintos("ranura", SLOTS_DOTA).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist></div>" +
       '<div class="field"><label for="itf-rareza">Rareza</label><select id="itf-rareza">' + opciones(LISTA_RAREZAS, F.rareza, "—") + "</select></div>" +
       '<div class="field"><label for="itf-calidad">Calidad</label><input id="itf-calidad" list="itx-dl-calidad" maxlength="30" value="' + esc(F.calidad) + '"><datalist id="itx-dl-calidad">' + distintos("calidad", ITEM_CALIDADES).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist></div>" +
+      '<div class="field"><label for="itf-desc">Gemas / descripción (una por línea)</label><textarea id="itf-desc" rows="3" maxlength="600" placeholder="Prismatic Gem: Champion\'s Green">' + esc(F.descripcion || "") + "</textarea></div>" +
       '<div class="field"><label for="itf-estilos">Estilos (solo si el item los tiene)</label><select id="itf-estilos">' + ["0", "2", "3", "4", "5", "6"].map((v) => '<option value="' + v + '"' + (String(F.estilos || 0) === v ? " selected" : "") + ">" + (v === "0" ? "Sin estilos" : v + " estilos") + "</option>").join("") + "</select></div>" +
       (nEst > 0 ? '<div class="field"><label>Estilos que SÍ tiene (los demás saldrán “Bloqueado”)</label><div class="itx-estchk">' + (() => { let o = ""; const ok = estilosOkLista(F); for (let k = 1; k <= nEst; k++) o += '<label class="itx-chk"><input type="checkbox" id="itf-est-' + k + '"' + (ok.indexOf(k) >= 0 ? " checked" : "") + "> Estilo " + k + "</label>"; return o; })() + "</div></div>" : "") +
       '<label class="itx-chk"><input type="checkbox" id="itf-activo"' + (F.activo ? " checked" : "") + "> Visible para los clientes</label>" +
@@ -293,7 +294,7 @@
   }
   function formEvento(el) {
     const F = adm.form; if (!F || !el.id || el.id.indexOf("itf-") !== 0) return false;
-    const m = { "itf-link": "link", "itf-nombre": "nombre", "itf-precio": "precio", "itf-stock": "stock", "itf-tipo": "tipo", "itf-heroe": "heroe", "itf-ranura": "ranura", "itf-rareza": "rareza", "itf-calidad": "calidad" };
+    const m = { "itf-link": "link", "itf-nombre": "nombre", "itf-precio": "precio", "itf-stock": "stock", "itf-tipo": "tipo", "itf-heroe": "heroe", "itf-ranura": "ranura", "itf-desc": "descripcion", "itf-rareza": "rareza", "itf-calidad": "calidad" };
     if (el.id === "itf-activo") { F.activo = el.checked; return true; }
     if (el.id === "itf-estilos") {
       F.estilos = el.value;
@@ -344,7 +345,7 @@
     if (!isFinite(stock) || stock < 0) stock = 1;
     const it = { id: F.id || ("it-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), nombre: F.nombre.trim(), img: F.img, precio: Math.round(precio * 100) / 100, stock,
       tipo: F.tipo, heroe: F.heroe.trim(), ranura: F.ranura.trim(), rareza: F.rareza, calidad: F.calidad.trim(),
-      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", activo: F.activo, creado: F.creado || new Date().toISOString() };
+      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: String(F.descripcion || "").trim().slice(0, 600), activo: F.activo, creado: F.creado || new Date().toISOString() };
     adm.guardando = true; adm.msg = ""; renderTodo();
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Entra con la cuenta de administrador." : "No se pudo guardar (" + r.status + ").");
@@ -369,6 +370,11 @@
   }
 
   /* ---------- Modal de un item (comprar) ---------- */
+  const lineasDesc = (it) => String(it.descripcion || "").split("\n").map((x) => x.trim()).filter(Boolean);
+  function descripcionHtml(it) {
+    const l = lineasDesc(it); if (!l.length) return "";
+    return '<div class="itx-desc"><b>💎 Gemas y detalles</b>' + l.map((x) => { const k = x.indexOf(": "); return "<div>" + (k > 0 && k < 24 ? '<span class="gk">' + esc(x.slice(0, k)) + "</span> " + esc(x.slice(k + 2)) : esc(x)) + "</div>"; }).join("") + "</div>";
+  }
   function modalHtml() {
     if (!modal) return "";
     let h = "", btns = "";
@@ -380,7 +386,7 @@
         const cred = Math.ceil(it.precio - 1e-9), agot = it.stock <= 0, p = perfil();
         h = "<h3>" + esc(it.nombre) + "</h3>" +
           '<div class="itx-thumb big" style="--rar:' + colorRareza(it.rareza) + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') + "</div>" +
-          '<p class="itx-hint">' + [it.rareza, it.calidad, it.tipo, it.heroe, it.ranura].filter(Boolean).map(esc).join(" · ") + "</p>" + estilosHtml(it) +
+          '<p class="itx-hint">' + [it.rareza, it.calidad, it.tipo, it.heroe, it.ranura].filter(Boolean).map(esc).join(" · ") + "</p>" + estilosHtml(it) + descripcionHtml(it) +
           '<p class="itx-resumen">Precio: <b>' + fmtPrecio(it.precio) + "</b> · o <b>" + cred + " créditos</b></p>" +
           (agot ? '<p class="itx-hint" style="color:#ff6b6b">Este item está agotado.</p>' : (p ? '<p class="itx-hint">Tienes <b>' + p.creditos + "</b> créditos.</p>" : '<p class="itx-hint">Para pagar con créditos entra a tu cuenta.</p>'));
         btns = (agot ? "" : '<button class="itx-btn fucsia" type="button" data-itx="cred" data-id="' + esc(it.id) + '">💎 Pagar con ' + cred + " créditos</button>" +
