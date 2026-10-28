@@ -104,3 +104,7 @@
   .itx-vbar .itx-btn, .itx-vrow .itx-btn { width: 100%; }
   .itx-vlink { padding: 16px; }
 }
+
+/* Lista desplegable de los selectores: fondo oscuro y texto claro (antes salía gris con letras blancas) */
+.itx select option { background-color: #1a0a0a; color: #f8fafc; }
+.itx select option:checked, .itx select option:hover { background-color: #4a1414; color: #fff; }
