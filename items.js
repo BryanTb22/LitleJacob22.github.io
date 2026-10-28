@@ -201,6 +201,7 @@
       try { const j = JSON.parse(d.fields.json.stringValue); sec.items = !!(j.secciones && j.secciones.items); sec.rifas = !(j.secciones && j.secciones.rifas === false); } catch (e) { sec.items = false; }
     }).catch(() => { /* sin dato: queda oculto */ }).then(() => { sec.cargado = true; renderTodo(); });
   }
+  window.addEventListener("lj-cfg", cargarSecciones);
   const visible = () => esAdmin() || sec.items;
 
   /* ---------- estilos (Estilo 1, Estilo 2 (Bloqueado)…) ---------- */

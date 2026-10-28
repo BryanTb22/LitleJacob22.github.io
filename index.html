@@ -1994,7 +1994,7 @@ html.ljc-lock { overflow: hidden; }
   .ord-summary { grid-template-columns: repeat(3, 1fr) !important; } .ord-sum { border-bottom: 1px solid #26272b !important; }
 }
 </style>
-<link rel="stylesheet" href="cabecera.css?v=1">
+<link rel="stylesheet" href="cabecera.css?v=2">
 </head>
 <body class="relative selection:bg-amber-500 selection:text-black">
 
@@ -2039,6 +2039,7 @@ html.ljc-lock { overflow: hidden; }
                     <div class="adm-more">
                         <button id="adminMoreBtn" type="button" class="adm-btn" aria-expanded="false" aria-controls="adminMoreMenu">Más opciones ▾</button>
                         <div id="adminMoreMenu" class="adm-menu" hidden="">
+                            <button id="adminCfgBtn" type="button" onclick="window.ljCuenta &amp;&amp; window.ljCuenta.config()">⚙ Configuraciones principales</button>
                             <button id="adminPublishBtn" type="button">🚀 Publicar ahora</button>
                             <button id="adminGhCfgBtn" type="button">⚙️ Conexión con GitHub</button>
                             <button id="adminDbBtn" type="button">🗄️ Base de datos</button>
@@ -2912,7 +2913,7 @@ html.ljc-lock { overflow: hidden; }
         if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     </script>
-    <script src="cuenta.js?v=6" defer=""></script>
+    <script src="cuenta.js?v=7" defer=""></script>
     <script src="recarga.js?v=6" defer=""></script>
     <link rel="stylesheet" href="items.css?v=17">
     <script>
@@ -2929,7 +2930,7 @@ html.ljc-lock { overflow: hidden; }
         document.addEventListener("DOMContentLoaded", function () { var s = document.createElement("script"); s.src = "afinado.js?v=1"; document.body.appendChild(s); });
     })();
     </script>
-    <script src="items.js?v=24" defer=""></script>
+    <script src="items.js?v=25" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
     <script>

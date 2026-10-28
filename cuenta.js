@@ -14,7 +14,50 @@
   var CUSTOMER_KEY = "litlejacob_customer_v1";   // lo usa el formulario de pedido de la tienda
   var GOOGLE_CLIENT_ID = "547624378539-m3dct3sir3r9vbe51hm6q1ojejg1i14q.apps.googleusercontent.com";
 
-  var st = { abierto: false, modo: "login", perfil: null, cargando: false, msg: "", tipo: "" };
+  var st = { abierto: false, modo: "login", perfil: null, cargando: false, msg: "", tipo: "", cfg: null, cfgCargando: false, cfgMsg: "", cfgGuarda: "" };
+
+  /* ---------- Configuraciones principales (compartidas con Rayas Store: rayas/estado) ---------- */
+  var CFG_DEF = [
+    ["rifas", "🎟️ Rifas", "Página de rifas, cómo participar, ganadores y reglas.", "VISIBLE para los clientes", "OCULTA: solo tú la ves"],
+    ["items", "🛒 Compra y venta de items", "Comprar items, Vender items y Carrito.", "VISIBLE para los clientes", "OCULTA: solo tú la ves"],
+    ["culqi", "💳 Culqi (tarjeta / Yape)", "Botón de pago en línea para recargar saldo.", "ACTIVO: pueden recargar con tarjeta o Yape", "APAGADO: solo piden saldo por WhatsApp"]
+  ];
+  function cfgDe(j) { var sc = j.secciones || {}; return { rifas: sc.rifas !== false, items: !!sc.items, culqi: !!(j.pagos && j.pagos.culqi) }; }
+  function leerEstado() {
+    return fetch(BASE + "rayas/estado", { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (d) { return JSON.parse(d.fields.json.stringValue); });
+  }
+  function cargarCfg() {
+    if (st.cfgCargando) return; st.cfgCargando = true;
+    leerEstado().then(function (j) { st.cfg = cfgDe(j); st.cfgMsg = ""; }).catch(function () { st.cfgMsg = "No se pudo leer la configuración."; })
+      .then(function () { st.cfgCargando = false; if (st.abierto && st.modo === "admin") pintar(); });
+  }
+  function guardarCfg(k) {
+    if (!st.cfg || st.cfgGuarda) return;
+    var nuevo = !st.cfg[k]; st.cfgGuarda = k; st.cfgMsg = "Guardando…"; pintar();
+    Promise.all([token(), leerEstado()]).then(function (r) {
+      var j = r[1];
+      if (k === "culqi") j.pagos = Object.assign({}, j.pagos || {}, { culqi: nuevo });
+      else { var sc = Object.assign({}, j.secciones || {}); sc[k] = nuevo; j.secciones = sc; }
+      return fetch(BASE + "rayas/estado?updateMask.fieldPaths=json&updateMask.fieldPaths=actualizado", {
+        method: "PATCH", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + r[0] },
+        body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(j) }, actualizado: { timestampValue: new Date().toISOString() } } })
+      }).then(function (x) { if (!x.ok) throw new Error("HTTP " + x.status); return j; });
+    }).then(function (j) {
+      st.cfg = cfgDe(j); st.cfgMsg = "✔ Guardado. Ya lo ven todos (también en Rayas Store).";
+      try { window.dispatchEvent(new Event("lj-cfg")); } catch (e) { /* nada */ }
+    }).catch(function (e) { st.cfgMsg = (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : "No se pudo guardar (" + ((e && e.message) || "error") + ")."; })
+      .then(function () { st.cfgGuarda = ""; pintar(); });
+  }
+  function cfgHtml() {
+    if (!st.cfg) { cargarCfg(); return '<div class="ljc-cfg"><h3>Configuraciones principales</h3><p class="ljc-hint">' + esc(st.cfgMsg || "Cargando…") + '</p></div>'; }
+    return '<div class="ljc-cfg"><h3>⚙ Configuraciones principales</h3><p class="ljc-hint">Se guarda al instante y es la misma configuración que en Rayas Store.</p>' +
+      CFG_DEF.map(function (d) {
+        var on = st.cfg[d[0]];
+        return '<button type="button" class="cfg-row' + (on ? ' on' : '') + '" data-a="cfg" data-k="' + d[0] + '" role="switch" aria-checked="' + on + '"' + (st.cfgGuarda ? ' disabled' : '') + '>' +
+          '<span class="cfg-tx"><b>' + d[1] + '</b><small>' + d[2] + '</small><em>' + (on ? d[3] : d[4]) + '</em></span><span class="cfg-sw" aria-hidden="true"></span></button>';
+      }).join("") + (st.cfgMsg ? '<p class="ljc-hint">' + esc(st.cfgMsg) + '</p>' : '') + '</div>';
+  }
 
   /* ---------- utilidades ---------- */
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -218,7 +261,7 @@
     } else if (st.modo === "admin" && s) {
       titulo = "Administrador";
       cuerpo = '<div class="ljc-body"><div class="ljc-saldo"><small>Sesión de administrador</small><b style="font-size:30px">🔧 Panel activo</b><span style="color:#8b9097;font-size:13px">' + esc(s.email || "") + '</span></div>' +
-        '<p class="ljc-hint">Ya puedes editar el catálogo, el stock y los pedidos desde la barra de abajo.</p>' +
+        '<p class="ljc-hint">Ya puedes editar el catálogo, el stock y los pedidos desde la barra de abajo.</p>' + cfgHtml() +
         '<button class="ljc-btn silver" type="button" data-a="cerrar">Ir al panel</button>' +
         '<button class="ljc-btn ghost sm" type="button" data-a="salir">Cerrar sesión</button></div>';
     } else if (st.modo === "olvide") {
@@ -261,6 +304,7 @@
     var a = e.target.closest("[data-a]"); if (!a) return;
     var acc = a.getAttribute("data-a");
     if (acc === "cerrar") { e.preventDefault(); cerrar(); }
+    else if (acc === "cfg") { e.preventDefault(); guardarCfg(a.getAttribute("data-k")); }
     else if (acc === "login" || acc === "registro" || acc === "olvide") { e.preventDefault(); st.modo = acc; st.msg = ""; pintar(); }
     else if (acc === "recargar") { e.preventDefault(); cerrar(); if (window.ljRecarga) window.ljRecarga.abrir(); }
     else if (acc === "salir") { try { if (window.ljAdminSalir) window.ljAdminSalir(); } catch (er) { /* nada */ } guardarSesion(null); st.perfil = null; st.modo = "login"; st.msg = "Cerraste sesión."; st.tipo = ""; pintar(); pintarBoton(); }
@@ -335,6 +379,7 @@
     sesion: leerSesion,
     perfil: function () { return st.perfil; },
     token: token,
+    config: function () { st.cfg = null; abrir("admin"); },
     abrir: function (modo, msg) { if (msg) { st.msg = msg; st.tipo = ""; } abrir(modo); },
     recargar: cargarPerfil,
     salir: function () { try { if (window.ljAdminSalir) window.ljAdminSalir(); } catch (er) { /* nada */ } guardarSesion(null); st.perfil = null; st.modo = "login"; pintarBoton(); pintar(); }
