@@ -215,12 +215,13 @@
   }
 
   /* ---------- filtros y tarjetas ---------- */
+  const claveHeroe = (h) => sinTildes(String(h || "").replace(/\s*\([^)]*\)\s*/g, " ")).trim();
   function itemsFiltrados() {
     const q = sinTildes(filtros.q), mn = parseFloat(filtros.min), mx = parseFloat(filtros.max), admin = esAdmin();
     const l = items.lista.filter((it) => {
       if (!it.activo && !admin) return false;
       if (filtros.tipo && it.tipo !== filtros.tipo) return false;
-      if (filtros.heroe && it.heroe !== filtros.heroe) return false;
+      if (filtros.heroe && claveHeroe(it.heroe) !== claveHeroe(filtros.heroe)) return false;
       if (filtros.ranura && it.ranura !== filtros.ranura) return false;
       if (filtros.rareza && it.rareza !== filtros.rareza) return false;
       if (filtros.calidad && it.calidad !== filtros.calidad) return false;
@@ -414,7 +415,7 @@
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Entra con la cuenta de administrador." : "No se pudo guardar (" + r.status + ").");
       const k = items.lista.findIndex((x) => x.id === it.id);
-      if (k >= 0) items.lista[k] = it; else items.lista.unshift(it);
+      if (k >= 0) items.lista[k] = it; else { items.lista.unshift(it); Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", pag: 0 }); }
       adm.form = null; adm.guardando = false; renderTodo();
     }).catch((e) => { adm.guardando = false; adm.msg = e.message || "No se pudo guardar."; renderTodo(); });
   }
