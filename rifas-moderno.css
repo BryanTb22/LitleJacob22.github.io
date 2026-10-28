@@ -1,0 +1,52 @@
+/* Rifas modernas con la temática de LitleJacob: plata + rojo carmesí sobre negro */
+#rifas .grid { gap: 30px; }
+.card { transition: transform .3s cubic-bezier(.2,.8,.2,1), filter .3s; }
+.card:hover { transform: translateY(-8px); filter: drop-shadow(0 22px 40px color-mix(in srgb, var(--r) 35%, rgba(200,22,31,.35))); }
+.card.frame { clip-path: none; border-radius: 28px; padding: 2px; box-shadow: 0 14px 44px rgba(0,0,0,.55);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--r) 75%, #fff 10%), rgba(200,22,31,.25) 38%, rgba(255,255,255,.06) 68%, color-mix(in srgb, var(--r) 40%, transparent)); filter: none; }
+.card.frame::before, .card.frame::after { display: none; }
+.card.frame > .in, .card.frame .in { clip-path: none; border-radius: 26px; overflow: hidden;
+  background: radial-gradient(120% 55% at 50% 0%, color-mix(in srgb, var(--r) 22%, transparent), transparent 70%), linear-gradient(180deg, #17171b, #0a0a0c); }
+.card .rbar { display: none; }
+.card .pic { aspect-ratio: 16 / 11; margin: 10px 10px 0; border-radius: 18px; overflow: hidden;
+  background: radial-gradient(70% 70% at 50% 55%, color-mix(in srgb, var(--r) 40%, transparent), transparent 72%), linear-gradient(180deg, #121215, #050506); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.card .pic:not(.noimg) img { inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 18px; animation: none; filter: none; transition: transform .4s cubic-bezier(.2,.8,.2,1); }
+.card:hover .pic:not(.noimg) img { transform: scale(1.05); }
+.card .pic:not(.noimg)::after { content: ""; position: absolute; inset: 0; border-radius: 18px; background: linear-gradient(180deg, transparent 55%, rgba(8,8,10,.6)); transform: none; transition: none; pointer-events: none; }
+.status { top: 18px; left: 18px; border-radius: 999px; padding: 6px 12px 6px 10px; font-size: 11px; letter-spacing: .12em; display: inline-flex; align-items: center; gap: 7px; backdrop-filter: blur(8px); box-shadow: 0 4px 16px rgba(0,0,0,.45); animation: none; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.status.activa { background: linear-gradient(180deg, #f4f5f7, #c4c8ce); color: #0b0b0d; animation: none; }
+.status.activa::before { background: #c8161f; animation: lmPulso 1.8s ease-in-out infinite; }
+@keyframes lmPulso { 0%,100% { box-shadow: 0 0 0 0 rgba(200,22,31,.6); } 50% { box-shadow: 0 0 0 6px rgba(200,22,31,0); } }
+.status.proxima { background: #c8161f; color: #fff; }
+.status.cerrada { background: rgba(255,255,255,.08); }
+.card .body { background: none; padding: 16px 18px 20px; gap: 11px; }
+.rarity { align-self: flex-start; padding: 4px 11px; border-radius: 999px; font-size: 11px; letter-spacing: .16em; text-shadow: none; background: color-mix(in srgb, var(--r) 16%, transparent); border: 1px solid color-mix(in srgb, var(--r) 55%, transparent); }
+.card h3 { font-family: var(--body); font-weight: 800; font-size: 21px; line-height: 1.15; text-transform: none; letter-spacing: .005em; text-shadow: none; }
+#rifas .card h3 { font-size: 22px; min-height: 2.3em; display: flex; align-items: center; }
+.card .desc, #rifas .card .desc { font-size: 14.5px; line-height: 1.5; }
+.card .meta { margin-top: auto; border-top: 1px solid rgba(255,255,255,.1); padding-top: 14px; align-items: center; justify-content: space-between; }
+.cost b { font-size: 44px; font-weight: 600; background: linear-gradient(180deg, #fff, #c4c8ce 60%, #7e848c); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 4px 16px rgba(196,200,206,.3)); }
+.cost small { letter-spacing: .14em; }
+.meta .pill { padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+.cbar { height: 10px; border-radius: 999px; background: rgba(255,255,255,.06); border: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,.6); }
+.cbar i { background: linear-gradient(90deg, #8b9097, #f4f5f7); box-shadow: 0 0 14px rgba(244,245,247,.45); }
+.cbar.hot i { background: linear-gradient(90deg, #c8161f, #ff4a52); box-shadow: 0 0 14px rgba(200,22,31,.7); }
+.pill.fechas, .pill.maxp { align-self: flex-start; padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); font-size: 12px; opacity: 1; color: #b9bdc4; }
+.timer { background: linear-gradient(90deg, #f4f5f7, #e0343d); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.card .btn { border-radius: 999px; }
+#rifas .card .btn, .card .btn-yellow { padding-block: 15px; font-size: 14px; margin-top: 4px; }
+.card .btn[disabled] { background: rgba(255,255,255,.07); color: var(--muted); box-shadow: none; }
+.ctools { background: rgba(8,8,10,.65); backdrop-filter: blur(8px); border-radius: 0 0 0 14px; }
+#rifas .card .body { padding: 16px 18px 20px; gap: 11px; }
+@media (max-width: 560px) { #rifas .grid { gap: 22px; } .card .pic { margin: 8px 8px 0; } }
+.card .btn, .card .btn-yellow, .card .btn-ghost { clip-path: none; border-radius: 999px; border: 0; background-image: none; }
+.card .btn-yellow { background: linear-gradient(180deg, #f4f5f7, #b9bdc4); color: #0b0b0d; box-shadow: 0 8px 22px rgba(200,22,31,.25), inset 0 1px 0 #fff; }
+.card .btn-ghost { background: rgba(255,255,255,.07); color: var(--muted); border: 1px solid rgba(255,255,255,.08); }
+.card .meta { flex-wrap: nowrap; gap: 8px; }
+.cost { white-space: nowrap; }
+.cost b { font-size: 40px; }
+.meta .pill { white-space: nowrap; font-size: 12px; padding: 5px 10px; }
+#rifas .cost b { font-size: 44px; }
+#rifas .sec-title > p { display: inline-flex; align-items: center; gap: 10px; width: auto; max-width: 92%; padding: 10px 22px; border-radius: 999px; clip-path: none; background: rgba(255,255,255,.05); border: 1px solid rgba(196,200,206,.28); box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08); backdrop-filter: blur(10px); color: #e6e8ec; font-family: var(--body); font-weight: 700; font-size: 13.5px; letter-spacing: .1em; text-transform: uppercase; text-shadow: none; line-height: 1.3; }
+#rifas .sec-title > p::before { content: "S/"; flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 11px; letter-spacing: 0; background: linear-gradient(180deg, #f4f5f7, #9aa0a8); color: #0b0b0d; background-size: auto; filter: none; }
