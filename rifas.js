@@ -489,7 +489,8 @@
       var tot = m.qty * m.p.cred;
       h = '<h3>¿Entrar a la rifa? 🎟️</h3><p class="hint">Rifa: <b>' + esc(m.p.nombre) + '</b> · ' + 'S/ ' + m.p.cred + ' por ticket.' + (m.mio ? ' Ya tienes <b>' + m.mio + '</b> ' + (m.mio === 1 ? 'ticket' : 'tickets') + '.' : '') + '</p>' +
         '<div class="qty" role="group" aria-label="Cantidad de tickets"><button type="button" data-a="qtyMenos"' + (m.qty <= 1 ? ' disabled' : '') + ' aria-label="Menos">−</button><span><b>' + m.qty + '</b><small>' + (m.qty === 1 ? 'ticket' : 'tickets') + '</small></span><button type="button" data-a="qtyMas"' + (m.qty >= m.max ? ' disabled' : '') + ' aria-label="Más">+</button></div>' +
-        '<p class="hint">Total: <b>S/ ' + tot + '</b>. Te quedarán <b>S/ ' + (c.creditos - tot) + '</b>.' + (m.max < 100 ? ' Máximo ahora: ' + m.max + '.' : '') + ' Más tickets = más chances de ganar 🍀</p>';
+        '<div class="qtot"><div><small>Total</small><b>S/ ' + tot + '</b></div><div><small>Te quedarán</small><b>S/ ' + (c.creditos - tot) + '</b></div></div>' +
+        '<p class="hint">' + (m.max < 100 ? 'Máximo ahora: ' + m.max + '. ' : '') + 'Más tickets = más chances de ganar 🍀</p>';
       btns = '<button class="btn btn-yellow" type="button" data-a="confirmarPart">✔ Confirmar ' + m.qty + (m.qty === 1 ? ' ticket' : ' tickets') + '</button><button class="btn btn-ghost btn-sm" type="button" data-a="cerrarModal">Cancelar</button>';
     } else if (m.tipo === "cargando") {
       h = '<h3>Procesando…</h3><p class="hint">Un momento por favor.</p>';
@@ -618,6 +619,32 @@
       }
     }
     render();
+    confeti();
+  }
+  function abrirZoom(src, alt) {
+    if (!src || document.getElementById("rzoom")) return;
+    var d = document.createElement("div"); d.id = "rzoom"; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", "Foto ampliada");
+    var im = document.createElement("img"); im.src = src; im.alt = alt || "";
+    var x = document.createElement("button"); x.type = "button"; x.className = "rz-x"; x.setAttribute("aria-label", "Cerrar"); x.textContent = "✕";
+    d.appendChild(im); d.appendChild(x); document.body.appendChild(d);
+    requestAnimationFrame(function () { d.classList.add("on"); });
+    function cerrar() { document.removeEventListener("keydown", tecla); if (d.parentNode) d.parentNode.removeChild(d); }
+    function tecla(ev) { if (ev.key === "Escape") cerrar(); }
+    d.addEventListener("click", cerrar); document.addEventListener("keydown", tecla);
+  }
+  function confeti() {
+    try {
+      if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var cv = document.createElement("canvas"); cv.id = "rconfeti"; cv.width = innerWidth; cv.height = innerHeight; document.body.appendChild(cv);
+      var cx = cv.getContext("2d"), cols = ["#c8161f", "#eef0f3", "#c4c8ce", "#ff4a52", "#ffffff"], ps = [], i;
+      for (i = 0; i < 140; i++) ps.push({ x: cv.width / 2, y: cv.height * 0.4, vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 14 - 4, w: 6 + Math.random() * 6, h: 4 + Math.random() * 5, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4, c: cols[i % cols.length] });
+      var t0 = Date.now();
+      (function f() {
+        var t = Date.now() - t0; cx.clearRect(0, 0, cv.width, cv.height);
+        ps.forEach(function (p) { p.vy += 0.35; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.r += p.vr; cx.save(); cx.globalAlpha = Math.max(0, 1 - t / 3200); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore(); });
+        if (t < 3200) requestAnimationFrame(f); else if (cv.parentNode) cv.parentNode.removeChild(cv);
+      })();
+    } catch (e) { }
   }
   function modalRuleta() {
     var rt = ruleta, g = rt.segs[rt.w], p = estado.premios[buscarPremio(rt.pid)] || {};
@@ -828,6 +855,10 @@
       boton = '<div class="pill">' + (p.ganador ? 'Ganador: <b style="color:var(--yellow)">' + esc(p.ganador) + '</b>' : 'Sorteo realizado') + '</div>';
     }
     var V = vivo(), id = esc(p.id);
+    var prog = cupos > 0 ? part / cupos : 0, restMs = p.cierre ? tiempoDe(p.cierre) - Date.now() : 0;
+    var urg = est === "activa" && fz !== "vencida" && restMs > 0 && restMs < 86400000;
+    var soon = est === "activa" && fz !== "vencida" && !lleno && (urg || (cupos > 0 && prog >= 0.8));
+    var soonTag = (est === "activa" && fz !== "vencida" && lleno) ? '<span class="soon full">Tickets agotados</span>' : (soon ? '<span class="soon">⏳ Cierra pronto</span>' : '');
     if (V) {
       partTxt = '<span' + ed("p:" + p.id + ":participantes", "0") + '>' + part + '</span>' + (cupos > 0 ? ' / ' + cupos + ' tickets' : ' participantes');
       if (est === "cerrada") boton = '<div class="pill">Ganador: <b style="color:var(--yellow)"' + ed("p:" + p.id + ":ganador", "Escribe el ganador") + '>' + esc(p.ganador) + '</b></div>';
@@ -849,7 +880,7 @@
       : (V ? '<button type="button" class="imgbtn" data-a="imgEdit" data-id="' + id + '">Cambiar imagen</button>' : '');
     return '<article class="card frame' + (V ? ' editing' : '') + '" style="--r:' + colorRareza(p.rareza) + '"><div class="in">' +
       '<div class="rbar"></div>' + tools +
-      (img ? '<div class="pic">' + img : '<div class="pic noimg"><span class="q">?</span>') +
+      (img ? '<div class="pic' + (V ? '' : ' zoomable') + '"' + (V ? '' : ' data-a="zoomImg" data-src="' + esc(p.img) + '" data-alt="' + esc(p.nombre) + '"') + '>' + img : '<div class="pic noimg"><span class="q">?</span>') + soonTag +
       (V ? '<button type="button" class="status ' + est + '" data-a="ciclarEstado" data-id="' + id + '" title="Clic para cambiar el estado">' + estTxt + ' ⟳</button>'
          : '<span class="status ' + est + '">' + estTxt + '</span>') + picInner + '</div>' +
       '<div class="body">' +
@@ -858,8 +889,8 @@
       '<h3' + ed("p:" + p.id + ":nombre", "Nombre del premio") + '>' + esc(V ? p.nombre : (p.nombre || "Premio")) + '</h3>' +
       (p.descripcion || V ? '<p class="desc"' + ed("p:" + p.id + ":descripcion", "Descripción (opcional)") + '>' + esc(p.descripcion) + '</p>' : '') +
       '<div class="meta"><span class="cost"><b' + ed("p:" + p.id + ":creditos", "0") + '>' + cred + '</b><small' + ed("t:lblCreditos", "por ticket") + '>' + esc(estado.textos.lblCreditos) + '</small></span><span class="pill">' + partTxt + '</span></div>' +
-      (cupos > 0 ? '<div class="cbar' + (part / cupos >= 0.8 ? ' hot' : '') + '" role="img" aria-label="' + esc(partTxt) + '"><i style="width:' + Math.min(100, Math.round(part / cupos * 100)) + '%"></i></div>' : '') +
-      (est === "activa" && p.cierre ? '<div class="timer" data-cierre="' + esc(p.cierre) + '">' + esc(restante(p.cierre)) + '</div>' : '') +
+      (cupos > 0 ? '<div class="cbar' + (lleno ? ' full' : (part / cupos >= 0.8 ? ' hot' : '')) + '" role="img" aria-label="' + esc(partTxt) + '"><i style="width:' + Math.min(100, Math.round(part / cupos * 100)) + '%"></i></div>' : '') +
+      (est === "activa" && p.cierre ? '<div class="timer' + (urg ? ' urg' : '') + '" data-cierre="' + esc(p.cierre) + '"><span class="tic">⏳</span> <span class="tx">' + esc(restante(p.cierre)) + '</span></div>' : '') +
       (est === "activa" && p.cierre ? '<div class="pill fechas">Cierra: ' + esc(fechaHora(p.cierre)) + (+p.cupos > 0 ? ' o al agotar tickets' : '') + '</div>' : '') +
       (est === "activa" && !p.cierre && +p.cupos > 0 ? '<div class="pill fechas">Cierra al agotar tickets</div>' : '') +
       (est === "proxima" && p.inicio && tiempoDe(p.inicio) ? '<div class="pill fechas">Abre: ' + esc(fechaHora(p.inicio)) + '</div>' : '') +
@@ -1623,6 +1654,7 @@
       case "confirmarPart": confirmarPart(); break;
       case "qtyMas": if (modal && modal.tipo === "confirmar" && modal.qty < modal.max) { modal.qty++; render(); } break;
       case "qtyMenos": if (modal && modal.tipo === "confirmar" && modal.qty > 1) { modal.qty--; render(); } break;
+      case "zoomImg": abrirZoom(t.getAttribute("data-src"), t.getAttribute("data-alt")); break;
       case "cerrarModal": modal = null; montoWsp = 0; render(); break;
       case "sortear": abrirRuleta(t.getAttribute("data-id")); break;
       case "ruletaGirar": ruletaGirar(); break;
@@ -1951,7 +1983,11 @@
     if (sigFases && sf !== sigFases && !modal && !vivo()) { sigFases = sf; render(); return; }
     sigFases = sf;
     var els = document.querySelectorAll(".timer[data-cierre]");
-    for (var k = 0; k < els.length; k++) els[k].textContent = restante(els[k].getAttribute("data-cierre"));
+    for (var k = 0; k < els.length; k++) {
+      var cv = els[k].getAttribute("data-cierre"), tx = els[k].querySelector(".tx"), ms = tiempoDe(cv) - Date.now();
+      if (tx) tx.textContent = restante(cv);
+      els[k].classList.toggle("urg", ms > 0 && ms < 86400000);
+    }
   }, 30000);
 
   /* ================= Inicio ================= */
