@@ -320,3 +320,27 @@ body.itx-pop-open{overflow:hidden}
 .itx-price { flex-wrap: wrap; row-gap: 6px; }
 .itx-act { margin-left: auto; }
 @media (max-width: 520px) { .itx-act .itx-buy { padding: 6px 8px; font-size: 11px; } .itx-act { gap: 4px; } }
+
+/* ===== Importar items desde un inventario de Steam (admin) ===== */
+.imp-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+.imp-row input { flex: 1 1 260px; min-width: 0; min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--itx-line); background: rgba(0,0,0,.4); color: var(--itx-fg); font: inherit; font-size: 15px; }
+.imp-row input:focus { border-color: var(--itx-gold); outline: none; }
+.impgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-height: 480px; overflow: auto; margin: 10px 0; padding: 4px; }
+.impcard { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid var(--itx-line); border-radius: 8px; background: rgba(0,0,0,.35); cursor: pointer; text-align: left; }
+.impcard.off { opacity: .4; }
+.impcard input { position: absolute; top: 10px; left: 10px; z-index: 2; width: 18px; height: 18px; accent-color: var(--itx-gold); }
+.impcard .itx-thumb { aspect-ratio: 1 / 1; }
+.impcard .impn { font-size: .85rem; line-height: 1.25; }
+.impcard .impm { font-size: .75rem; font-weight: 700; }
+.impcard .impg { font-size: .72rem; color: #9ee8ff; line-height: 1.35; }
+.impbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.imprepo { display: grid; gap: 6px; margin: 6px 0 10px; }
+.improw { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--itx-line); border-radius: 8px; cursor: pointer; }
+.improw.off { opacity: .55; }
+.improw-t { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.improw-t img { border-radius: 6px; object-fit: cover; }
+.improw-t b { display: block; font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.improw-t small { display: block; color: var(--itx-muted); font-size: 11px; }
+.improw-s { white-space: nowrap; font-size: 13px; }
+.improw-s small { color: var(--itx-danger); }
+@media (max-width: 820px) { .imp-row .itx-btn { width: 100%; } }

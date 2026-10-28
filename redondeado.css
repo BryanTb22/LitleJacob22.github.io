@@ -1,0 +1,18 @@
+/* ===== Diseño redondeado (como Rayas Store) — archivo aparte: para descartarlo, quita su <link> de index.html ===== */
+:root { --itx-r-sm: 12px; --itx-r-md: 16px; --itx-r-lg: 22px; }
+/* Botones en píldora */
+.itx-btn, .itx-buy, .itx-tab, .itx-chip, .itx-tag, .itx-steam-go, .itx-pg-tag, .stk-status, .stk-edbtn, .stk-qty, .stk-qty input, .stk-qty button, .gchip, .pp-dto { border-radius: 999px; }
+.itx-btn { padding-left: 20px; padding-right: 20px; }
+.itx-btn.sm { padding-left: 16px; padding-right: 16px; }
+.itx-buy { padding: 7px 14px; }
+.itx-tab { padding: 8px 16px; }
+/* Campos */
+.itx-form input, .itx-form select, .itx-form textarea, .itx-filt input, .itx-filt select, .itx-bar input, .itx-bar select, .stk-ctl input, .stk-ctl select, .imp-row input, .stk-ed textarea, .ofr-f input { border-radius: var(--itx-r-sm); }
+/* Paneles y tarjetas */
+.itx-card, .itx-filt, .itx-tabs, .itx-admin, .itx-form, .itx-vlink, .itx-pg-precio, .itx-empty, .stk-row, .stk-stat, .ofr-t, .carr, .impcard, .improw, .itx-desc { border-radius: var(--itx-r-md); }
+.itx-card .itx-thumb { border-radius: var(--itx-r-md) var(--itx-r-md) 0 0; }
+.itx-pg-foto { border-radius: var(--itx-r-md); overflow: hidden; }
+.itx-dialog, .itx-pop, .fed { border-radius: var(--itx-r-lg); }
+.stk-ed { border-radius: 0 0 var(--itx-r-md) var(--itx-r-md); }
+/* Cabecera */
+.nav-link, .nav-right .lock, .wa-pill { border-radius: 999px !important; }
