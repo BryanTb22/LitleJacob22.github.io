@@ -6,9 +6,7 @@ body{overflow-x:hidden}
 html.lj-rifas .topbar{position:sticky;top:0;z-index:60;background:rgba(8,8,10,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 html.lj-rifas .topbar .site-nav{position:static!important;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 .site-nav.ljc,html.lj-rifas .topbar.ljc{box-shadow:0 6px 22px rgba(0,0,0,.55),0 1px 0 rgba(192,36,58,.45)}
-.site-nav.ljc{padding-top:6px!important;padding-bottom:6px!important}
-.site-nav.ljc .nav-brand img,.topbar.ljc .nav-brand img{width:32px;height:32px;transition:all .2s}
-.site-nav.ljc .nav-brand span,.topbar.ljc .nav-brand span{font-size:.92em}
+/* Al bajar, la barra solo recibe sombra. NO cambia de tamaño: si se encogía, el contenido se movía, el navegador corregía el scroll y la página rebotaba hacia arriba. */
 /* foco visible y contraste */
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #e8ebef!important;outline-offset:2px!important;box-shadow:0 0 0 4px rgba(192,36,58,.55)!important}
 ::selection{background:#c0243a;color:#fff}
