@@ -872,6 +872,15 @@
       (sub ? '<p>' + sub + '</p>' : '') + '<div class="orn">◆</div></div>';
   }
 
+  function navTienda() {
+    var on = !!(admin.puede || (estado.secciones && estado.secciones.items));
+    var lock = !(estado.secciones && estado.secciones.items) && admin.puede ? " 🔒" : "";
+    return '<a class="nav-link" href="index.html#inicio">Inicio</a><a class="nav-link" href="index.html#sets-cache">Sets Caché</a>' +
+      (on ? '<a class="nav-link" href="index.html#items">Comprar items' + lock + '</a><a class="nav-link" href="index.html#vender">Vender items' + lock + '</a>' : '') +
+      '<a class="nav-link" href="index.html#compro">Compro</a><a class="nav-link active" href="rifas.html">Rifas</a>';
+  }
+  function waPill() { return "https://wa.me/51952997030?text=" + encodeURIComponent("Hola LitleJacob, vi tu tienda LitleJacob Store y quiero hacer una consulta."); }
+
   function render() {
     var app = document.getElementById("app");
     if (!app) return;
@@ -888,16 +897,21 @@
     }
     var html = '' +
       '<header class="topbar gutter"><div class="wrap">' +
-      '<' + (V ? 'span' : 'a href="#inicio"') + ' class="logo"><img class="logo-img" src="favicon.png" alt="" width="44" height="44">' + tx("span", "logo1") + ' ' + tx("i", "logo2") + '</' + (V ? 'span' : 'a') + '>' +
-      '<nav class="nav"><a class="navlink" href="index.html#sets-cache">Sets Caché</a><a class="navlink navactivo" href="#rifas">Rifas</a><a class="navlink" href="#como">Cómo participar</a><a class="navlink" href="#ganadores">Ganadores</a><a class="navlink" href="#reglas">Reglas</a>' +
+      '<nav class="site-nav" aria-label="Principal">' +
+      '<a href="index.html#inicio" class="nav-brand"><img src="favicon.png" alt="" width="44" height="44"><span>Litlejacob <i>Store</i></span></a>' +
+      '<div class="nav-links">' + navTienda() + '</div>' +
+      '<div class="nav-right">' +
+      '<a class="wa-pill wa-contact" href="' + esc(waPill()) + '" target="_blank" rel="noopener noreferrer"><span class="wa-dot"></span>WhatsApp +51 952 997 030</a>' +
       (admin.puede ? '<button class="lock" type="button" data-a="admin">Panel admin</button>'
         : (cuenta.perfil ? '<button class="lock hot misrifas" type="button" data-a="misRifas">🎟️ Mis rifas</button><button class="lock me" type="button" data-a="miCuenta"><b>◆ S/ ' + cuenta.perfil.creditos + '</b><span class="nm"> · ' + esc(cuenta.perfil.nombre || "Mi cuenta") + '</span></button>'
           : (leerSesion() ? '<button class="lock" type="button" data-a="miCuenta">Mi cuenta</button>'
             : '<button class="lock" type="button" data-a="entrar">Entrar</button><button class="lock hot" type="button" data-a="registro">Crear cuenta</button>'))) +
-      '</nav></div></header>' +
+      '</div></nav>' +
+      '<nav class="subnav" aria-label="En esta página"><a href="#rifas">Rifas activas</a><a href="#como">Cómo participar</a><a href="#ganadores">Ganadores</a><a href="#reglas">Reglas</a></nav>' +
+      '</div></header>' +
 
       '<section class="hero gutter" id="inicio">' + fotoBtn("hero") + '<div class="wrap">' +
-      '<img class="hero-logo" src="favicon.png" alt="Rayas Store" width="132" height="132">' + fotoBtn("logo") +
+      '<img class="hero-logo" src="favicon.png" alt="Litlejacob Store" width="132" height="132">' + fotoBtn("logo") +
       tx("div", "kicker", 'class="kicker"') +
       (V ? '<h1' + ed("t:titulo", "Título") + '>' + esc(T.titulo) + '</h1>' : '<h1>' + tituloHtml(T.titulo) + '</h1>') +
       tx("p", "subtitulo") +
@@ -946,7 +960,7 @@
       '</div></section>' +
 
       '<footer class="footer gutter"><div class="wrap">' +
-      '<span class="logo"><img class="logo-img" src="favicon.png" alt="" width="36" height="36" loading="lazy">' + esc(T.logo1) + ' <i>' + esc(T.logo2) + '</i></span>' +
+      '<span class="logo"><img class="logo-img" src="favicon.png" alt="" width="36" height="36" loading="lazy">Litlejacob <i>Store</i></span>' +
       (V ? '<button type="button" class="btn btn-ghost btn-sm" data-a="editContactos">✎ Editar contactos de WhatsApp</button>'
          : (contactos().length ? '<span>WhatsApp: ' + contactos().map(function (c) { return esc(c.nombre) + ' <span class="wa">' + esc(waBonito(c.numero)) + '</span>'; }).join(' · ') + '</span>' : '')) +
       tx("span", "pie") +
