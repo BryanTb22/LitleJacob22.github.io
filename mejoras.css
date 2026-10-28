@@ -134,3 +134,24 @@
   body:has(.itx-sticky) { padding-bottom: 80px; }
 }
 .itx-card .itx-price { min-height: 80px; align-content: flex-end; }
+
+/* ===== Carrito en pasos + resumen (tema 4) ===== */
+.cpasos{display:flex;justify-content:center;gap:6px;list-style:none;margin:0 0 12px;padding:0}
+.cpasos li{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 6px;border-radius:999px;border:1px solid var(--itx-line,#3d3f45);color:var(--itx-muted,#8b9097);font:600 12px/1 Inter,system-ui,sans-serif}
+.cpasos i{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.08);font-style:normal;font-size:11px}
+.cpasos li.act{border-color:#c8cdd4;color:#f4f5f7}.cpasos li.act i{background:#c8cdd4;color:#111}
+.cpasos li.hecho{border-color:#c0243a;color:#f4f5f7}.cpasos li.hecho i{background:#c0243a;color:#fff}
+.cresumen{display:grid;gap:6px;margin:12px 0;padding:12px 14px;border:1px solid var(--itx-line,#3d3f45);border-radius:12px;background:rgba(255,255,255,.04)}
+.cresumen div{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:#c4c8ce}
+.cresumen div b{color:#f4f5f7}
+.cresumen .falta b,.cresumen .falta{color:#ff7b8c}
+.cresumen .total{margin-top:4px;padding-top:8px;border-top:1px dashed #3d3f45;font-size:16px;color:#f4f5f7}
+.cresumen .total b{font-size:20px;color:#e8eaee}
+.itx-hint.warn{color:#ff9aa7}
+@media (max-width:420px){.cpasos li{padding-right:9px;font-size:11px}}
+/* botones del carrito/compra con la paleta plata/rojo de LitleJacob */
+.itx-dialog{border-color:#c8cdd4!important}
+.itx-dialog h3{color:#f4f5f7!important}
+.itx-dbtns .itx-btn.fucsia{background:linear-gradient(180deg,#d12a42,#9e1b2e)!important;color:#fff!important;box-shadow:0 6px 18px rgba(192,36,58,.35)!important}
+.itx-dbtns .itx-btn.gold{background:linear-gradient(180deg,#eceef2,#aeb4bd)!important;color:#15161a!important;box-shadow:none!important}
+.itx-dbtns .itx-btn.ghost{border-color:#5a5e66!important;color:#d6d9de!important}
