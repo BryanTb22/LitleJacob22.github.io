@@ -98,14 +98,32 @@
       window.google.accounts.id.renderButton(el2, { theme: "filled_black", size: "large", shape: "pill", text: "continue_with", locale: "es", width: 320 });
     }).catch(function () { /* sin conexión con Google */ });
   }
-  function btnGoogle() { return GOOGLE_CLIENT_ID ? '<div id="g-btn" class="gbtn"></div><div class="gsep"><span>o con tu correo</span></div>' : ""; }
+  var steamPre = null;   // lo que trae Steam para sugerir en "Completa tu perfil": { sid, nom }
+  function btnGoogle() { return (GOOGLE_CLIENT_ID ? '<div id="g-btn" class="gbtn"></div>' : "") + (window.ljSteam ? window.ljSteam.boton("sbtn", "steamEntrar") : "") + '<div class="gsep"><span>o con tu correo</span></div>'; }
+  function steamIr(vincular) {
+    cuenta.msg = "Abriendo Steam…"; cuenta.msgTipo = ""; render();
+    window.ljSteam.ir(vincular ? token : null).catch(function (e) {
+      cuenta.msg = (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : ((e && e.message) || "No se pudo conectar con Steam. Intenta de nuevo."); cuenta.msgTipo = "err"; render();
+    });
+  }
+  // Al volver de Steam: canjea el token por la sesión (misma de siempre), limpia la dirección y sigue el flujo normal.
+  function steamAlCargar() {
+    var v = window.ljSteam && window.ljSteam.alCargar(); if (!v) return false;
+    if (v.tipo === "error") { cuenta.modo = "login"; cuenta.msg = v.msg; cuenta.msgTipo = "err"; render(); return true; }
+    if (v.tipo === "vinculado") { cuenta.modo = "perfil"; cuenta.msg = v.msg; cuenta.msgTipo = "ok"; render(); cargarPerfil().then(function () { cuenta.msg = v.msg; cuenta.msgTipo = "ok"; render(); }); return true; }
+    steamPre = v.pre; cuenta.modo = "login"; cuenta.msg = "Entrando con Steam…"; cuenta.msgTipo = ""; render();
+    v.entrar().then(function () { trasEntrar(); }).catch(function (e) { cuenta.modo = "login"; cuenta.msg = "No se pudo entrar con Steam (" + ((e && e.message) || "error") + ")."; cuenta.msgTipo = "err"; render(); });
+    return true;
+  }
   function crearPerfil(ses, d) {
+    var campos = {
+      nombre: { stringValue: d.nombre }, whatsapp: { stringValue: d.whatsapp },
+      email: { stringValue: d.email }, tradelink: { stringValue: d.tradelink }, steam: { stringValue: d.steam || "" }, creditos: { integerValue: "0" }, creado: { timestampValue: new Date().toISOString() }
+    };
+    // Las reglas de Firestore solo aceptan los campos básicos al crear la cuenta; la foto/país de Steam los guarda el servidor al entrar con Steam.
     return fsPedir("rayas_users/" + encodeURIComponent(ses.uid) + "?currentDocument.exists=false", {
       method: "PATCH",
-      body: JSON.stringify({ fields: {
-        nombre: { stringValue: d.nombre }, whatsapp: { stringValue: d.whatsapp },
-        email: { stringValue: d.email }, tradelink: { stringValue: d.tradelink }, steam: { stringValue: d.steam || "" }, creditos: { integerValue: "0" }, creado: { timestampValue: new Date().toISOString() }
-      } })
+      body: JSON.stringify({ fields: campos })
     }).then(function (r) { if (!r.ok) throw new Error("PERFIL_" + r.status); });
   }
   function uidSesion() {
@@ -151,14 +169,22 @@
       return fetch(BASE + ruta, opts);
     });
   }
+  function avatarUsuario(u, grande) {
+    var cls = "uav" + (grande ? " grande" : "");
+    if (window.ljSteam && window.ljSteam.imgOk(u.steamAvatar)) return '<img class="' + cls + '" src="' + esc(u.steamAvatar) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
+    var n = String(u.nombre || u.email || "?").trim(), h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 360;
+    return '<span class="' + cls + ' ini" style="--h:' + h + '" aria-hidden="true">' + esc((n.charAt(0) || "?").toUpperCase()) + '</span>';
+  }
   function leerPerfilDoc(d) {
     var f = (d && d.fields) || {};
     var sv = function (k) { return f[k] && f[k].stringValue || ""; };
     return {
       uid: d && d.name ? d.name.split("/").pop() : "",
-      nombre: sv("nombre"), steam: sv("steam"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"),
+      nombre: sv("nombre"), steam: sv("steam"), steamId: sv("steamId"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"),
       creditos: f.creditos ? Number(f.creditos.integerValue || f.creditos.doubleValue || 0) : 0,
       creado: f.creado && f.creado.timestampValue || "",
+      steamAvatar: sv("steamAvatar"), steamPais: sv("steamPais"), steamPerfilUrl: sv("steamPerfilUrl"),
+      steamPublico: f.steamPublico && typeof f.steamPublico.booleanValue === "boolean" ? f.steamPublico.booleanValue : null,
       promoUsada: !!(f.promoUsada && f.promoUsada.booleanValue === true)
     };
   }
@@ -1095,9 +1121,9 @@
       titulo = "Completa tu perfil";
       var ses0 = leerSesion() || {};
       cuerpo = '<form class="drawer-body form" id="formCompletar">' +
-        '<p class="hint">Entraste con <b>' + esc(ses0.email || "") + '</b>, pero aún no tienes perfil en LitleJacob Store. Complétalo para participar en las rifas.</p>' +
-        '<div class="field"><label for="c-nombre">Nombre o apodo</label><input id="c-nombre" maxlength="40" required autocomplete="nickname"></div>' +
-        campoSteam("c-steam") + '<div class="field"><label for="c-trade">Link de intercambio de Steam (trade link)</label><input id="c-trade" inputmode="url" required placeholder="https://steamcommunity.com/tradeoffer/new/?partner=…&token=…">' +
+        '<p class="hint">' + (ses0.email ? 'Entraste con <b>' + esc(ses0.email) + '</b>, pero aún no tienes perfil en LitleJacob Store.' : '¡Listo, entraste con Steam!') + ' Completa tu perfil (WhatsApp y trade link) para comprar y participar en las rifas.</p>' +
+        '<div class="field"><label for="c-nombre">Nombre o apodo</label><input id="c-nombre" maxlength="40" required autocomplete="nickname"' + (steamPre && steamPre.nom ? ' value="' + esc(steamPre.nom) + '"' : '') + '></div>' +
+        campoSteam("c-steam", steamPre && steamPre.sid ? steamPre.sid : "") + '<div class="field"><label for="c-trade">Link de intercambio de Steam (trade link)</label><input id="c-trade" inputmode="url" required placeholder="https://steamcommunity.com/tradeoffer/new/?partner=…&token=…">' +
         '<p class="hint">' + TRADE_AYUDA + '</p></div>' +
         '<div class="field"><label for="c-wa">WhatsApp</label><input id="c-wa" inputmode="tel" maxlength="20" placeholder="987 654 321" required></div>' +
         '<button class="btn btn-fuchsia" type="submit">Guardar mi perfil</button>' + msg +
@@ -1111,7 +1137,7 @@
       var link = creditoHref();
       cuerpo = '<div class="drawer-body">' + (p
         ? '<div class="saldo frame gold"><div class="in"><small>Tu saldo</small><b>' + p.creditos + '</b></div></div>' +
-          '<form class="grp" id="formTrade"><h3>Mis datos</h3>' +
+          (window.ljSteam ? window.ljSteam.bloqueVinculo(p.steamId, "sbtn", "hint", "grp") : "") + '<form class="grp" id="formTrade"><h3>Mis datos</h3>' +
           '<div class="field"><label for="p-nombre">Nombre o apodo</label><input id="p-nombre" maxlength="40" required value="' + esc(p.nombre) + '"></div>' +
           '<div class="field"><label for="p-wa">WhatsApp</label><input id="p-wa" inputmode="tel" maxlength="30" required value="' + esc(p.whatsapp) + '"></div>' +
           '<div class="field"><label for="p-email">Correo</label><input id="p-email" value="' + esc(p.email) + '" disabled></div>' +
@@ -1191,7 +1217,7 @@
       '<div class="ulist">' + (lista.length ? lista.map(function (u) {
         var id = esc(u.uid);
         var abierto = !!(admin.uOpen && admin.uOpen[u.uid]) || admin.fichaU === "u_" + u.uid || (admin.editU && admin.editU === u.uid) || admin.delU === u.uid;
-        return '<div class="urow' + (abierto ? ' open' : '') + '"><button type="button" class="urow-sum" data-a="abrirU" data-uid="' + id + '" aria-expanded="' + abierto + '">' +
+        return '<div class="urow' + (abierto ? ' open' : '') + '"><button type="button" class="urow-sum" data-a="abrirU" data-uid="' + id + '" aria-expanded="' + abierto + '">' + avatarUsuario(u) +
           '<b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="ucr">' + 'S/ ' + (Number(u.creditos) || 0) + '</span><i aria-hidden="true">▾</i></button>' +
           '<div class="urow-body"><div class="t"><span>WhatsApp: ' + esc(u.whatsapp) + '</span><span>' + esc(u.email) + '</span>' +
           (tradeValido(u.tradelink) ? '<span><a href="' + esc(u.tradelink) + '" target="_blank" rel="noopener">Abrir trade link ↗</a></span>' : '<span style="color:var(--fuchsia)">Sin trade link</span>') + '</div>' +
@@ -1265,6 +1291,18 @@
   }
   function waNum(n) { n = soloDigitos(n); return n.length === 9 ? "51" + n : n; }
   function usuarioPorUid(uid) { return (admin.usuarios || []).filter(function (x) { return x.uid === uid; })[0]; }
+  // Pedidos de un usuario (solo admin, al abrir su ficha): cantidad, total gastado y última compra.
+  function cargarPedidosU(uid) {
+    admin.pedU = admin.pedU || {}; admin.pedCarg = admin.pedCarg || {}; if (admin.pedU[uid] !== undefined || admin.pedCarg[uid]) return;
+    admin.pedCarg[uid] = true;
+    token().then(function (tk) { return fetch(BASE.replace("/documents/", "/documents:runQuery"), { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "orders" }], where: { fieldFilter: { field: { fieldPath: "uid" }, op: "EQUAL", value: { stringValue: uid } } }, limit: 200 } }) }); })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (j) {
+        var n = 0, total = 0, ult = "";
+        (j || []).forEach(function (x) { if (!x.document) return; var f = x.document.fields || {}, m = Number(f.creditos && (f.creditos.integerValue || f.creditos.doubleValue) || 0), t = f.createdAt && f.createdAt.timestampValue || ""; if (m > 0) { n++; total += m; if (t > ult) ult = t; } });
+        admin.pedU[uid] = { n: n, total: Math.round(total * 100) / 100, ult: ult }; render();
+      }).catch(function () { admin.pedU[uid] = null; render(); });
+  }
   function detalleUsuario(uid, ctx) {
     var u = usuarioPorUid(uid), id = esc(uid);
     if (!u) return '<div class="ficha"><p class="hint">' + (admin.usuarios === null ? "Cargando datos…" : "No se encontró el perfil de este usuario.") + '</p></div>';
@@ -1285,13 +1323,20 @@
           (pr && pr.ganadorUid === uid ? ' · <b>🏆 ganador</b>' : '') + '</li>');
       });
     });
-    var h = '<div class="ficha"><div class="fhead"><b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="fcred">◆ S/ ' + u.creditos + '</span></div>' +
+    var ped = (admin.pedU || {})[uid], pedHtml = ped === undefined ? "Cargando…" : (ped === null ? "No se pudo leer (revisa permisos)" : ped.n + (ped.n === 1 ? " pedido" : " pedidos") + (ped.n ? " · S/ " + ped.total + " gastados · última compra " + esc(ped.ult ? fechaHora(ped.ult) : "—") : ""));
+    var h = '<div class="ficha"><div class="fhead">' + avatarUsuario(u, true) + '<div class="fnom"><b>' + esc(u.nombre || "(sin nombre)") + '</b>' +
+      (u.steamPais ? '<small>📍 ' + esc(u.steamPais) + '</small>' : '') +
+      (window.ljSteam && window.ljSteam.urlOk(u.steamPerfilUrl) ? '<a href="' + esc(u.steamPerfilUrl) + '" target="_blank" rel="noopener noreferrer">Ver perfil de Steam ↗</a>' : '') + '</div>' +
+      '<span class="fcred">◆ S/ ' + u.creditos + '</span></div>' +
+      (u.steamPublico === false ? '<p class="fpriv">🔒 Perfil de Steam privado: no se puede ver su inventario ni verificar la entrega de antemano.</p>' : '') +
+      '<div class="frow"><span>Pedidos</span><div>' + pedHtml + '</div></div>' +
       '<div class="frow"><span>WhatsApp</span><div>' + (soloDigitos(u.whatsapp) ? '<a href="https://wa.me/' + esc(waNum(u.whatsapp)) + '" target="_blank" rel="noopener">' + esc(u.whatsapp) + ' ↗</a>' : '—') + '</div></div>' +
       '<div class="frow"><span>Correo</span><div><a href="mailto:' + esc(u.email) + '">' + esc(u.email) + '</a></div></div>' +
       '<div class="frow"><span>Trade link</span><div>' + (tradeValido(u.tradelink)
         ? '<a href="' + esc(u.tradelink) + '" target="_blank" rel="noopener">Abrir en Steam ↗</a> <button class="iconbtn wide" type="button" data-a="copiar" data-txt="' + esc(u.tradelink) + '">' + (u.copiado && Date.now() - u.copiado < 3000 ? "✔ Copiado" : "Copiar") + '</button>'
         : '<span style="color:var(--fuchsia)">Sin trade link</span>') + '</div></div>' +
-      (u.steam ? '<div class="frow"><span>Steam</span><div>' + esc(u.steam) + '</div></div>' : '') +
+      (u.steam ? '<div class="frow"><span>ID de Steam</span><div>' + esc(u.steam) + '</div></div>' : '') +
+      (u.steamId && u.steamId !== u.steam ? '<div class="frow"><span>SteamID64</span><div>' + esc(u.steamId) + '</div></div>' : '') +
       '<div class="frow"><span>Registro</span><div>' + (u.creado ? esc(fechaHora(u.creado)) : "—") + '</div></div>' +
       '<div class="frow"><span>Rifas</span><div>' + (rifas.length ? '<ul class="frifas">' + rifas.join("") + '</ul>' : "Ninguna todavía") + '</div></div>';
     if (ctx && ctx.p) {
@@ -1615,12 +1660,14 @@
       case "admin":
         if (admin.puede) admin.abierto = true; else { cuenta.modo = "login"; cuenta.msg = ""; cuenta.msgTipo = ""; }
         render(); break;
+      case "steamEntrar": steamIr(false); break;
+      case "steamVincular": steamIr(true); break;
       case "entrar": ev.preventDefault(); cuenta.modo = "login"; cuenta.msg = ""; cuenta.msgTipo = ""; render(); break;
       case "registro": ev.preventDefault(); cuenta.modo = "registro"; cuenta.msg = t.getAttribute("data-need") ? "Para participar primero crea una cuenta en la página." : ""; cuenta.msgTipo = t.getAttribute("data-need") ? "err" : ""; render(); break;
       case "misRifas": cuenta.modo = "rifas"; cuenta.msg = ""; render(); cargarParts(); break;
       case "miCuenta": cuenta.modo = "perfil"; cuenta.msg = ""; render(); cargarPerfil(); break;
       case "abrirU": admin.uOpen = admin.uOpen || {}; var ku = t.getAttribute("data-uid"); if (admin.uOpen[ku]) delete admin.uOpen[ku]; else admin.uOpen[ku] = true; render(); break;
-      case "verFicha": var kf = t.getAttribute("data-key"); admin.fichaU = admin.fichaU === kf ? null : kf; admin.editU = null; admin.uMsg = ""; render(); break;
+      case "verFicha": var kf = t.getAttribute("data-key"); admin.fichaU = admin.fichaU === kf ? null : kf; admin.editU = null; admin.uMsg = ""; if (admin.fichaU && /^u_/.test(admin.fichaU)) cargarPedidosU(admin.fichaU.slice(2)); render(); break;
       case "editRapido": admin.fichaU = "u_" + t.getAttribute("data-uid"); admin.editU = t.getAttribute("data-uid"); admin.uMsg = ""; render(); break;
       case "cantPart": var xq = (partes[t.getAttribute("data-id")] || []).filter(function (y) { return y.uid === t.getAttribute("data-uid"); })[0]; if (xq) guardarCantidad(t.getAttribute("data-id"), xq.uid, xq.cantidad + Number(t.getAttribute("data-d"))); break;
       case "crearPrueba": crearCuentaPrueba(); break;
@@ -2068,7 +2115,7 @@
   var pRemoto = cargarRemoto();
   cargarParts();
   revisarHash();
-  var pPerfil = (leerSesion() && !admin.puede) ? cargarPerfil() : Promise.resolve();
+  var pPerfil = (!steamAlCargar() && leerSesion() && !admin.puede) ? cargarPerfil() : Promise.resolve();
   // Llegas desde la tienda con ?recargar=1: abre directo la ventana de recarga.
   if (quiereRecarga) {
     try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) { /* nada */ }
