@@ -267,7 +267,7 @@
     const agot = it.stock <= 0, col = colorRareza(it.rareza), admin = esAdmin();
     return '<article class="itx-card' + (agot ? " agot" : "") + (it.activo ? "" : " oculto") + '" data-itx="ver" data-id="' + esc(it.id) + '" tabindex="0" role="button" aria-label="Ver ' + esc(it.nombre) + '">' +
       '<div class="itx-thumb" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre, ' loading="lazy"') || '<span class="sinfoto">Sin foto</span>') +
-      (agot ? '<span class="itx-tag agotado">Agotado</span>' : ((it._tot || it.stock) > 1 ? '<span class="itx-tag">x' + (it._tot || it.stock) + "</span>" : "")) + (it.activo ? "" : '<span class="itx-tag oc">Oculto</span>') + "</div>" +
+      (agot ? '<span class="itx-tag agotado">Agotado</span>' : ((it._tot || it.stock) > 1 ? '<span class="itx-tag">x' + (it._tot || it.stock) + "</span>" : "")) + (!agot && (it._tot || it.stock) <= 2 ? '<span class="itx-ult">' + ((it._tot || it.stock) === 1 ? "¡Última unidad!" : "¡Últimas unidades!") + "</span>" : "") + (it.activo ? "" : '<span class="itx-tag oc">Oculto</span>') + "</div>" +
       (admin ? '<div class="itx-admb"><button type="button" class="itx-btn ghost sm" data-itx="editar" data-id="' + esc(it.id) + '" aria-label="Editar">✎</button>' +
         (adm.itemDel === it.id ? '<button type="button" class="itx-btn sm del" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar">🗑</button>') + "</div>" : "") +
       '<div class="itx-body"><h4>' + esc(it.nombre) + "</h4>" +
@@ -283,7 +283,7 @@
   }
   function gridHtml() {
     if (items.err) return '<div class="itx-empty"><strong>No se pudo cargar</strong><span>' + esc(items.err) + "</span></div>";
-    if (!items.cargado) return '<div class="itx-empty"><strong>Cargando items…</strong></div>';
+    if (!items.cargado) return '<div class="itx-grid itx-sk-grid" aria-busy="true" aria-label="Cargando items">' + new Array(9).join('<article class="itx-card itx-sk" aria-hidden="true"><div class="itx-thumb"></div><div class="itx-body"><i class="sk-l w80"></i><i class="sk-l w50"></i><i class="sk-l w60 tall"></i></div></article>') + "</div>";
     const l = itemsFiltrados();
     if (!l.length) return '<div class="itx-empty"><strong>' + (items.lista.length ? "Ningún item coincide" : "Pronto nuevos items") + "</strong><span>" + (items.lista.length ? "Prueba con otros filtros." : "Estamos subiendo el catálogo.") + "</span></div>";
     const porPag = 24, total = Math.ceil(l.length / porPag);
@@ -303,8 +303,27 @@
     });
     return h + '<button type="button" class="itx-btn ghost sm" data-itx="' + accion + '" data-p="' + (act + 1) + '"' + (act >= total - 1 ? " disabled" : "") + ' aria-label="Página siguiente">›</button></nav>';
   }
+  let filtAbierto = null;   // null = automático (abierto en pantallas anchas, cerrado en celular)
+  function chipsActivos() {
+    const l = [];
+    if (filtros.tipo) l.push(["tipo", "Tipo", filtros.tipo]);
+    if (filtros.heroe) l.push(["heroe", "Héroe", filtros.heroe]);
+    if (filtros.ranura) l.push(["ranura", "Ranura", filtros.ranura]);
+    if (filtros.rareza) l.push(["rareza", "Rareza", filtros.rareza]);
+    if (filtros.calidad) l.push(["calidad", "Calidad", filtros.calidad]);
+    if (filtros.min || filtros.max) l.push(["precio", "Precio", filtros.min && filtros.max ? "S/ " + filtros.min + " – S/ " + filtros.max : filtros.min ? "desde S/ " + filtros.min : "hasta S/ " + filtros.max]);
+    if (filtros.q) l.push(["q", "Búsqueda", filtros.q]);
+    return l;
+  }
+  function chipsHtml() {
+    const l = chipsActivos(); if (!l.length) return "";
+    return l.map((c) => '<button type="button" class="itx-chip" data-itx="quitarUno" data-k="' + c[0] + '" aria-label="Quitar filtro ' + esc(c[1]) + '"><span>' + esc(c[1]) + ": <b>" + esc(c[2]) + '</b></span><i aria-hidden="true">✕</i></button>').join("") +
+      (l.length > 1 ? '<button type="button" class="itx-chip limpiar" data-itx="reset">Quitar todo</button>' : "");
+  }
   function pintarGrid() {
     const g = document.getElementById("itxGrid"); if (!g) return;
+    const ch = document.getElementById("itxChips"); if (ch) ch.innerHTML = chipsHtml();
+    const fc = document.getElementById("itxFiltN"); if (fc) { const n = chipsActivos().filter((c) => c[0] !== "q").length; fc.textContent = n ? " (" + n + ")" : ""; }
     g.innerHTML = gridHtml(); hidratarImgs();
     const c = document.getElementById("itxCuenta"); if (c) c.textContent = items.cargado ? itemsFiltrados().length + " items" : "";
   }
@@ -356,12 +375,14 @@
     if (!out.length) return "";
     return '<div class="ofr"><div class="ofr-top"><h3>✨ También te puede interesar</h3><div class="rel-flechas"><button type="button" class="rel-f" data-itx="relMov" data-d="-1" aria-label="Anterior">←</button><button type="button" class="rel-f" data-itx="relMov" data-d="1" aria-label="Siguiente">→</button></div></div><div class="rel-fila">' + out.map(itemCardHtml).join("") + "</div></div>";
   }
+  document.addEventListener("toggle", (ev) => { const d = ev.target; if (d && d.tagName === "DETAILS" && d.closest && d.closest("#itemsRoot .itx-filt")) filtAbierto = d.open; }, true);
   function comprarHtml() {
     if (!visible()) return cabecera("Catálogo", "Comprar", "items", "Esta sección estará disponible pronto.");
     if (idItemHash()) return aviso() + paginaItemHtml(idItemHash());
     const tabs = ['<button type="button" class="itx-tab' + (!filtros.tipo ? " on" : "") + '" data-itx="tipo" data-v="">Todos</button>'].concat(ITEM_TIPOS.map((t) =>
       '<button type="button" class="itx-tab' + (filtros.tipo === t ? " on" : "") + '" data-itx="tipo" data-v="' + esc(t) + '">' + esc(t) + "</button>")).join("");
-    const filt = '<aside class="itx-filt"><details' + (window.innerWidth > 820 ? " open" : "") + "><summary>Filtros</summary>" +
+    const nFilt = chipsActivos().filter((c) => c[0] !== "q").length;
+    const filt = '<aside class="itx-filt"><details' + ((filtAbierto === null ? window.innerWidth > 820 : filtAbierto) ? " open" : "") + '><summary>Filtros<span id="itxFiltN">' + (nFilt ? " (" + nFilt + ")" : "") + "</span></summary>" +
       '<div class="ff"><label>Precio (S/)</label><div class="ff2"><input id="itx-min" inputmode="decimal" placeholder="Desde" value="' + esc(filtros.min) + '"><input id="itx-max" inputmode="decimal" placeholder="Hasta" value="' + esc(filtros.max) + '"></div></div>' +
       '<div class="ff"><label for="itx-heroe">Héroe</label><input id="itx-heroe" type="search" list="itx-dl-hfil" autocomplete="off" placeholder="Todos · escribe para buscar" value="' + esc(filtros.heroe) + '"><datalist id="itx-dl-hfil">' + distintos("heroe", HEROES_DOTA).map((v) => '<option value="' + esc(v) + '"></option>').join("") + "</datalist></div>" +
       '<div class="ff"><label for="itx-ranura">Ranura</label><select id="itx-ranura">' + opciones(distintos("ranura", SLOTS_DOTA), filtros.ranura, "Todas") + "</select></div>" +
@@ -375,7 +396,7 @@
       '<div class="itx-tabs">' + tabs + "</div>" +
       '<div class="itx-shop">' + filt + '<div class="itx-main"><div class="itx-bar"><input id="itx-q" type="search" placeholder="Buscar items…" value="' + esc(filtros.q) + '" autocomplete="off">' +
       '<select id="itx-orden" aria-label="Ordenar">' + [["nuevo", "Más nuevos"], ["menor", "Precio: menor a mayor"], ["mayor", "Precio: mayor a menor"], ["nombre", "Nombre A-Z"]].map((o) => '<option value="' + o[0] + '"' + (filtros.orden === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
-      '<span class="itx-count" id="itxCuenta"></span></div><div id="itxGrid">' + gridHtml() + "</div></div></div>";
+      '<span class="itx-count" id="itxCuenta"></span></div><div class="itx-chips" id="itxChips">' + chipsHtml() + '</div><div id="itxGrid">' + gridHtml() + "</div></div></div>";
   }
 
   /* ---------- Admin: formulario de item ---------- */
@@ -682,13 +703,24 @@
         '<button class="itx-btn gold" type="button" data-itx="carAhora" data-id="' + esc(it.id) + '">⚡ Comprar ahora</button>';
     return miga(it.tipo, it.nombre, it.heroe) + 
       '<section class="itx-pg"><h1>' + esc(it.nombre) + (it.activo ? "" : ' <small>(oculto)</small>') + "</h1>" +
-      '<div class="itx-pg-grid"><div class="itx-pg-foto" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') +
+      '<div class="itx-pg-grid"><div class="itx-pg-foto' + (it.img ? " zoomable" : "") + '" style="--rar:' + col + '"' + (it.img ? ' data-itx="zoomImg" role="button" tabindex="0" aria-label="Ampliar foto"' : "") + ">" + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') + (it.img ? '<span class="itx-lupa" aria-hidden="true">⤢</span>' : "") +
       '<span class="itx-pg-tag' + (agot ? " off" : "") + '">' + (agot ? "Agotado" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
       '<div class="itx-pg-info"><dl class="itx-pg-attrs">' + attrs + "</dl>" + estilosHtml(it) + descripcionHtml(it) +
       '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + "</div>" +
       steamHtml(it, true) +
       (agot ? "" : (p ? '<p class="itx-hint">Tienes <b>S/ ' + p.creditos + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>')) +
-      '<div class="pp-btns">' + btns + "</div></div></div></div>" + ofertasHtml(it) + "</section>" + parecidosHtml(it);
+      '<div class="pp-btns">' + btns + "</div></div></div></div>" + ofertasHtml(it) + "</section>" + parecidosHtml(it) +
+      (agot ? "" : '<div class="itx-sticky"><div class="ips-p"><small>Precio</small><b>' + fmtPrecio(it.precio) + '</b></div><button class="itx-btn fucsia" type="button" data-itx="carAdd" data-id="' + esc(it.id) + '">🛒 ' + (carro[it.id] ? "✔ En el carrito (" + carro[it.id] + ")" : "Agregar al carrito") + "</button></div>");
+  }
+  function zoomFoto(t) {
+    const im = t.querySelector("img"); if (!im) return;
+    const ov = document.createElement("div"); ov.className = "itx-lightbox"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Foto ampliada");
+    ov.innerHTML = '<button type="button" class="itx-lb-x" aria-label="Cerrar">✕</button><img alt="">';
+    ov.querySelector("img").src = im.currentSrc || im.src;
+    const cerrar = () => { ov.remove(); document.removeEventListener("keydown", tecla); };
+    const tecla = (e) => { if (e.key === "Escape") cerrar(); };
+    ov.addEventListener("click", cerrar); document.addEventListener("keydown", tecla);
+    document.body.appendChild(ov);
   }
 
   /* ---------- Modal de un item (comprar) ---------- */
@@ -719,15 +751,16 @@
   const ofertasDe = (it) => { const k = sinTildes(it.nombre); return items.lista.filter((x) => sinTildes(x.nombre) === k && (x.activo || esAdmin())).sort((a, b) => (a.precio || 0) - (b.precio || 0)); };
   const ofe = { min: "", max: "" };
   // Una fila por cada unidad en stock (como lis-skins): si hay 3, salen 3 filas separadas.
-  function ofertaFilaHtml(x, curId) {
+  function ofertaFilaHtml(x, curId, mejor) {
     const cur = x.id === curId, ne = Number(x.estilos) || 0, ok = estilosOkLista(x), n = Math.max(1, Math.min(30, x.stock)), agot = x.stock <= 0;
     const est = ne ? [1, 2, 3, 4, 5, 6, 7, 8].slice(0, ne).map((k) => '<span class="est' + (ok.indexOf(k) >= 0 ? "" : " lock") + '">' + k + "</span>").join("") : "";
     const gem = gemChipsHtml(x); let out = "";
     const edit = esAdmin() ? '<button type="button" class="itx-btn ghost sm ofr-ed" data-itx="editar" data-id="' + esc(x.id) + '"' + (x.stock > 1 ? ' data-u="1"' : '') + ' title="Editar esta unidad (gemas, estilos y precio)">✎ Editar</button>' : "";
     for (let u = 0; u < n; u++) {
       const enCarro = !agot && u < (Number(carro[x.id]) || 0);
-      out += '<div class="ofr-r' + (cur ? " cur" : "") + (agot ? " agot" : "") + (enCarro ? " enc" : "") + '" data-itx="ver" data-id="' + esc(x.id) + '" role="button" tabindex="0"><span class="ofr-g">' + gem + "</span>" +
-        '<span class="ofr-e">' + est + '</span><span class="ofr-p"><b>' + fmtPrecio(x.precio) + "</b></span>" +
+      const best = mejor && u === 0;
+      out += '<div class="ofr-r' + (cur ? " cur" : "") + (agot ? " agot" : "") + (enCarro ? " enc" : "") + (best ? " best" : "") + '" data-itx="ver" data-id="' + esc(x.id) + '" role="button" tabindex="0"><span class="ofr-g">' + gem + "</span>" +
+        '<span class="ofr-e">' + est + '</span><span class="ofr-p"><b>' + fmtPrecio(x.precio) + "</b>" + (best ? '<em class="ofr-best">Mejor precio</em>' : "") + "</span>" +
         '<span class="ofr-b">' + edit + (agot ? '<span class="ofr-ag">Agotado</span>' : (enCarro
           ? '<button type="button" class="itx-btn ghost sm ofr-in" data-itx="carMenos" data-id="' + esc(x.id) + '" title="Quitar del carrito">✔ En el carrito</button>'
           : '<button type="button" class="itx-btn gold sm" data-itx="carAhora" data-id="' + esc(x.id) + '">⚡ Comprar ahora</button>' +
@@ -739,7 +772,7 @@
     const mn = parseFloat(String(ofe.min).replace(",", ".")), mx = parseFloat(String(ofe.max).replace(",", "."));
     const l = ofertasDe(it).filter((x) => (!isFinite(mn) || x.precio >= mn) && (!isFinite(mx) || x.precio <= mx));
     return '<div class="ofr-h"><span>Gemas / Runas</span><span>Estilos desbloqueados</span><span>Precio</span><span>Acción</span></div>' +
-      (l.length ? l.map((x) => ofertaFilaHtml(x, it.id)).join("") : '<div class="ofr-vacio">Ninguna oferta en ese rango de precio.</div>');
+      (l.length ? (() => { let mj = null; l.forEach((x) => { if (x.stock > 0 && (mj === null || x.precio < mj.precio)) mj = x; }); return l.map((x) => ofertaFilaHtml(x, it.id, x === mj && l.length > 1)).join(""); })() : '<div class="ofr-vacio">Ninguna oferta en ese rango de precio.</div>');
   }
   function ofertasHtml(it) {
     const n = ofertasDe(it).reduce((a, x) => a + Math.max(1, Math.min(30, x.stock)), 0);
@@ -770,18 +803,24 @@
     const it = itemPorId(id); if (!it || it.stock <= 0) return false;
     carro[id] = Math.min(it.stock, (Number(carro[id]) || 0) + 1); carroGuardar(); return true;
   }
+  function pasosHtml(n) {
+    return '<ol class="cpasos" aria-label="Pasos de la compra">' + ["Carrito", "Pago", "Listo"].map((t, i) => '<li class="' + (i + 1 < n ? "hecho" : i + 1 === n ? "act" : "") + '"><i>' + (i + 1 < n ? "✔" : i + 1) + "</i>" + t + "</li>").join("") + "</ol>";
+  }
   function carroModal() {
     const cerrar = '<button class="itx-btn ghost sm" type="button" data-itx="cerrarModal">Cerrar</button>';
     if (!items.cargado) { cargarItems(); return { h: "<h3>Tu carrito 🛒</h3><p class='itx-hint'>Cargando…</p>", btns: cerrar }; }
     const l = carroLineas(), T = carroTotales(), p = perfil();
     if (!l.length) return { h: "<h3>Tu carrito 🛒</h3><p class='itx-hint'>Está vacío. Elige items del catálogo y pulsa <b>Al carrito</b>.</p>", btns: cerrar };
-    const h = "<h3>Tu carrito 🛒</h3><div class=\"carl\">" + l.map((x) =>
+    const falta = p ? Math.max(0, T.cred - p.creditos) : 0, nUni = l.reduce((a, x) => a + x.qty, 0);
+    const h = "<h3>Tu carrito 🛒</h3>" + pasosHtml(1) + "<div class=\"carl\">" + l.map((x) =>
       '<div class="carr"><div class="carr-t">' + (x.it.img ? imgTag(x.it.img, "", ' width="48" height="48"') : '<span class="sinfoto">—</span>') + "<span><b>" + esc(x.it.nombre) + "</b><small>" + fmtPrecio(x.it.precio) + " c/u</small></span></div>" +
       '<div class="carr-q"><button type="button" class="itx-btn ghost sm" data-itx="carMenos" data-id="' + esc(x.it.id) + '" aria-label="Menos">−</button><span>' + x.qty + "</span>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="carMas" data-id="' + esc(x.it.id) + '" aria-label="Más"' + (x.qty >= x.it.stock ? " disabled" : "") + '>+</button>' +
       '<button type="button" class="itx-btn ghost sm" data-itx="carQuitar" data-id="' + esc(x.it.id) + '" aria-label="Quitar">🗑</button></div></div>').join("") + "</div>" +
-      '<p class="itx-resumen">Total: <b>' + fmtPrecio(T.sol) + "</b></p>" +
-      (p ? '<p class="itx-hint">Tienes <b>S/ ' + p.creditos + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>');
+      '<div class="cresumen"><div><span>Productos (' + nUni + ')</span><b>' + fmtPrecio(T.sol) + "</b></div>" +
+      (p ? "<div><span>Tu saldo</span><b>S/ " + p.creditos + "</b></div>" + (falta ? '<div class="falta"><span>Te faltan</span><b>S/ ' + falta + "</b></div>" : "<div><span>Saldo después</span><b>S/ " + (p.creditos - T.cred) + "</b></div>") : "") +
+      '<div class="total"><span>Total a pagar</span><b>' + fmtPrecio(T.sol) + "</b></div></div>" +
+      (p ? (falta ? '<p class="itx-hint warn">Tu saldo no alcanza. Recarga o pide por WhatsApp.</p>' : "") : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>');
     const btns = '<button class="itx-btn fucsia" type="button" data-itx="carCred">💎 Pagar con tu saldo (S/ ' + T.cred + ')</button>' +
       '<button class="itx-btn gold" type="button" data-itx="carWsp">💬 Pedir por WhatsApp</button>' +
       '<button class="itx-btn ghost sm" type="button" data-itx="carVaciar">Vaciar</button>' + cerrar;
@@ -826,10 +865,10 @@
           '<button class="itx-btn gold" type="button" data-itx="wsp" data-id="' + esc(it.id) + '">💬 Comprar por WhatsApp</button>') + cerrar;
       }
     } else if (modal.tipo === "carrito") { const mc = carroModal(); h = mc.h; btns = mc.btns; }
-    else if (modal.tipo === "cargando") { h = "<h3>Procesando…</h3><p class='itx-hint'>Un momento por favor.</p>"; }
+    else if (modal.tipo === "cargando") { h = "<h3>Procesando…</h3>" + pasosHtml(2) + "<p class='itx-hint'>Un momento por favor.</p>"; }
     else if (modal.tipo === "error") { h = "<h3>No se pudo completar</h3><p class='itx-hint'>" + esc(modal.msg) + "</p>"; btns = cerrar; }
     else if (modal.tipo === "ok") {
-      h = "<h3>¡Compra lista! 🎉</h3><p class='itx-hint'>Compraste <b>S/ " + esc(modal.nombre) + "</b>. Pedido <b>" + esc(modal.code) + "</b>. Te quedan <b>" + modal.saldo + "</b>. Te escribiremos para entregártelo por Steam; asegúrate de tener tu link de intercambio en tu cuenta.</p>";
+      h = "<h3>¡Compra lista! 🎉</h3>" + pasosHtml(4) + "<p class='itx-hint'>Compraste <b>" + esc(modal.nombre) + "</b>. Pedido <b>" + esc(modal.code) + "</b>. Te quedan <b>S/ " + modal.saldo + "</b>. Te escribiremos para entregártelo por Steam; asegúrate de tener tu link de intercambio en tu cuenta.</p>";
       btns = cerrar;
     }
     return '<div class="itx-scrim" data-itx="cerrarModal"></div><div class="itx-dialog" role="dialog" aria-modal="true">' + h + '<div class="itx-dbtns">' + btns + "</div></div>";
@@ -1091,6 +1130,8 @@
       case "pag": { filtros.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarGrid(); const gp = document.getElementById("itxGrid"); if (gp && gp.scrollIntoView) gp.scrollIntoView({ block: "start", behavior: "smooth" }); break; }
       case "quitarFiltros": adm.nuevoNombre = ""; Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", pag: 0 }); renderTodo(); sincHash(); break;
       case "avisoCerrar": adm.nuevoNombre = ""; renderTodo(); break;
+      case "quitarUno": { const kq = t.getAttribute("data-k"); if (kq === "precio") { filtros.min = ""; filtros.max = ""; } else if (kq && Object.prototype.hasOwnProperty.call(filtros, kq)) filtros[kq] = ""; filtros.pag = 0; renderTodo(); sincHash(); break; }
+      case "zoomImg": zoomFoto(t); break;
       case "reset": adm.nuevoNombre = ""; Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "mayor", pag: 0 }); renderTodo(); sincHash(); break;
       case "carAddCard": {
         const id = t.getAttribute("data-id"), antes = Number(carro[id]) || 0;

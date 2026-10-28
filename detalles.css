@@ -1,0 +1,36 @@
+/* Detalles generales LitleJacob: cabecera fija compacta, foco visible, animaciones suaves, pie, toasts */
+html{scroll-behavior:smooth}
+body{overflow-x:hidden}
+/* cabecera fija */
+.site-nav{position:sticky!important;top:0;z-index:60;background:rgba(8,8,10,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:padding .2s,box-shadow .2s}
+html.lj-rifas .topbar{position:sticky;top:0;z-index:60;background:rgba(8,8,10,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+html.lj-rifas .topbar .site-nav{position:static!important;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.site-nav.ljc,html.lj-rifas .topbar.ljc{box-shadow:0 6px 22px rgba(0,0,0,.55),0 1px 0 rgba(192,36,58,.45)}
+.site-nav.ljc{padding-top:6px!important;padding-bottom:6px!important}
+.site-nav.ljc .nav-brand img,.topbar.ljc .nav-brand img{width:32px;height:32px;transition:all .2s}
+.site-nav.ljc .nav-brand span,.topbar.ljc .nav-brand span{font-size:.92em}
+/* foco visible y contraste */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #e8ebef!important;outline-offset:2px!important;box-shadow:0 0 0 4px rgba(192,36,58,.55)!important}
+::selection{background:#c0243a;color:#fff}
+/* aparición suave */
+.lj-rev{opacity:0;transform:translateY(16px);transition:opacity .5s ease,transform .5s ease}
+.lj-rev.in{opacity:1;transform:none}
+/* pie */
+.lj-pie{margin:34px auto 10px;padding:18px 14px 6px;max-width:980px;text-align:center;border-top:1px solid rgba(200,205,212,.18)}
+.lj-pie nav{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin-bottom:10px}
+.lj-pie a{color:#c8cdd4;text-decoration:none;font-size:.88rem;padding:6px 4px}
+.lj-pie a:hover{color:#fff;text-decoration:underline;text-decoration-color:#c0243a}
+.lj-pie small{display:block;color:#9aa0a8;font-size:.78rem}
+/* avisos (toasts) del panel */
+.lj-toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);z-index:9999;background:#15161a;color:#f4f5f7;border:1px solid #c8cdd4;border-left:4px solid #c0243a;border-radius:10px;padding:11px 18px;font-size:.92rem;box-shadow:0 10px 30px rgba(0,0,0,.6);opacity:0;transition:opacity .25s,transform .25s;max-width:min(92vw,420px);pointer-events:none}
+.lj-toast.on{opacity:1;transform:translate(-50%,0)}
+.lj-toast.ok{border-left-color:#c8cdd4}
+@media (max-width:640px){
+  img,video,canvas,table{max-width:100%}
+  .site-nav .nav-links{max-width:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .lj-rev{opacity:1;transform:none;transition:none}
+  .lj-toast{transition:none}
+}

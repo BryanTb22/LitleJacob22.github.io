@@ -46,3 +46,112 @@
 .lj-win-b small { font-size: 12px; color: var(--mj-dim); }
 .lj-win-more { display: flex; justify-content: center; margin-top: 18px; }
 @media (prefers-reduced-motion: reduce) { .lj-trust-i, .lj-win, .section-card, .buy-mini, .buy-option, .buy-option .ico { transition: none !important; } }
+
+/* ---------- Rifas (ronda 2): cierre pronto, zoom, total, confeti — plata/rojo/negro ---------- */
+.card .pic.zoomable { cursor: zoom-in; }
+.card .soon { position: absolute; top: 10px; right: 10px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; background: var(--fuchsia); color: #fff; font: 700 11px var(--body, inherit); letter-spacing: .1em; text-transform: uppercase; box-shadow: 0 4px 16px rgba(200, 22, 31, .5); animation: ljLate 1.8s ease-in-out infinite; }
+.card .soon.full { background: #2a2c31; color: #c4c8ce; box-shadow: none; animation: none; border: 1px solid var(--line); }
+@keyframes ljLate { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.card .pic.zoomable::before { content: "⌕"; position: absolute; right: 10px; bottom: 10px; z-index: 2; width: 32px; height: 32px; display: grid; place-items: center; background: rgba(10, 10, 12, .7); border: 1px solid var(--line); color: var(--yellow-2); font-size: 18px; opacity: 0; transition: opacity .2s; }
+.card .pic.zoomable:hover::before { opacity: 1; }
+@media (hover: none) { .card .pic.zoomable::before { opacity: .85; } }
+.timer { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 6px 13px; border: 1px solid var(--line); background: rgba(255, 255, 255, .04); color: var(--yellow-2); }
+.timer.urg { color: #fff; border-color: var(--fuchsia); background: linear-gradient(90deg, rgba(200, 22, 31, .35), rgba(200, 22, 31, .1)); box-shadow: 0 0 20px rgba(200, 22, 31, .3); }
+.cbar.full i { background: linear-gradient(90deg, #55585e, #9a9ea6); box-shadow: none; }
+.cbar.hot i { animation: ljBarra 1.8s ease-in-out infinite; }
+@keyframes ljBarra { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
+#rzoom { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; padding: 20px; background: rgba(4, 4, 6, .93); cursor: zoom-out; opacity: 0; transition: opacity .2s; }
+#rzoom.on { opacity: 1; }
+#rzoom img { max-width: min(96vw, 1100px); max-height: 88vh; object-fit: contain; border: 1px solid var(--yellow); box-shadow: 0 20px 80px rgba(0, 0, 0, .8), 0 0 60px rgba(200, 22, 31, .18); transform: scale(.94); transition: transform .25s; }
+#rzoom.on img { transform: none; }
+#rzoom .rz-x { position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border: 1px solid rgba(255, 255, 255, .3); background: rgba(0, 0, 0, .55); color: #fff; font-size: 20px; cursor: pointer; }
+#rzoom .rz-x:hover { background: var(--fuchsia); border-color: var(--fuchsia); }
+.qty { gap: 22px; margin: 10px 0 6px; }
+.qty button { transition: transform .15s, box-shadow .15s; }
+.qty button:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 0 22px rgba(200, 22, 31, .45); }
+.qtot { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 4px; }
+.qtot > div { display: grid; gap: 2px; justify-items: center; padding: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, .04); }
+.qtot > div:first-child { border-color: var(--fuchsia); background: rgba(200, 22, 31, .1); }
+.qtot small { color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; }
+.qtot b { font-size: 1.7rem; line-height: 1.1; color: var(--yellow-2); }
+.qtot > div:first-child b { color: #fff; }
+#rconfeti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
+@media (prefers-reduced-motion: reduce) { .card .soon, .cbar.hot i { animation: none; } }
+
+/* =====================================================================
+   Catálogo (tema 3): chips de filtros, esqueleto, últimas unidades,
+   mejor precio, zoom de foto y barra fija en celular (plata + rojo)
+   ===================================================================== */
+.itx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.itx-chips:empty { display: none; }
+.itx-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 999px; border: 1px solid var(--mj-line-hi); background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02)); color: var(--mj-steel-hi); font: inherit; font-size: 13px; cursor: pointer; transition: border-color .2s, background .2s; }
+.itx-chip b { color: #fff; font-weight: 800; }
+.itx-chip i { font-style: normal; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(200, 22, 31, .55); color: #fff; font-size: 11px; line-height: 1; }
+.itx-chip:hover, .itx-chip:focus-visible { border-color: var(--mj-blood-hi); outline: none; }
+.itx-chip:hover i { background: var(--mj-blood-hi); }
+.itx-chip.limpiar { padding: 6px 14px; border-style: dashed; background: none; color: var(--mj-dim); }
+.itx-filt summary { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.itx-filt summary #itxFiltN { color: var(--mj-blood-hi); margin-left: 6px; }
+
+/* esqueleto de carga */
+.itx-sk-grid { pointer-events: none; }
+.itx-card.itx-sk { min-height: 330px; cursor: default; }
+.itx-card.itx-sk:hover { transform: none; border-color: var(--itx-line); }
+.itx-sk .itx-thumb, .sk-l { position: relative; overflow: hidden; background: rgba(255, 255, 255, .05); }
+.sk-l { display: block; height: 14px; border-radius: 8px; margin-bottom: 10px; }
+.sk-l.w80 { width: 80%; } .sk-l.w50 { width: 50%; } .sk-l.w60 { width: 60%; } .sk-l.tall { height: 34px; margin-top: 14px; border-radius: 999px; }
+.itx-sk .itx-thumb::before, .sk-l::before { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .1), transparent); animation: itxSh 1.3s infinite; }
+@keyframes itxSh { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .itx-sk .itx-thumb::before, .sk-l::before { animation: none; } }
+
+/* últimas unidades */
+.itx-ult { position: absolute; left: 10px; bottom: 12px; z-index: 2; padding: 4px 10px; border-radius: 999px; background: linear-gradient(90deg, var(--mj-blood), var(--mj-blood-hi)); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; box-shadow: 0 4px 14px rgba(200, 22, 31, .5); }
+.itx-card .itx-meta { align-content: flex-start; }
+
+/* mejor precio */
+.ofr-p { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.ofr-best { font-style: normal; display: inline-block; padding: 2px 9px; border-radius: 999px; background: linear-gradient(180deg, #f4f5f7, #b9bdc4); color: #14151a; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.ofr-r.best { box-shadow: inset 4px 0 0 var(--mj-blood-hi); background: linear-gradient(90deg, rgba(200, 22, 31, .16), rgba(200, 22, 31, .02)); }
+
+/* zoom de foto */
+.itx-pg-foto.zoomable { cursor: zoom-in; }
+.itx-lupa { position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(8, 8, 10, .78); border: 1px solid rgba(255, 255, 255, .25); font-size: 18px; pointer-events: none; }
+.itx-pg-foto.zoomable:hover .itx-lupa { background: var(--mj-blood-hi); }
+.itx-lightbox { position: fixed; inset: 0; z-index: 100000; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .9); cursor: zoom-out; }
+.itx-lightbox img { max-width: min(96vw, 1100px); max-height: 90vh; object-fit: contain; border-radius: 10px; }
+.itx-lb-x { position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--mj-line-hi); background: #15151a; color: #fff; font-size: 18px; cursor: pointer; }
+
+/* barra fija (solo celular) */
+.itx-sticky { display: none; }
+@media (max-width: 760px) {
+  .itx-bar select, #itx-orden { width: 100%; flex: 1 1 100%; min-width: 0; }
+  .itx-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; align-items: center; gap: 12px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(10, 10, 12, .94); backdrop-filter: blur(14px); border-top: 1px solid var(--mj-blood); box-shadow: 0 -10px 30px rgba(0, 0, 0, .5); }
+  .itx-sticky .ips-p { display: flex; flex-direction: column; line-height: 1.1; }
+  .itx-sticky .ips-p small { font-size: 11px; color: var(--mj-dim); letter-spacing: .1em; text-transform: uppercase; }
+  .itx-sticky .ips-p b { font: 700 22px var(--mj-head); color: var(--mj-steel-hi); }
+  .itx-sticky .itx-btn { flex: 1; }
+  body.is-admin .itx-sticky { bottom: 64px; }
+  body:has(.itx-sticky) { padding-bottom: 80px; }
+}
+.itx-card .itx-price { min-height: 80px; align-content: flex-end; }
+
+/* ===== Carrito en pasos + resumen (tema 4) ===== */
+.cpasos{display:flex;justify-content:center;gap:6px;list-style:none;margin:0 0 12px;padding:0}
+.cpasos li{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 6px;border-radius:999px;border:1px solid var(--itx-line,#3d3f45);color:var(--itx-muted,#8b9097);font:600 12px/1 Inter,system-ui,sans-serif}
+.cpasos i{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.08);font-style:normal;font-size:11px}
+.cpasos li.act{border-color:#c8cdd4;color:#f4f5f7}.cpasos li.act i{background:#c8cdd4;color:#111}
+.cpasos li.hecho{border-color:#c0243a;color:#f4f5f7}.cpasos li.hecho i{background:#c0243a;color:#fff}
+.cresumen{display:grid;gap:6px;margin:12px 0;padding:12px 14px;border:1px solid var(--itx-line,#3d3f45);border-radius:12px;background:rgba(255,255,255,.04)}
+.cresumen div{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:#c4c8ce}
+.cresumen div b{color:#f4f5f7}
+.cresumen .falta b,.cresumen .falta{color:#ff7b8c}
+.cresumen .total{margin-top:4px;padding-top:8px;border-top:1px dashed #3d3f45;font-size:16px;color:#f4f5f7}
+.cresumen .total b{font-size:20px;color:#e8eaee}
+.itx-hint.warn{color:#ff9aa7}
+@media (max-width:420px){.cpasos li{padding-right:9px;font-size:11px}}
+/* botones del carrito/compra con la paleta plata/rojo de LitleJacob */
+.itx-dialog{border-color:#c8cdd4!important}
+.itx-dialog h3{color:#f4f5f7!important}
+.itx-dbtns .itx-btn.fucsia{background:linear-gradient(180deg,#d12a42,#9e1b2e)!important;color:#fff!important;box-shadow:0 6px 18px rgba(192,36,58,.35)!important}
+.itx-dbtns .itx-btn.gold{background:linear-gradient(180deg,#eceef2,#aeb4bd)!important;color:#15161a!important;box-shadow:none!important}
+.itx-dbtns .itx-btn.ghost{border-color:#5a5e66!important;color:#d6d9de!important}
