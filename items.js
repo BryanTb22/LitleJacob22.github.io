@@ -38,7 +38,7 @@
   function safeImg(src) {
     src = String(src || "").trim();
     if (/^img\/[\w.\-]+$/.test(src)) return src;
-    if (/^https:\/\/[^\s"'<>()]+$/.test(src)) return src;
+    if (/^https:\/\/[^\s"'<>()]+$/.test(src)) return src.replace(/(steamstatic\.com\/economy\/image\/[^\s"'<>()]+)\/(\d+)fx(\d+)f$/, (m, a, w) => (Number(w) > 256 ? a + "/256fx256f" : m));
     return "";
   }
 
@@ -65,7 +65,7 @@
       return '<img data-fs="' + esc(id) + '"' + (IMG_CACHE[id] ? ' src="' + IMG_CACHE[id] + '"' : "") + ' alt="' + esc(alt) + '"' + (extra || "") + ">";
     }
     const u = safeImg(src);
-    return u ? '<img src="' + esc(u) + '" alt="' + esc(alt) + '"' + (extra || "") + ">" : "";
+    return u ? '<img src="' + esc(u) + '" alt="' + esc(alt) + '" decoding="async"' + (extra || "") + ">" : "";
   }
   function hidratarImgs() {
     document.querySelectorAll(".itx img[data-fs]:not([src]), #itxModal img[data-fs]:not([src])").forEach((el) => {
@@ -109,7 +109,7 @@
 
   /* ---------- estado ---------- */
   const items = { lista: [], cargado: false, cargando: false, err: "" };
-  const filtros = { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", limite: 48 };
+  const filtros = { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", limite: 24 };
   const ven = { link: "", cargando: false, err: "", lista: null, noTrad: 0, sel: {}, precios: [], pCargado: false, pCargando: false, q: "", f: { tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", min: "", max: "", orden: "mayor" } };
   const adm = { form: null, msg: "", guardando: false, subiendo: false, steamCargando: false, steamInfo: "", itemDel: null, cp: {} };
   const sec = { cargado: false, items: false };   // sección visible para clientes (rayas/estado → secciones.items)
@@ -618,9 +618,9 @@
     switch (a) {
       case "ver": modal = { tipo: "item", id: t.getAttribute("data-id") }; renderTodo(); break;
       case "cerrarModal": modal = null; renderTodo(); break;
-      case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.limite = 48; renderTodo(); break;
-      case "mas": filtros.limite += 48; pintarGrid(); break;
-      case "reset": Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", limite: 48 }); renderTodo(); break;
+      case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.limite = 24; renderTodo(); break;
+      case "mas": filtros.limite += 24; pintarGrid(); break;
+      case "reset": Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", limite: 24 }); renderTodo(); break;
       case "cred": comprarConCreditos(t.getAttribute("data-id")); break;
       case "wsp": { const it = itemPorId(t.getAttribute("data-id")); if (it) window.open(waLink(mensajeItem(it)), "_blank", "noopener"); break; }
       case "nuevo": adm.form = nuevoForm(); adm.msg = ""; adm.steamInfo = ""; renderTodo(); irAlForm(); break;
@@ -652,7 +652,7 @@
   function campoEvento(el, tipo) {
     if (!el.id) return false;
     const mapa = { "itx-q": "q", "itx-min": "min", "itx-max": "max", "itx-heroe": "heroe", "itx-ranura": "ranura", "itx-rareza": "rareza", "itx-calidad": "calidad", "itx-orden": "orden" };
-    if (mapa[el.id]) { filtros[mapa[el.id]] = el.value; filtros.limite = 48; pintarGrid(); return true; }
+    if (mapa[el.id]) { filtros[mapa[el.id]] = el.value; filtros.limite = 24; pintarGrid(); return true; }
     if (el.id === "itv-link") { ven.link = el.value; return true; }
     const VF = { "itv-min": "min", "itv-max": "max", "itv-heroe": "heroe", "itv-ranura": "ranura", "itv-rareza": "rareza", "itv-calidad": "calidad", "itv-orden": "orden" };
     if (VF[el.id]) { ven.f[VF[el.id]] = el.value; renderTodo(); return true; }
