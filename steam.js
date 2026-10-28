@@ -17,7 +17,7 @@
   function ir(tokenFn) {
     return (tokenFn ? tokenFn() : Promise.resolve(null)).then(function (tk) {
       var h = { "Content-Type": "application/json" }; if (tk) h.Authorization = "Bearer " + tk;
-      return fetch(URL_INICIAR, { method: "POST", headers: h, body: JSON.stringify({ origen: location.origin, ruta: location.pathname }) });
+      return fetch(URL_INICIAR, { method: "POST", headers: h, body: JSON.stringify({ origen: location.origin, ruta: location.pathname }) }).catch(function () { throw new Error("Steam todavía no está activado: falta publicar la función del servidor. Mientras tanto entra con Google o con tu correo."); });
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || !j.url) throw new Error(j.error || "No se pudo conectar con Steam."); location.href = j.url; });
     });
