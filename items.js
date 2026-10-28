@@ -1174,6 +1174,10 @@
     cargarSecciones(); cargarItems();
     window.addEventListener("hashchange", alCambiarRuta);
     setInterval(vigilarSesion, 1500);
+    if (/[?&]carrito=1(&|$)/.test(location.search)) {   // viene del botón Carrito de la página de rifas
+      modal = { tipo: "carrito" };
+      try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) { /* nada */ }
+    }
     aplicarRutaCatalogo(); alCambiarRuta(); renderTodo();
   }
   window.ljItems = { render: renderTodo };
