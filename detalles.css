@@ -34,3 +34,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   .lj-rev{opacity:1;transform:none;transition:none}
   .lj-toast{transition:none}
 }
+
+/* Con el panel (admin o cuenta) abierto, la barra superior queda detrás del fondo oscuro y no tapa el encabezado del panel. */
+html.lj-rifas body:has(.drawer) .topbar{z-index:40}
