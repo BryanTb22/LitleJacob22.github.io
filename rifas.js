@@ -874,11 +874,15 @@
   }
 
   function rifasOn() { return !(estado.secciones && estado.secciones.rifas === false); }
+  function carroN() {
+    try { var c = JSON.parse(localStorage.getItem("lj_carro_items_v1") || "{}"), n = 0; Object.keys(c).forEach(function (k) { n += Number(c[k]) || 0; }); return n ? ' (' + n + ')' : ''; } catch (e) { return ''; }
+  }
   function navTienda() {
     var on = !!(admin.puede || (estado.secciones && estado.secciones.items));
     var lock = !(estado.secciones && estado.secciones.items) && admin.puede ? " 🔒" : "";
     return '<a class="nav-link" href="index.html#inicio">Inicio</a><a class="nav-link" href="index.html#sets-cache">Sets Caché</a>' +
       (on ? '<a class="nav-link" href="index.html#items">Comprar items' + lock + '</a><a class="nav-link" href="index.html#vender">Vender items' + lock + '</a>' : '') +
+      (on ? '<a class="nav-link" href="index.html?carrito=1#items">🛒 Carrito' + carroN() + '</a>' : '') +
       '<a class="nav-link" href="index.html#compro">Compro</a>' + (admin.puede || rifasOn() ? '<a class="nav-link active" href="rifas.html">Rifas' + (rifasOn() ? '' : ' 🔒') + '</a>' : '');
   }
   function waPill() { return "https://wa.me/51952997030?text=" + encodeURIComponent("Hola LitleJacob, vi tu tienda LitleJacob Store y quiero hacer una consulta."); }
@@ -904,7 +908,7 @@
       '<div class="nav-links">' + navTienda() + '</div>' +
       '<div class="nav-right">' +
       '<a class="wa-pill wa-contact" href="' + esc(waPill()) + '" target="_blank" rel="noopener noreferrer"><span class="wa-dot"></span>WhatsApp +51 952 997 030</a>' +
-      (admin.puede ? '<button class="lock" type="button" data-a="admin">Panel admin</button>'
+      (admin.puede ? '<button class="lock" type="button" data-a="admin"><span class="ljc-ico">🔧</span>Admin</button>'
         : (cuenta.perfil ? '<button class="lock hot misrifas" type="button" data-a="misRifas">🎟️ Mis rifas</button><button class="lock me" type="button" data-a="miCuenta"><b>◆ S/ ' + cuenta.perfil.creditos + '</b><span class="nm"> · ' + esc(cuenta.perfil.nombre || "Mi cuenta") + '</span></button>'
           : (leerSesion() ? '<button class="lock" type="button" data-a="miCuenta">Mi cuenta</button>'
             : '<button class="lock" type="button" data-a="entrar">Entrar</button><button class="lock hot" type="button" data-a="registro">Crear cuenta</button>'))) +
