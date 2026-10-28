@@ -116,7 +116,7 @@
   }
   function leerPerfil(d) {
     var f = (d && d.fields) || {}, sv = function (k) { return (f[k] && f[k].stringValue) || ""; };
-    return { nombre: sv("nombre"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"), steam: sv("steam"),
+    return { nombre: sv("nombre"), steamId: sv("steamId"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"), steam: sv("steam"),
       creditos: f.creditos ? Number(f.creditos.integerValue || f.creditos.doubleValue || 0) : 0,
       promoUsada: !!(f.promoUsada && f.promoUsada.booleanValue === true) };
   }
@@ -187,7 +187,16 @@
     raiz.addEventListener("submit", alEnviar);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && st.abierto) cerrar(); });
     pintarBoton();
-    if (leerSesion()) cargarPerfil();
+    var vs = window.ljSteam && window.ljSteam.alCargar();   // ¿volvemos de Steam?
+    if (vs) {
+      if (vs.tipo === "token") {
+        st.steamPre = vs.pre; st.msg = "Entrando con Steam…"; st.tipo = ""; st.modo = "login"; abrir("login");
+        vs.entrar().then(function () { st.msg = ""; st.modo = "perfil"; return cargarPerfil(); })
+          .catch(function (er) { st.modo = "login"; st.msg = "No se pudo entrar con Steam (" + ((er && er.message) || "error") + ")."; st.tipo = "err"; pintar(); });
+      } else if (vs.tipo === "vinculado") {
+        st.msg = vs.msg; st.tipo = "ok"; st.modo = "perfil"; abrir("perfil"); cargarPerfil().then(function () { st.msg = vs.msg; st.tipo = "ok"; pintar(); });
+      } else { st.msg = vs.msg; st.tipo = "err"; st.modo = "login"; abrir("login"); }
+    } else if (leerSesion()) cargarPerfil();
     // Permite abrir la cuenta con #cuenta en la dirección
     if (/^#cuenta$/.test(location.hash)) abrir();
   }
@@ -245,14 +254,14 @@
         '<p class="ljc-hint">¿Ya tienes cuenta? <a href="#" data-a="login">Entra aquí</a></p></form>';
     } else if (st.modo === "completar" && s) {
       titulo = "Completa tu perfil";
-      cuerpo = '<form class="ljc-body" id="ljcCompletar" novalidate><p class="ljc-hint">Entraste con <b>' + esc(s.email || "") + '</b>. Completa tus datos para comprar y participar en las rifas.</p>' +
-        camposCliente("ljc") + '<button class="ljc-btn red" type="submit">Guardar mi perfil</button>' + mensaje() +
+      cuerpo = '<form class="ljc-body" id="ljcCompletar" novalidate><p class="ljc-hint">' + (s.email ? 'Entraste con <b>' + esc(s.email) + '</b>.' : '¡Listo, entraste con Steam!') + ' Completa tus datos (WhatsApp y trade link) para comprar y participar en las rifas.</p>' +
+        camposCliente("ljc", st.steamPre ? { nombre: st.steamPre.nom, steam: st.steamPre.sid } : null) + '<button class="ljc-btn red" type="submit">Guardar mi perfil</button>' + mensaje() +
         '<button class="ljc-btn ghost sm" type="button" data-a="salir">Cerrar sesión</button></form>';
     } else if (st.modo === "perfil" && s) {
       titulo = "Mi cuenta";
       cuerpo = '<div class="ljc-body">' + (p
         ? '<div class="ljc-saldo"><small>Tu saldo</small><b>' + p.creditos + '</b><a class="ljc-rec" href="#" data-a="recargar">💎 Recargar saldo</a><a href="rifas.html">Ir a las rifas →</a></div>' +
-          '<form id="ljcPerfil" novalidate><h3>Mis datos</h3>' + camposCliente("ljp", p) +
+          (window.ljSteam ? window.ljSteam.bloqueVinculo(p.steamId, "ljc-btn steam", "ljc-hint", "ljc-steam") : "") + '<form id="ljcPerfil" novalidate><h3>Mis datos</h3>' + camposCliente("ljp", p) +
           campo("ljp-email", "Correo", "disabled", "", p.email || s.email) +
           (p.steam ? "" : '<p class="ljc-hint warn">Agrega tu ID de Steam para que podamos agregarte y enviarte tus sets.</p>') +
           '<button class="ljc-btn silver" type="submit">Guardar cambios</button>' + mensaje() + '</form>'
@@ -282,7 +291,7 @@
       '<header class="ljc-head"><h2>' + esc(titulo) + '</h2><button class="ljc-btn ghost sm" type="button" data-a="cerrar">Cerrar</button></header>' + cuerpo + '</aside>';
     if (document.getElementById("ljc-g")) montarGoogle();
   }
-  function gBtn() { return GOOGLE_CLIENT_ID ? '<div id="ljc-g" class="ljc-g"></div><div class="ljc-sep"><span>o con tu correo</span></div>' : ""; }
+  function gBtn() { return (GOOGLE_CLIENT_ID ? '<div id="ljc-g" class="ljc-g"></div>' : "") + (window.ljSteam ? window.ljSteam.boton("ljc-btn steam", "steamEntrar") : "") + '<div class="ljc-sep"><span>o con tu correo</span></div>'; }
   var gsi = null;
   function montarGoogle() {
     if (!gsi) gsi = new Promise(function (ok, no) {
@@ -304,6 +313,10 @@
     var a = e.target.closest("[data-a]"); if (!a) return;
     var acc = a.getAttribute("data-a");
     if (acc === "cerrar") { e.preventDefault(); cerrar(); }
+    else if (acc === "steamEntrar" || acc === "steamVincular") {
+      e.preventDefault(); estado("Abriendo Steam…");
+      window.ljSteam.ir(acc === "steamVincular" ? token : null).catch(function (er) { st.msg = (er && er.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : ((er && er.message) || "No se pudo conectar con Steam."); st.tipo = "err"; pintar(); });
+    }
     else if (acc === "cfg") { e.preventDefault(); guardarCfg(a.getAttribute("data-k")); }
     else if (acc === "login" || acc === "registro" || acc === "olvide") { e.preventDefault(); st.modo = acc; st.msg = ""; pintar(); }
     else if (acc === "recargar") { e.preventDefault(); cerrar(); if (window.ljRecarga) window.ljRecarga.abrir(); }

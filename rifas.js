@@ -97,7 +97,23 @@
       window.google.accounts.id.renderButton(el2, { theme: "filled_black", size: "large", shape: "pill", text: "continue_with", locale: "es", width: 320 });
     }).catch(function () { /* sin conexión con Google */ });
   }
-  function btnGoogle() { return GOOGLE_CLIENT_ID ? '<div id="g-btn" class="gbtn"></div><div class="gsep"><span>o con tu correo</span></div>' : ""; }
+  var steamPre = null;   // lo que trae Steam para sugerir en "Completa tu perfil": { sid, nom }
+  function btnGoogle() { return (GOOGLE_CLIENT_ID ? '<div id="g-btn" class="gbtn"></div>' : "") + (window.ljSteam ? window.ljSteam.boton("sbtn", "steamEntrar") : "") + '<div class="gsep"><span>o con tu correo</span></div>'; }
+  function steamIr(vincular) {
+    cuenta.msg = "Abriendo Steam…"; cuenta.msgTipo = ""; render();
+    window.ljSteam.ir(vincular ? token : null).catch(function (e) {
+      cuenta.msg = (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : ((e && e.message) || "No se pudo conectar con Steam. Intenta de nuevo."); cuenta.msgTipo = "err"; render();
+    });
+  }
+  // Al volver de Steam: canjea el token por la sesión (misma de siempre), limpia la dirección y sigue el flujo normal.
+  function steamAlCargar() {
+    var v = window.ljSteam && window.ljSteam.alCargar(); if (!v) return false;
+    if (v.tipo === "error") { cuenta.modo = "login"; cuenta.msg = v.msg; cuenta.msgTipo = "err"; render(); return true; }
+    if (v.tipo === "vinculado") { cuenta.modo = "perfil"; cuenta.msg = v.msg; cuenta.msgTipo = "ok"; render(); cargarPerfil().then(function () { cuenta.msg = v.msg; cuenta.msgTipo = "ok"; render(); }); return true; }
+    steamPre = v.pre; cuenta.modo = "login"; cuenta.msg = "Entrando con Steam…"; cuenta.msgTipo = ""; render();
+    v.entrar().then(function () { trasEntrar(); }).catch(function (e) { cuenta.modo = "login"; cuenta.msg = "No se pudo entrar con Steam (" + ((e && e.message) || "error") + ")."; cuenta.msgTipo = "err"; render(); });
+    return true;
+  }
   function crearPerfil(ses, d) {
     return fsPedir("rayas_users/" + encodeURIComponent(ses.uid) + "?currentDocument.exists=false", {
       method: "PATCH",
@@ -155,7 +171,7 @@
     var sv = function (k) { return f[k] && f[k].stringValue || ""; };
     return {
       uid: d && d.name ? d.name.split("/").pop() : "",
-      nombre: sv("nombre"), steam: sv("steam"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"),
+      nombre: sv("nombre"), steam: sv("steam"), steamId: sv("steamId"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"),
       creditos: f.creditos ? Number(f.creditos.integerValue || f.creditos.doubleValue || 0) : 0,
       creado: f.creado && f.creado.timestampValue || "",
       promoUsada: !!(f.promoUsada && f.promoUsada.booleanValue === true)
@@ -1093,9 +1109,9 @@
       titulo = "Completa tu perfil";
       var ses0 = leerSesion() || {};
       cuerpo = '<form class="drawer-body form" id="formCompletar">' +
-        '<p class="hint">Entraste con <b>' + esc(ses0.email || "") + '</b>, pero aún no tienes perfil en LitleJacob Store. Complétalo para participar en las rifas.</p>' +
-        '<div class="field"><label for="c-nombre">Nombre o apodo</label><input id="c-nombre" maxlength="40" required autocomplete="nickname"></div>' +
-        campoSteam("c-steam") + '<div class="field"><label for="c-trade">Link de intercambio de Steam (trade link)</label><input id="c-trade" inputmode="url" required placeholder="https://steamcommunity.com/tradeoffer/new/?partner=…&token=…">' +
+        '<p class="hint">' + (ses0.email ? 'Entraste con <b>' + esc(ses0.email) + '</b>, pero aún no tienes perfil en LitleJacob Store.' : '¡Listo, entraste con Steam!') + ' Completa tu perfil (WhatsApp y trade link) para comprar y participar en las rifas.</p>' +
+        '<div class="field"><label for="c-nombre">Nombre o apodo</label><input id="c-nombre" maxlength="40" required autocomplete="nickname"' + (steamPre && steamPre.nom ? ' value="' + esc(steamPre.nom) + '"' : '') + '></div>' +
+        campoSteam("c-steam", steamPre && steamPre.sid ? steamPre.sid : "") + '<div class="field"><label for="c-trade">Link de intercambio de Steam (trade link)</label><input id="c-trade" inputmode="url" required placeholder="https://steamcommunity.com/tradeoffer/new/?partner=…&token=…">' +
         '<p class="hint">' + TRADE_AYUDA + '</p></div>' +
         '<div class="field"><label for="c-wa">WhatsApp</label><input id="c-wa" inputmode="tel" maxlength="20" placeholder="987 654 321" required></div>' +
         '<button class="btn btn-fuchsia" type="submit">Guardar mi perfil</button>' + msg +
@@ -1109,7 +1125,7 @@
       var link = creditoHref();
       cuerpo = '<div class="drawer-body">' + (p
         ? '<div class="saldo frame gold"><div class="in"><small>Tu saldo</small><b>' + p.creditos + '</b></div></div>' +
-          '<form class="grp" id="formTrade"><h3>Mis datos</h3>' +
+          (window.ljSteam ? window.ljSteam.bloqueVinculo(p.steamId, "sbtn", "hint", "grp") : "") + '<form class="grp" id="formTrade"><h3>Mis datos</h3>' +
           '<div class="field"><label for="p-nombre">Nombre o apodo</label><input id="p-nombre" maxlength="40" required value="' + esc(p.nombre) + '"></div>' +
           '<div class="field"><label for="p-wa">WhatsApp</label><input id="p-wa" inputmode="tel" maxlength="30" required value="' + esc(p.whatsapp) + '"></div>' +
           '<div class="field"><label for="p-email">Correo</label><input id="p-email" value="' + esc(p.email) + '" disabled></div>' +
@@ -1598,6 +1614,8 @@
       case "admin":
         if (admin.puede) admin.abierto = true; else { cuenta.modo = "login"; cuenta.msg = ""; cuenta.msgTipo = ""; }
         render(); break;
+      case "steamEntrar": steamIr(false); break;
+      case "steamVincular": steamIr(true); break;
       case "entrar": ev.preventDefault(); cuenta.modo = "login"; cuenta.msg = ""; cuenta.msgTipo = ""; render(); break;
       case "registro": ev.preventDefault(); cuenta.modo = "registro"; cuenta.msg = t.getAttribute("data-need") ? "Para participar primero crea una cuenta en la página." : ""; cuenta.msgTipo = t.getAttribute("data-need") ? "err" : ""; render(); break;
       case "misRifas": cuenta.modo = "rifas"; cuenta.msg = ""; render(); cargarParts(); break;
@@ -2050,7 +2068,7 @@
   var pRemoto = cargarRemoto();
   cargarParts();
   revisarHash();
-  var pPerfil = (leerSesion() && !admin.puede) ? cargarPerfil() : Promise.resolve();
+  var pPerfil = (!steamAlCargar() && leerSesion() && !admin.puede) ? cargarPerfil() : Promise.resolve();
   // Llegas desde la tienda con ?recargar=1: abre directo la ventana de recarga.
   if (quiereRecarga) {
     try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) { /* nada */ }
