@@ -976,7 +976,7 @@
       var hi = html.indexOf('</header>') + 9, fi = html.indexOf('<footer class="footer');
       if (!admin.puede) html = html.slice(0, hi).replace(/<nav class="subnav"[\s\S]*?<\/nav>/, '') +
         '<section class="section gutter rifas-off"><div class="wrap"><div class="empty frame"><div class="in"><strong>Rifas en pausa</strong><span>Por ahora no hay rifas disponibles. Mira nuestra tienda mientras tanto.</span><a class="btn btn-yellow" href="index.html#sets-cache">Ir a la tienda</a></div></div></div></section>' + html.slice(fi);
-      else html = html.slice(0, hi) + '<p class="hint" style="text-align:center;margin:18px auto 0;max-width:760px">🔒 Las rifas están ocultas: solo tú (administrador) las ves. Actívalas en Panel admin → Configuraciones principales.</p>' + html.slice(hi);
+      else html = html.slice(0, hi) + '<p class="hint" style="text-align:center;margin:18px auto 0;max-width:760px">🔒 Las rifas están ocultas: solo tú (administrador) las ves. Actívalas en Panel admin → Configuración.</p>' + html.slice(hi);
     }
     if (ruleta) html += modalRuleta();
     else if (modal) html += modalAviso();
@@ -1182,11 +1182,11 @@
   }
 
   function panelAdmin() {
-    var titulo = admin.editando ? (admin.editando.nuevo ? "Nuevo premio" : "Editar premio") : "Panel admin";
+    var titulo = admin.editando ? (admin.editando.nuevo ? "Nuevo premio" : "Editar premio") : "Panel admin · Rifas";
     var cuerpo;
     if (admin.editando) cuerpo = formPremio();
     else cuerpo = '<div class="tabs" role="tablist">' +
-      '<button class="tab" role="tab" type="button" data-a="tab" data-t="config" aria-selected="' + (admin.tab === "config") + '">⚙ Configuraciones principales</button>' +
+      '<button class="tab" role="tab" type="button" data-a="tab" data-t="config" aria-selected="' + (admin.tab === "config") + '">⚙ Configuración</button>' +
       '<button class="tab" role="tab" type="button" data-a="tab" data-t="premios" aria-selected="' + (admin.tab === "premios") + '">Premios</button>' +
       '<button class="tab" role="tab" type="button" data-a="tab" data-t="usuarios" aria-selected="' + (admin.tab === "usuarios") + '">Usuarios y saldo</button>' +
       '<button class="tab" role="tab" type="button" data-a="tab" data-t="pagina" aria-selected="' + (admin.tab === "pagina") + '">Textos y contactos</button>' +
@@ -1413,9 +1413,8 @@
   }
   function tabConfig() {
     var it = !!(estado.secciones && estado.secciones.items), cq = !!(estado.pagos && estado.pagos.culqi);
-    return '<div class="grp cfg"><h3>Configuraciones principales</h3><p class="hint">Activa o desactiva las secciones. Lo desactivado solo lo ves tú (administrador). Pulsa <b>Guardar y publicar</b> para que lo vean todos. Estas opciones son las mismas en LitleJacob Store y Rayas Store.</p>' +
+    return '<div class="grp cfg"><h3>Configuración de rifas</h3><p class="hint">Lo desactivado solo lo ves tú (administrador). Pulsa <b>Guardar y publicar</b> para que lo vean todos. La compra y venta de items se configura en el panel de la tienda.</p>' +
       swCfg("c-rifas", rifasOn(), "🎟️ Rifas", "Página de rifas, cómo participar, ganadores y reglas.", "VISIBLE para los clientes", "OCULTA: solo tú la ves") +
-      swCfg("c-items", it, "🛒 Compra y venta de items", "Comprar items, Vender items y Carrito en la tienda.", "VISIBLE para los clientes", "OCULTA: solo tú la ves") +
       swCfg("c-pagos", cq, "💳 Culqi (tarjeta / Yape)", "Botón de pago en línea para recargar saldo.", "ACTIVO: pueden recargar con tarjeta o Yape", "APAGADO: solo piden saldo por WhatsApp") +
       '</div>';
   }
