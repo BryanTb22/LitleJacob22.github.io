@@ -194,7 +194,7 @@
       return j.nextPageToken && acc.length < 2000 ? pag(j.nextPageToken) : null;
     });
     pag("").then(() => { items.lista = acc; items.cargado = true; }).catch((e) => { items.err = e.message || "No se pudo cargar el catálogo."; })
-      .then(() => { items.cargando = false; renderTodo(); });
+      .then(() => { items.cargando = false; aplicarRutaCatalogo(); renderTodo(); });
   }
   function cargarSecciones() {
     fetch(DOC_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
@@ -297,6 +297,41 @@
     if (!esAdmin()) return "";
     return '<label class="itx-chk" style="justify-content:center;margin:6px 0 14px"><input type="checkbox" data-itx="secciones"' + (sec.items ? " checked" : "") + '> Mostrar “Comprar items” y “Vender items” a los clientes (también en Rayas Store)</label>';
   }
+  /* ---------- Rutas por niveles, como lis-skins: #items/<tipo>/<héroe> ---------- */
+  const slug = (t) => sinTildes(String(t || "")).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const rutaCatalogo = (tipo, heroe) => "#items" + (tipo || heroe ? "/" + (tipo ? slug(tipo) : "todos") : "") + (heroe ? "/" + slug(heroe) : "");
+  function aplicarRutaCatalogo() {
+    const m = location.hash.match(/^#\/?items\/([^\/?]*)(?:\/([^\/?]*))?/);
+    if (!m) return false;
+    let a = "", b = "";
+    try { a = decodeURIComponent(m[1] || ""); b = decodeURIComponent(m[2] || ""); } catch (e) { /* ruta rara */ }
+    filtros.tipo = ""; filtros.heroe = "";
+    ITEM_TIPOS.forEach((t) => { if (slug(t) === a) filtros.tipo = t; });
+    if (b) distintos("heroe", HEROES_DOTA).forEach((h) => { if (slug(h) === b) filtros.heroe = h; });
+    filtros.pag = 0; return true;
+  }
+  // Deja la dirección de la barra igual a los filtros (sin recargar ni ensuciar el historial).
+  function sincHash() {
+    if (!/^#\/?items(\/|$)/.test(location.hash)) return;
+    const r = rutaCatalogo(filtros.tipo, filtros.heroe);
+    if (location.hash !== r) { try { history.replaceState(null, "", location.pathname + location.search + r); } catch (e) { /* sin historial */ } }
+  }
+  function migaCatalogoHtml(tipo, heroe, nombre) {
+    const sep = " <span>›</span> ";
+    let l = '<a href="#inicio">Inicio</a>' + sep + '<a href="#items">Comprar items</a>';
+    if (tipo) l += sep + (heroe || nombre ? '<a href="' + rutaCatalogo(tipo, "") + '">' + esc(tipo) + "</a>" : "<span>" + esc(tipo) + "</span>");
+    if (heroe) l += sep + (nombre ? '<a href="' + rutaCatalogo(tipo, heroe) + '">' + esc(heroe) + "</a>" : "<span>" + esc(heroe) + "</span>");
+    if (nombre) l += sep + "<span>" + esc(nombre) + "</span>";
+    return '<div class="crumb">' + l + "</div>";
+  }
+  function parecidosHtml(it) {
+    const l = items.lista.filter((x) => x.id !== it.id && sinTildes(x.nombre) !== sinTildes(it.nombre) && x.stock > 0 && (x.activo || esAdmin()));
+    const mismo = l.filter((x) => it.heroe && x.heroe === it.heroe), tipo = l.filter((x) => x.tipo === it.tipo && (!it.heroe || x.heroe !== it.heroe));
+    const vistos = {}, out = [];
+    mismo.concat(tipo).forEach((x) => { const k = sinTildes(x.nombre); if (!vistos[k] && out.length < 6) { vistos[k] = 1; out.push(x); } });
+    if (!out.length) return "";
+    return '<div class="ofr"><div class="ofr-top"><h3>✨ También te puede interesar</h3></div><div class="itx-grid">' + out.map(itemCardHtml).join("") + "</div></div>";
+  }
   function comprarHtml() {
     if (!visible()) return cabecera("Catálogo", "Comprar", "items", "Esta sección estará disponible pronto.");
     if (idItemHash()) return aviso() + paginaItemHtml(idItemHash());
@@ -311,6 +346,7 @@
       '<button type="button" class="itx-btn ghost sm" data-itx="reset" style="width:100%">Restablecer filtros</button></details></aside>';
     return cabecera("Catálogo", "Comprar", "items", "Elige tu item y págalo con créditos o por WhatsApp.") + aviso() + switchSeccion() +
       (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' : "") +
+      (filtros.tipo || filtros.heroe ? migaCatalogoHtml(filtros.tipo, filtros.heroe, "") : "") +
       '<div class="itx-tabs">' + tabs + "</div>" +
       '<div class="itx-shop">' + filt + '<div class="itx-main"><div class="itx-bar"><input id="itx-q" type="search" placeholder="Buscar items…" value="' + esc(filtros.q) + '" autocomplete="off">' +
       '<select id="itx-orden" aria-label="Ordenar">' + [["nuevo", "Más nuevos"], ["menor", "Precio: menor a mayor"], ["mayor", "Precio: mayor a menor"], ["nombre", "Nombre A-Z"]].map((o) => '<option value="' + o[0] + '"' + (filtros.orden === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
@@ -414,7 +450,7 @@
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Entra con la cuenta de administrador." : "No se pudo guardar (" + r.status + ").");
       const k = items.lista.findIndex((x) => x.id === it.id);
-      if (k >= 0) items.lista[k] = it; else { items.lista.unshift(it); Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", pag: 0 }); }
+      if (k >= 0) items.lista[k] = it; else { items.lista.unshift(it); Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", pag: 0 }); sincHash(); }
       const o = F.desdeId ? itemPorId(F.desdeId) : null;
       if (!o) { adm.form = null; adm.guardando = false; renderTodo(); return; }
       // La unidad editada pasó a ser su propio item: se le resta 1 al grupo de donde salió.
@@ -605,7 +641,7 @@
   const idItemHash = () => { const m = location.hash.match(/^#\/?item\/(.+)$/); if (!m) return null; try { return decodeURIComponent(m[1]); } catch (e) { return null; } };
   const abrirItem = (id) => { location.hash = "item/" + encodeURIComponent(id); };
   function paginaItemHtml(id) {
-    const miga = (tipo, n) => '<div class="crumb"><a href="#inicio">Inicio</a> <span>›</span> <a href="#items">Comprar items</a>' + (tipo ? " <span>›</span> <span>" + esc(tipo) + "</span>" : "") + (n ? " <span>›</span> <span>" + esc(n) + "</span>" : "") + "</div>";
+    const miga = (tipo, n, heroe) => migaCatalogoHtml(tipo, heroe, n);
     if (!items.cargado && !items.err) return miga("") + '<div class="itx-empty"><strong>Cargando item…</strong></div>';
     const it = itemPorId(id);
     if (!it || (!it.activo && !esAdmin())) return miga("") + '<div class="itx-empty"><strong>Este item no está disponible</strong><span>Puede que ya se haya vendido o que aún no esté publicado.</span><a class="itx-btn gold" href="#items" style="margin-top:12px">Ver todos los items</a></div>';
@@ -619,7 +655,7 @@
     const btns = agot ? '<button class="itx-btn ghost" type="button" disabled>Agotado</button>'
       : '<button class="itx-btn fucsia" type="button" data-itx="carAdd" data-id="' + esc(it.id) + '">🛒 ' + (carro[it.id] ? "✔ En el carrito (" + carro[it.id] + ") · agregar otro" : "Al carrito") + '</button>' +
         '<button class="itx-btn gold" type="button" data-itx="carAhora" data-id="' + esc(it.id) + '">⚡ Comprar ahora</button>';
-    return miga(it.tipo, it.nombre) + 
+    return miga(it.tipo, it.nombre, it.heroe) + 
       '<section class="itx-pg"><h1>' + esc(it.nombre) + (it.activo ? "" : ' <small>(oculto)</small>') + "</h1>" +
       '<div class="itx-pg-grid"><div class="itx-pg-foto" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') +
       '<span class="itx-pg-tag' + (agot ? " off" : "") + '">' + (agot ? "Agotado" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
@@ -627,7 +663,7 @@
       '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + '<span class="pp-cred">o ' + cred + " créditos</span></div>" +
       steamHtml(it, true) +
       (agot ? "" : (p ? '<p class="itx-hint">Tienes <b>' + p.creditos + "</b> créditos.</p>" : '<p class="itx-hint">Para pagar con créditos entra a tu cuenta.</p>')) +
-      '<div class="pp-btns">' + btns + "</div></div></div></div>" + ofertasHtml(it) + "</section>";
+      '<div class="pp-btns">' + btns + "</div></div></div></div>" + ofertasHtml(it) + "</section>" + parecidosHtml(it);
   }
 
   /* ---------- Modal de un item (comprar) ---------- */
@@ -1025,9 +1061,9 @@
       case "irSteam": break; // el enlace se abre solo; no abre la ficha
       case "ver": abrirItem(t.getAttribute("data-id")); break;
       case "cerrarModal": modal = null; renderTodo(); break;
-      case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.pag = 0; renderTodo(); break;
+      case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.pag = 0; renderTodo(); sincHash(); break;
       case "pag": { filtros.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarGrid(); const gp = document.getElementById("itxGrid"); if (gp && gp.scrollIntoView) gp.scrollIntoView({ block: "start", behavior: "smooth" }); break; }
-      case "reset": Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "mayor", pag: 0 }); renderTodo(); break;
+      case "reset": Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "mayor", pag: 0 }); renderTodo(); sincHash(); break;
       case "carAdd": if (carroAgregar(t.getAttribute("data-id"))) renderTodo(); break;
       case "carAhora": if (carroAgregar(t.getAttribute("data-id"))) { modal = { tipo: "carrito" }; renderTodo(); } break;
       case "carMas": carroAgregar(t.getAttribute("data-id")); renderTodo(); break;
@@ -1081,7 +1117,7 @@
       return true;
     }
     const mapa = { "itx-q": "q", "itx-min": "min", "itx-max": "max", "itx-heroe": "heroe", "itx-ranura": "ranura", "itx-rareza": "rareza", "itx-calidad": "calidad", "itx-orden": "orden" };
-    if (mapa[el.id]) { if (filtros[mapa[el.id]] === el.value) return true; filtros[mapa[el.id]] = el.value; filtros.pag = 0; pintarGrid(); return true; }
+    if (mapa[el.id]) { if (filtros[mapa[el.id]] === el.value) return true; filtros[mapa[el.id]] = el.value; filtros.pag = 0; if (el.id === "itx-heroe") { renderTodo(); sincHash(); return true; } pintarGrid(); return true; }
     const SK = { "stk-q": "q", "stk-tipo": "tipo", "stk-heroe": "heroe", "stk-ranura": "ranura", "stk-rareza": "rareza", "stk-calidad": "calidad", "stk-estado": "estado", "stk-orden": "orden" };
     if (SK[el.id]) { if (stk[SK[el.id]] === el.value) return true; stk[SK[el.id]] = el.value; stk.pag = 0; pintarStock(); return true; }
     if (el.getAttribute && el.getAttribute("data-stk-in")) { if (tipo === "change") { const it = itemPorId(el.getAttribute("data-stk-in")); if (it) { stkCambiar(it, el.value); el.value = it.stock; } } return true; }
@@ -1118,13 +1154,15 @@
   }
   function alCambiarRuta() {
     const h = location.hash.replace(/^#\/?/, "");
-    if (h === "items" || h === "vender" || /^item\//.test(h)) { cargarItems(); if (h === "vender") cargarPrecios(); setTimeout(() => { renderTodo(); const it = idItemHash() && itemPorId(idItemHash()); if (it) document.title = it.nombre + " • " + TIENDA; }, 0); }
+    if (/^items\//.test(h)) aplicarRutaCatalogo();
+    else if (h === "items") { filtros.tipo = ""; filtros.heroe = ""; filtros.pag = 0; }
+    if (h === "items" || /^items\//.test(h) || h === "vender" || /^item\//.test(h)) { cargarItems(); if (h === "vender") cargarPrecios(); setTimeout(() => { renderTodo(); const it = idItemHash() && itemPorId(idItemHash()); if (it) document.title = it.nombre + " • " + TIENDA; }, 0); }
   }
   function iniciar() {
     cargarSecciones(); cargarItems();
     window.addEventListener("hashchange", alCambiarRuta);
     setInterval(vigilarSesion, 1500);
-    alCambiarRuta(); renderTodo();
+    aplicarRutaCatalogo(); alCambiarRuta(); renderTodo();
   }
   window.ljItems = { render: renderTodo };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar); else iniciar();
