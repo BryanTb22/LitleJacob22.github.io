@@ -612,7 +612,7 @@
     const btns = agot ? '<button class="itx-btn ghost" type="button" disabled>Agotado</button>'
       : '<button class="itx-btn fucsia" type="button" data-itx="carAdd" data-id="' + esc(it.id) + '">🛒 ' + (carro[it.id] ? "✔ En el carrito (" + carro[it.id] + ") · agregar otro" : "Al carrito") + '</button>' +
         '<button class="itx-btn gold" type="button" data-itx="carAhora" data-id="' + esc(it.id) + '">⚡ Comprar ahora</button>';
-    return miga(it.tipo, it.nombre) +
+    return miga(it.tipo, it.nombre) + (esAdmin() && adm.form ? '<div class="itx-edit">' + formHtml() + '</div>' : '') +
       '<section class="itx-pg"><h1>' + esc(it.nombre) + (it.activo ? "" : ' <small>(oculto)</small>') + "</h1>" +
       '<div class="itx-pg-grid"><div class="itx-pg-foto" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') +
       '<span class="itx-pg-tag' + (agot ? " off" : "") + '">' + (agot ? "Agotado" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
@@ -653,13 +653,14 @@
   // Una fila por cada unidad en stock (como lis-skins): si hay 3, salen 3 filas separadas.
   function ofertaFilaHtml(x, curId) {
     const cur = x.id === curId, ne = Number(x.estilos) || 0, ok = estilosOkLista(x), n = Math.max(1, Math.min(30, x.stock)), agot = x.stock <= 0;
-    const est = ne ? [1, 2, 3, 4, 5, 6, 7, 8].slice(0, ne).map((k) => '<span class="est' + (ok.indexOf(k) >= 0 ? "" : " lock") + '">' + k + "</span>").join("") : "<em>—</em>";
-    const gem = gemChipsHtml(x) || "<em>Sin gemas</em>"; let out = "";
+    const est = ne ? [1, 2, 3, 4, 5, 6, 7, 8].slice(0, ne).map((k) => '<span class="est' + (ok.indexOf(k) >= 0 ? "" : " lock") + '">' + k + "</span>").join("") : "";
+    const gem = gemChipsHtml(x); let out = "";
+    const edit = esAdmin() ? '<button type="button" class="itx-btn ghost sm ofr-ed" data-itx="editar" data-id="' + esc(x.id) + '" title="Editar gemas, estilos y precio">✎ Editar</button>' : "";
     for (let u = 0; u < n; u++) {
       const enCarro = !agot && u < (Number(carro[x.id]) || 0);
       out += '<div class="ofr-r' + (cur ? " cur" : "") + (agot ? " agot" : "") + (enCarro ? " enc" : "") + '" data-itx="ver" data-id="' + esc(x.id) + '" role="button" tabindex="0"><span class="ofr-g">' + gem + "</span>" +
         '<span class="ofr-e">' + est + '</span><span class="ofr-p"><b>' + fmtPrecio(x.precio) + "</b></span>" +
-        '<span class="ofr-b">' + (agot ? '<span class="ofr-ag">Agotado</span>' : (enCarro
+        '<span class="ofr-b">' + edit + (agot ? '<span class="ofr-ag">Agotado</span>' : (enCarro
           ? '<button type="button" class="itx-btn ghost sm ofr-in" data-itx="carMenos" data-id="' + esc(x.id) + '" title="Quitar del carrito">✔ En el carrito</button>'
           : '<button type="button" class="itx-btn gold sm" data-itx="carAhora" data-id="' + esc(x.id) + '">⚡ Comprar ahora</button>' +
             '<button type="button" class="itx-btn ghost sm ofr-cart" data-itx="carAdd" data-id="' + esc(x.id) + '" aria-label="Agregar al carrito" title="Agregar al carrito">🛒</button>')) + "</span></div>";
