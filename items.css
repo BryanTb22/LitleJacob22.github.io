@@ -120,3 +120,10 @@
 .itx-desc b { display: block; margin-bottom: 4px; }
 .itx-desc .gk { color: var(--itx-gold-l); font-weight: 700; }
 .itx-meta .gem { color: #9ee8ff; }
+
+/* Precio de Steam bajo el precio del item */
+.itx-steam { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,.15); font-size: 12.5px; opacity: .85; }
+.itx-steam b { font-weight: 700; opacity: 1; }
+.itx-steam-go { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(255,255,255,.2); color: inherit; transition: color .15s, border-color .15s; }
+.itx-steam-go:hover, .itx-steam-go:focus-visible { color: #f5c542; border-color: #f5c542; outline: none; }
+.itx-steam.grande { font-size: 14px; margin: 6px 0 10px; border-top: 0; padding-top: 0; justify-content: flex-start; }

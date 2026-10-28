@@ -131,7 +131,7 @@
     const nv = (k) => (f[k] ? Number(f[k].doubleValue !== undefined ? f[k].doubleValue : (f[k].integerValue || 0)) : 0);
     return { id: d.name.split("/").pop(), nombre: sv("nombre"), img: sv("img"), precio: nv("precio"), stock: f.stock ? nv("stock") : 1,
       tipo: sv("tipo"), heroe: sv("heroe"), ranura: sv("ranura"), rareza: sv("rareza"), calidad: sv("calidad"),
-      estilos: nv("estilos"), estOk: sv("estOk"), descripcion: sv("descripcion"),
+      estilos: nv("estilos"), estOk: sv("estOk"), descripcion: sv("descripcion"), steamUsd: nv("steamUsd"), steamAct: (f.steamAct && f.steamAct.timestampValue) || "",
       activo: f.activo ? f.activo.booleanValue !== false : true, creado: (f.creado && f.creado.timestampValue) || "" };
   }
   function itemAFields(it) {
@@ -139,6 +139,7 @@
     return { fields: { nombre: s(it.nombre), img: s(it.img), precio: { doubleValue: Number(it.precio) }, stock: { integerValue: String(Math.max(0, Math.floor(Number(it.stock) || 0))) },
       tipo: s(it.tipo), heroe: s(it.heroe), ranura: s(it.ranura), rareza: s(it.rareza), calidad: s(it.calidad),
       estilos: { integerValue: String(Math.max(0, Math.min(8, Math.floor(Number(it.estilos) || 0)))) }, estOk: s(it.estOk), descripcion: s(it.descripcion),
+      steamUsd: { doubleValue: Number(it.steamUsd) > 0 ? Number(it.steamUsd) : 0 }, steamAct: { timestampValue: it.steamAct || new Date(0).toISOString() },
       activo: { booleanValue: it.activo !== false }, creado: { timestampValue: it.creado || new Date().toISOString() } } };
   }
   function cargarItems(forzar) {
@@ -196,6 +197,15 @@
     });
     return l;
   }
+  /* Precio de referencia del Mercado de Steam: US$ guardados × tipo de cambio de la página (el mismo que en Rayas Store). */
+  const TC = 3.85;
+  const urlSteam = (it) => "https://steamcommunity.com/market/listings/570/" + encodeURIComponent(it.nombre);
+  function steamHtml(it, grande) {
+    const sol = Number(it.steamUsd) > 0 ? Number(it.steamUsd) * TC : 0;
+    return '<div class="itx-steam' + (grande ? " grande" : "") + '"><span>' + (sol ? "Steam: <b>" + fmtPrecio(sol) + "</b>" : "Mercado de Steam") + "</span>" +
+      '<a class="itx-steam-go" data-itx="irSteam" href="' + esc(urlSteam(it)) + '" target="_blank" rel="noopener noreferrer" title="Ver en el Mercado de Steam" aria-label="Ver ' + esc(it.nombre) + ' en el Mercado de Steam">' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>';
+  }
   function itemCardHtml(it) {
     const agot = it.stock <= 0, col = colorRareza(it.rareza), admin = esAdmin();
     return '<article class="itx-card' + (agot ? " agot" : "") + (it.activo ? "" : " oculto") + '" data-itx="ver" data-id="' + esc(it.id) + '" tabindex="0" role="button" aria-label="Ver ' + esc(it.nombre) + '">' +
@@ -205,7 +215,7 @@
         (adm.itemDel === it.id ? '<button type="button" class="itx-btn sm del" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar">🗑</button>') + "</div>" : "") +
       '<div class="itx-body"><h4>' + esc(it.nombre) + "</h4>" +
       '<div class="itx-meta">' + (it.rareza ? '<span style="color:' + col + '">' + esc(it.rareza) + "</span>" : "") + (it.calidad ? "<span>" + esc(it.calidad) + "</span>" : "") + (it.heroe ? "<span>" + esc(it.heroe) + "</span>" : "") + (it.descripcion ? '<span class="gem">💎 ' + lineasDesc(it).length + "</span>" : "") + "</div>" +
-      '<div class="itx-price"><b>' + fmtPrecio(it.precio) + '</b><span class="itx-buy">' + (agot ? "Agotado" : "Comprar") + "</span></div></div></article>";
+      '<div class="itx-price"><b>' + fmtPrecio(it.precio) + '</b><span class="itx-buy">' + (agot ? "Agotado" : "Comprar") + "</span></div>" + steamHtml(it) + "</div></article>";
   }
   function gridHtml() {
     if (items.err) return '<div class="itx-empty"><strong>No se pudo cargar</strong><span>' + esc(items.err) + "</span></div>";
@@ -327,7 +337,8 @@
         if (d.rareza && LISTA_RAREZAS.indexOf(d.rareza) >= 0) F.rareza = d.rareza;
         if (d.calidad) F.calidad = d.calidad;
         if (d.estilos > 1) { F.estilos = String(d.estilos); F.estOk = d.estOk || "1"; } else { F.estilos = "0"; F.estOk = ""; }
-        adm.steamInfo = d.precioUsd ? "Precio en Steam: US$ " + d.precioUsd.toFixed(2) + " (referencia). Pon tú el precio en soles." : "Pon tú el precio en soles.";
+        if (d.precioUsd) { F.steamUsd = d.precioUsd; F.steamAct = new Date().toISOString(); }
+        adm.steamInfo = d.precioUsd ? "Precio en Steam: US$ " + d.precioUsd.toFixed(2) + " (≈ " + fmtPrecio(d.precioUsd * TC) + "; se mostrará a los clientes). Pon tú el precio en soles." : "Pon tú el precio en soles.";
         if (d.diag) adm.steamInfo += " [Steam no dio héroe/ranura. Datos: " + d.diag + "]";
         if (!d.imgData) return null;
         return fetch(d.imgData).then((x) => x.blob()).then((b) => subirImagen(new File([b], "item.png", { type: b.type || "image/png" }), 640))
@@ -345,7 +356,7 @@
     if (!isFinite(stock) || stock < 0) stock = 1;
     const it = { id: F.id || ("it-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), nombre: F.nombre.trim(), img: F.img, precio: Math.round(precio * 100) / 100, stock,
       tipo: F.tipo, heroe: F.heroe.trim(), ranura: F.ranura.trim(), rareza: F.rareza, calidad: F.calidad.trim(),
-      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: String(F.descripcion || "").trim().slice(0, 600), activo: F.activo, creado: F.creado || new Date().toISOString() };
+      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: String(F.descripcion || "").trim().slice(0, 600), steamUsd: Number(F.steamUsd) || 0, steamAct: F.steamAct || "", activo: F.activo, creado: F.creado || new Date().toISOString() };
     adm.guardando = true; adm.msg = ""; renderTodo();
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Entra con la cuenta de administrador." : "No se pudo guardar (" + r.status + ").");
@@ -387,7 +398,7 @@
         h = "<h3>" + esc(it.nombre) + "</h3>" +
           '<div class="itx-thumb big" style="--rar:' + colorRareza(it.rareza) + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') + "</div>" +
           '<p class="itx-hint">' + [it.rareza, it.calidad, it.tipo, it.heroe, it.ranura].filter(Boolean).map(esc).join(" · ") + "</p>" + estilosHtml(it) + descripcionHtml(it) +
-          '<p class="itx-resumen">Precio: <b>' + fmtPrecio(it.precio) + "</b> · o <b>" + cred + " créditos</b></p>" +
+          '<p class="itx-resumen">Precio: <b>' + fmtPrecio(it.precio) + "</b> · o <b>" + cred + " créditos</b></p>" + steamHtml(it, true) +
           (agot ? '<p class="itx-hint" style="color:#ff6b6b">Este item está agotado.</p>' : (p ? '<p class="itx-hint">Tienes <b>' + p.creditos + "</b> créditos.</p>" : '<p class="itx-hint">Para pagar con créditos entra a tu cuenta.</p>'));
         btns = (agot ? "" : '<button class="itx-btn fucsia" type="button" data-itx="cred" data-id="' + esc(it.id) + '">💎 Pagar con ' + cred + " créditos</button>" +
           '<button class="itx-btn gold" type="button" data-itx="wsp" data-id="' + esc(it.id) + '">💬 Comprar por WhatsApp</button>') + cerrar;
@@ -635,6 +646,7 @@
     // dentro de una tarjeta, los botones de admin no deben abrir el item
     if (a === "ver" && ev.target.closest("[data-itx='editar'],[data-itx='borrar'],[data-itx='borrarSi']")) return;
     switch (a) {
+      case "irSteam": break; // el enlace se abre solo; no abre la ficha
       case "ver": modal = { tipo: "item", id: t.getAttribute("data-id") }; renderTodo(); break;
       case "cerrarModal": modal = null; renderTodo(); break;
       case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.pag = 0; renderTodo(); break;
