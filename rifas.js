@@ -941,7 +941,7 @@
       '<div class="nav-links">' + navTienda() + '</div>' +
       '<div class="nav-right">' +
       '<a class="wa-pill wa-contact" href="' + esc(waPill()) + '" target="_blank" rel="noopener noreferrer"><span class="wa-dot"></span>WhatsApp +51 952 997 030</a>' +
-      (admin.puede ? '<button class="lock" type="button" data-a="admin"><span class="ljc-ico">🔧</span>Admin</button>'
+      (admin.puede ? '<button class="lock" type="button" data-a="admin"><span class="ljc-ico">🔧</span>Admin</button><button class="lock" type="button" data-a="salir" title="Cerrar la sesión de administrador">⎋ Cerrar sesión</button>'
         : (cuenta.perfil ? '<button class="lock hot misrifas" type="button" data-a="misRifas">🎟️ Mis rifas</button><button class="lock me" type="button" data-a="miCuenta"><b>◆ S/ ' + cuenta.perfil.creditos + '</b><span class="nm"> · ' + esc(cuenta.perfil.nombre || "Mi cuenta") + '</span></button>'
           : (leerSesion() ? '<button class="lock" type="button" data-a="miCuenta">Mi cuenta</button>'
             : '<button class="lock" type="button" data-a="entrar">Entrar</button><button class="lock hot" type="button" data-a="registro">Crear cuenta</button>'))) +
@@ -1225,7 +1225,7 @@
       '<button class="tab" role="tab" type="button" data-a="tab" data-t="pagina" aria-selected="' + (admin.tab === "pagina") + '">Textos y contactos</button>' +
       '</div>' + (admin.tab === "config" ? tabConfig() : admin.tab === "pagina" ? tabPagina() : (admin.tab === "usuarios" ? tabUsuarios() : listaPremios()));
     return '<aside class="drawer" role="dialog" aria-label="Panel de administración">' +
-      '<div class="drawer-head"><h2>' + titulo + '</h2><button class="btn btn-ghost btn-sm" type="button" data-a="cerrar">Cerrar</button></div>' +
+      '<div class="drawer-head"><h2>' + titulo + '</h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" type="button" data-a="salir" title="Cerrar la sesión de administrador" style="color:var(--danger,#ff7a7a)">⎋ Cerrar sesión</button><button class="btn btn-ghost btn-sm" type="button" data-a="cerrar">Cerrar panel</button></div></div>' +
       '<div class="drawer-body">' + cuerpo + '</div>' +
       (admin.editando ? '' :
         '<div class="drawer-foot">' +

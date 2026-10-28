@@ -393,7 +393,7 @@
       '<div class="ff"><label for="itx-calidad">Calidad</label><select id="itx-calidad">' + opciones(distintos("calidad", ITEM_CALIDADES), filtros.calidad, "Todas") + "</select></div>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="reset" style="width:100%">Restablecer filtros</button></details></aside>';
     return cabecera("Catálogo", "Comprar", "items", "Elige tu item y págalo con tu saldo o por WhatsApp.") + aviso() + switchSeccion() +
-      (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><button type="button" class="itx-btn ghost sm" data-itx="stRefrescar"' + (stp.corriendo ? " disabled" : "") + '>' + (stp.corriendo ? "Actualizando…" : "↻ Precios de Steam") + '</button>' + (stp.msg ? '<span class="itx-hint">' + esc(stp.msg) + '</span>' : '') + '<span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' + importarHtml() : "") +
+      (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><button type="button" class="itx-btn ghost sm" data-itx="salirAdmin" title="Cerrar la sesión de administrador">⎋ Cerrar sesión</button><button type="button" class="itx-btn ghost sm" data-itx="stRefrescar"' + (stp.corriendo ? " disabled" : "") + '>' + (stp.corriendo ? "Actualizando…" : "↻ Precios de Steam") + '</button>' + (stp.msg ? '<span class="itx-hint">' + esc(stp.msg) + '</span>' : '') + '<span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' + importarHtml() : "") +
       avisoFiltrosHtml() +
       '<div id="itxMiga">' + migaActualHtml() + "</div>" +
       '<div class="itx-tabs">' + tabs + "</div>" +
@@ -1283,6 +1283,7 @@
       case "stkEdCerrar": stk.ed = null; pintarStock(); break;
       case "stkEdGuardar": stkEdGuardar(); break;
       case "stkQuitarFoto": if (stk.ed) { stk.ed.F.img = ""; pintarStock(); } break;
+      case "salirAdmin": try { if (window.ljCuenta && window.ljCuenta.salir) window.ljCuenta.salir(); } catch (er) { /* nada */ } renderTodo(); break;
       case "stkAbrir": modal = { tipo: "stock" }; stk.msg = ""; stk.ed = null; renderTodo(); break;
       case "stkReset": Object.assign(stk, { q: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", estado: "all", orden: "nombre", pag: 0 }); renderTodo(); break;
       case "stkPag": stk.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarStock(); { const d = document.querySelector(".itx-dialog.stk"); if (d) d.scrollTop = 0; } break;
