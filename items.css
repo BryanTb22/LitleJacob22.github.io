@@ -308,3 +308,5 @@ body.itx-pop-open{overflow:hidden}
 .rel-f{width:38px;height:38px;border-radius:50%;border:1px solid var(--itx-line);background:rgba(255,255,255,.05);color:var(--itx-gold-l,#e8c76a);font-size:18px;cursor:pointer}
 .rel-f:hover{background:rgba(255,255,255,.12)}
 @media (max-width:640px){.rel-fila > .itx-card{flex-basis:170px}.rel-flechas{display:none}}
+
+.itx-price b .desde { display: block; font: 700 10px/1 'Inter', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--itx-muted); margin-bottom: 3px; }
