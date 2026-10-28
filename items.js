@@ -267,7 +267,7 @@
     const agot = it.stock <= 0, col = colorRareza(it.rareza), admin = esAdmin();
     return '<article class="itx-card' + (agot ? " agot" : "") + (it.activo ? "" : " oculto") + '" data-itx="ver" data-id="' + esc(it.id) + '" tabindex="0" role="button" aria-label="Ver ' + esc(it.nombre) + '">' +
       '<div class="itx-thumb" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre, ' loading="lazy"') || '<span class="sinfoto">Sin foto</span>') +
-      (agot ? '<span class="itx-tag agotado">Agotado</span>' : ((it._tot || it.stock) > 1 ? '<span class="itx-tag">x' + (it._tot || it.stock) + "</span>" : "")) + (!agot && (it._tot || it.stock) <= 2 ? '<span class="itx-ult">' + ((it._tot || it.stock) === 1 ? "¡Última unidad!" : "¡Últimas unidades!") + "</span>" : "") + (it.activo ? "" : '<span class="itx-tag oc">Oculto</span>') + "</div>" +
+      (agot ? '<span class="itx-tag agotado">Agotado</span>' : ((it._tot || it.stock) > 1 ? '<span class="itx-tag">x' + (it._tot || it.stock) + "</span>" : "")) + (it.activo ? "" : '<span class="itx-tag oc">Oculto</span>') + "</div>" +
       (admin ? '<div class="itx-admb"><button type="button" class="itx-btn ghost sm" data-itx="editar" data-id="' + esc(it.id) + '" aria-label="Editar">✎</button>' +
         (adm.itemDel === it.id ? '<button type="button" class="itx-btn sm del" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar">🗑</button>') + "</div>" : "") +
       '<div class="itx-body"><h4>' + esc(it.nombre) + "</h4>" +
