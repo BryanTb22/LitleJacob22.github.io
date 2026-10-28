@@ -121,7 +121,8 @@
     (base || []).concat(items.lista.map((x) => x[k])).forEach((v) => { if (v && !set[v]) { set[v] = 1; out.push(v); } });
     return out.sort((a, b) => a.localeCompare(b));
   }
-  const opciones = (lista, sel, vacio) => '<option value="">' + esc(vacio) + "</option>" + lista.map((v) => '<option value="' + esc(v) + '"' + (v === sel ? " selected" : "") + ">" + esc(v) + "</option>").join("");
+  const COLOR_OPCION = { "ARCANO": "#ade55c", "INMORTAL": "#e4ae39", "LEGENDARIO": "#e455f5", "MÍTICO": "#a37dff", "RARO": "#6f8aff", "POCO COMÚN": "#7db3ec", "COMÚN": "#c3d2e3" };
+  const opciones = (lista, sel, vacio) => '<option value="">' + esc(vacio) + "</option>" + lista.map((v) => '<option value="' + esc(v) + '"' + (v === sel ? " selected" : "") + (COLOR_OPCION[v] ? ' style="color:' + COLOR_OPCION[v] + ';font-weight:700"' : "") + ">" + esc(v) + "</option>").join("");
 
   /* ---------- datos de items ---------- */
   function itemDeDoc(d) {
