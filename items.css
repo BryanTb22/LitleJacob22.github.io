@@ -243,3 +243,47 @@
 @media (max-width:640px){.ofr-h,.ofr-r{grid-template-columns:1fr 54px 84px}.ofr-h span:last-child,.ofr-b{display:none}}
 .gform .grow-f{display:flex;gap:8px;margin-bottom:8px}
 .gform .grow-f input{flex:1;min-width:0}
+
+
+/* ===== Ofertas del item (como lis-skins): una fila por unidad ===== */
+.ofr{margin-top:34px}
+.ofr-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.ofr-top h3{margin:0}
+.ofr-f{display:flex;gap:8px}
+.ofr-f input{width:130px;min-height:40px;padding:0 12px;border-radius:12px;border:1px solid var(--itx-line);background:rgba(0,0,0,.3);color:inherit;font:inherit}
+.ofr-h,.ofr-r{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,1.4fr)}
+.ofr-r{cursor:pointer}
+.ofr-r.enc{background:rgba(120,230,150,.08)}
+.ofr-in{color:#7ee787;border-color:#7ee787}
+.ofr-e{display:flex;gap:6px;flex-wrap:wrap}
+.ofr-e .est{min-width:26px;text-align:center;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.08);font-size:.8rem}
+.ofr-e .est.lock{opacity:.45;text-decoration:line-through}
+.ofr-b{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.ofr-ag{color:#ff6b6b;font-weight:700}
+.ofr-vacio{padding:18px;text-align:center;color:var(--itx-muted);border-top:1px solid var(--itx-line)}
+@media (max-width:640px){
+  .ofr-h{display:none}
+  .ofr-r{grid-template-columns:1fr auto;grid-template-areas:"g p" "e b";row-gap:8px}
+  .ofr-g{grid-area:g}.ofr-p{grid-area:p;text-align:right}.ofr-e{grid-area:e}.ofr-b{grid-area:b;display:flex}
+}
+
+/* ===== Previsualización de gemas ===== */
+.gchip.gp{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 4px}
+.gchip.g-ki{background:rgba(255,160,70,.12);border-color:#ffa646;color:#ffb866}
+.gem-ic{flex:none;filter:drop-shadow(0 0 6px rgba(255,255,255,.25))}
+.gem-ic.g-un{filter:drop-shadow(0 0 7px rgba(190,90,255,.55))}
+.gem-ic.g-et{filter:drop-shadow(0 0 7px rgba(90,200,255,.55))}
+.gem-ic.g-ki{filter:drop-shadow(0 0 7px rgba(255,140,50,.55))}
+.itx-desc .g-ki .gdot{background:#ffa646}
+
+/* ===== Carrito ===== */
+.carl{display:grid;gap:10px;margin:10px 0;min-width:0}
+.carr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--itx-line);border-radius:12px;min-width:0}
+.carr-t{display:flex;align-items:center;gap:10px;flex:1 1 0;min-width:0}
+.carr-t img{width:48px;height:48px;object-fit:cover;border-radius:8px;flex:0 0 auto}
+.carr-t > span{display:flex;flex-direction:column;flex:1 1 0;min-width:0;text-align:left}
+.carr-t b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+.carr-t small{color:var(--itx-muted)}
+.carr-q{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.carr-q > span{min-width:20px;text-align:center;font-weight:800}
+.carr-q .itx-btn{min-width:34px;padding-inline:10px}
