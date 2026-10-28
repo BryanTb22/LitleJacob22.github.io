@@ -1,0 +1,48 @@
+/* =====================================================================
+   Mejoras de la portada de LitleJacob (plata + rojo sobre negro)
+   ===================================================================== */
+:root { --mj-line: #26272b; --mj-line-hi: #3d3f45; --mj-blood: #c8161f; --mj-blood-hi: #e0202a; --mj-steel: #c4c8ce; --mj-steel-hi: #eef0f3; --mj-dim: #9aa0a8; --mj-head: "Oswald", Impact, "Arial Narrow", sans-serif; }
+
+/* ----- héroe: más jerarquía y lectura ----- */
+.home-hero .hero-kicker { letter-spacing: .42em !important; font-size: 13px !important; }
+.home-hero .hero-title { text-shadow: 0 4px 28px rgba(0, 0, 0, .75); }
+.home-hero .hero-sub { letter-spacing: .6em !important; }
+.home-hero .hero-text { font-size: clamp(16px, 1.6vw, 19px) !important; line-height: 1.55 !important; color: #e4e6ea !important; text-shadow: 0 2px 14px rgba(0, 0, 0, .85); max-width: 640px; margin-inline: auto; }
+.home-hero .hero-ctas .lj-btn-lg { padding: 15px 30px !important; font-size: 14px !important; }
+@media (max-width: 720px) { .home-hero .hero-ctas { flex-direction: column; align-items: stretch; } .home-hero .hero-ctas .lj-btn { justify-content: center; text-align: center; } }
+
+/* ----- franja de confianza ----- */
+.lj-trust { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 8px; }
+.lj-trust-i { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .015)); border: 1px solid var(--mj-line-hi); border-radius: 6px; transition: border-color .2s, transform .2s, box-shadow .2s; }
+.lj-trust-i:hover { border-color: var(--mj-blood); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(200, 22, 31, .18); }
+.lj-trust-ico { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 30% 25%, rgba(224, 32, 42, .35), rgba(200, 22, 31, .08)); border: 1px solid rgba(224, 32, 42, .55); }
+.lj-trust-ico svg { width: 24px; height: 24px; fill: none; stroke: var(--mj-steel-hi); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.lj-trust-i b { display: block; font: 600 15px var(--mj-head); letter-spacing: .1em; text-transform: uppercase; color: #fff; }
+.lj-trust-i small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--mj-dim); line-height: 1.35; }
+@media (max-width: 760px) { .lj-trust { grid-template-columns: 1fr; } }
+
+/* ----- tarjetas de secciones ----- */
+.section-card { transition: transform .25s cubic-bezier(.2, .8, .2, 1), border-color .25s, box-shadow .25s; }
+.section-card:hover { transform: translateY(-4px); border-color: var(--mj-blood) !important; box-shadow: 0 18px 44px rgba(200, 22, 31, .22), 0 0 0 1px rgba(224, 32, 42, .35); }
+.buy-mini { transition: border-color .25s, box-shadow .25s; }
+.buy-mini:hover { border-color: var(--mj-blood) !important; box-shadow: 0 14px 36px rgba(200, 22, 31, .16); }
+.buy-option { transition: transform .2s, border-color .2s, background .2s; }
+.buy-option:hover { transform: translateY(-2px); border-color: var(--mj-blood) !important; }
+.buy-option .ico { display: grid; place-items: center; width: 54px; height: 54px; font-size: 28px; border-radius: 50%; background: radial-gradient(circle at 30% 25%, rgba(224, 32, 42, .3), rgba(200, 22, 31, .06)); border: 1px solid rgba(224, 32, 42, .5); transition: transform .25s; }
+.buy-option:hover .ico { transform: scale(1.1) rotate(-4deg); }
+
+/* ----- últimos ganadores ----- */
+.lj-win-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 8px; }
+.lj-win { display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012)); border: 1px solid var(--mj-line-hi); border-radius: 6px; overflow: hidden; transition: transform .25s, border-color .25s, box-shadow .25s; }
+.lj-win:hover { transform: translateY(-4px); border-color: var(--mj-blood); box-shadow: 0 16px 38px rgba(200, 22, 31, .2); }
+.lj-win-pic { position: relative; aspect-ratio: 16 / 10; background: radial-gradient(70% 70% at 50% 55%, rgba(200, 22, 31, .25), transparent 70%), #0b0b0d; }
+.lj-win-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lj-win-pic::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(8, 8, 10, .7)); pointer-events: none; }
+.lj-win-q { position: absolute; inset: 0; display: grid; place-items: center; font: 700 44px var(--mj-head); color: var(--mj-steel); }
+.lj-win-tag { position: absolute; top: 10px; left: 10px; z-index: 2; padding: 4px 11px; font: 700 11px var(--mj-head); letter-spacing: .16em; color: #fff; background: linear-gradient(180deg, #e0343d, #a3121a); border-radius: 2px; box-shadow: 0 4px 14px rgba(0, 0, 0, .5); }
+.lj-win-b { display: flex; flex-direction: column; gap: 3px; padding: 14px 16px 16px; }
+.lj-win-b b { font: 600 20px var(--mj-head); letter-spacing: .06em; text-transform: uppercase; color: #fff; overflow-wrap: anywhere; }
+.lj-win-b span { font-size: 13.5px; color: var(--mj-steel); }
+.lj-win-b small { font-size: 12px; color: var(--mj-dim); }
+.lj-win-more { display: flex; justify-content: center; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { .lj-trust-i, .lj-win, .section-card, .buy-mini, .buy-option, .buy-option .ico { transition: none !important; } }
