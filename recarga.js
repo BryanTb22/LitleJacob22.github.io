@@ -1,7 +1,7 @@
 /* =====================================================================
    RECARGA DE CRÉDITOS dentro de la tienda (Sets Caché / Inicio / Compro).
    Misma lógica que la de Rifas: el pago lo cobra la función "cobrar" (servidor),
-   que decide el monto y los créditos. Aquí solo se muestra la ventana.
+   que decide el monto y el saldo. Aquí solo se muestra la ventana.
    El interruptor del admin (rayas/estado → pagos.culqi) decide si se paga con tarjeta;
    si está apagado, solo queda "Pagar por WhatsApp". Con ?pagotest=1 se ve siempre.
    ===================================================================== */
@@ -69,8 +69,8 @@
   }
   function wspLink() {
     var p = perfil() || {}, s = m.sel;
-    var t = "¡Hola! 👋 Soy *" + (p.nombre || "cliente") + "* (📧 " + (p.email || "") + ").\n\n💎 Quiero recargar créditos en *LitleJacob Store*" +
-      (s ? ": *S/ " + s + "* (" + creditosPara(s) + " créditos)." : ".") + "\n\n¿Me ayudas con mi recarga? 🙏";
+    var t = "¡Hola! 👋 Soy *" + (p.nombre || "cliente") + "* (📧 " + (p.email || "") + ").\n\n💎 Quiero recargar saldo en *LitleJacob Store*" +
+      (s ? ": *S/ " + s + "* (saldo S/ " + creditosPara(s) + ")." : ".") + "\n\n¿Me ayudas con mi recarga? 🙏";
     // La app de WhatsApp para Windows daña los emojis del enlace: en PC se envía sin emojis.
     if (!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
       t = t.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "").replace(/\( +/g, "(").replace(/[ \t]+/g, " ").replace(/^ +| +$/gm, "").replace(/\n{3,}/g, "\n\n").trim();
@@ -82,42 +82,42 @@
     if (!raiz) return;
     var p = perfil(), primera = !!(p && !p.promoUsada), h = "";
     if (m.vista === "cargando") h = '<h3>Procesando…</h3><p class="rc-h">Un momento por favor. No cierres esta ventana.</p>';
-    else if (m.vista === "pendiente") h = '<h3>Código de pago listo 💵</h3><p class="rc-h">Se abrió tu código de pago por <b>S/ ' + m.sel + '</b>. Págalo en un agente, banco, app bancaria o con QR (vale 24 horas). Cuando Culqi lo confirme tus créditos se suman solos; puede tardar unos minutos.</p><p class="rc-h">Tienes <b>' + (p ? p.creditos : "") + '</b> créditos ahora.</p>' +
+    else if (m.vista === "pendiente") h = '<h3>Código de pago listo 💵</h3><p class="rc-h">Se abrió tu código de pago por <b>S/ ' + m.sel + '</b>. Págalo en un agente, banco, app bancaria o con QR (vale 24 horas). Cuando Culqi lo confirme tu saldo se suma solo; puede tardar unos minutos.</p><p class="rc-h">Tienes <b>S/ ' + (p ? p.creditos : "") + '</b> ahora.</p>' +
       '<button class="rc-btn red" data-a="refrescar" type="button">🔄 Ya pagué · actualizar mi saldo</button><button class="rc-btn ghost" data-a="cerrar" type="button">Cerrar</button>';
-    else if (m.vista === "ok") h = '<h3>¡Recarga lista! 🎉</h3><p class="rc-h">Se sumaron <b>' + m.info.creditos + '</b> créditos' + (m.info.promo ? ' (incluye tu regalo de primera recarga 🎁)' : '') +
+    else if (m.vista === "ok") h = '<h3>¡Recarga lista! 🎉</h3><p class="rc-h">Se sumaron <b>S/ ' + m.info.creditos + '</b>' + (m.info.promo ? ' (incluye tu regalo de primera recarga 🎁)' : '') +
       '. Ahora tienes <b>' + (p ? p.creditos : "") + '</b>.</p><button class="rc-btn gold" data-a="cerrar" type="button">Seguir comprando</button>';
     else if (m.vista === "error") h = '<h3>No se pudo completar</h3><p class="rc-h" role="alert">' + esc(m.err) + '</p><button class="rc-btn gold" data-a="volver" type="button">Volver</button><button class="rc-btn ghost" data-a="cerrar" type="button">Cerrar</button>';
     else if (m.vista === "yape") {
       var yp = m.yape || {};
-      h = '<h3>Pagar con Yape 💜</h3><p class="rc-h">Yapea <b>S/ ' + fmtSol(m.sel) + '</b> (sin comisión) y avísanos por WhatsApp con tu captura. Te cargamos <b>' + creditosPara(m.sel) + ' créditos</b>.</p>' +
+      h = '<h3>Pagar con Yape 💜</h3><p class="rc-h">Yapea <b>S/ ' + fmtSol(m.sel) + '</b> (sin comisión) y avísanos por WhatsApp con tu captura. Te cargamos <b>S/ ' + creditosPara(m.sel) + '</b>.</p>' +
         (m.qrUrl ? '<div style="text-align:center"><img src="' + m.qrUrl + '" alt="QR de Yape" width="240" height="240" style="max-width:100%;height:auto;background:#fff;padding:8px;border-radius:12px"></div>' : (yp.qr ? '<p class="rc-note">Cargando QR…</p>' : '')) +
         (yp.numero || yp.nombre ? '<p class="rc-note" style="text-align:center">' + (yp.numero ? 'Yape al <b>' + esc(yp.numero) + '</b>' : '') + (yp.nombre ? ' · a nombre de <b>' + esc(yp.nombre) + '</b>' : '') + '</p>' : '') +
-        '<p class="rc-note"><b>1.</b> Escanea el QR o yapea al número. <b>2.</b> Toca el botón y envía la captura por WhatsApp. <b>3.</b> Cargamos tus créditos (usa el mismo nombre/correo de tu cuenta).</p>' +
+        '<p class="rc-note"><b>1.</b> Escanea el QR o yapea al número. <b>2.</b> Toca el botón y envía la captura por WhatsApp. <b>3.</b> Cargamos tu saldo (usa el mismo nombre/correo de tu cuenta).</p>' +
         '<button class="rc-btn ghost" type="button" data-a="bajarqr">⬇ Descargar QR</button><a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">✅ Ya pagué · enviar captura por WhatsApp</a><button class="rc-btn ghost" type="button" data-a="volver">← Cambiar monto</button>';
     }
     else {
       var sel = m.sel;
-      h = '<h3>Recargar créditos 💎</h3>' +
-        (primera ? '<div class="rc-promo"><b>🎁 PROMO PRIMERA RECARGA</b><span>S/ 50 → <b>55</b> créditos · S/ 100 → <b>110</b> créditos</span></div>' : '') +
-        '<p class="rc-h"><b>1.</b> Elige cuánto quieres recargar (S/ 1 = 1 crédito)</p><div class="rc-packs">' +
+      h = '<h3>Recargar saldo 💎</h3>' +
+        (primera ? '<div class="rc-promo"><b>🎁 PROMO PRIMERA RECARGA</b><span>S/ 50 → <b>S/ 55</b> · S/ 100 → <b>S/ 110</b></span></div>' : '') +
+        '<p class="rc-h"><b>1.</b> Elige cuánto quieres recargar</p><div class="rc-packs">' +
         PACKS.map(function (pk) {
           var ex = primera && pk.p ? pk.p : 0;
           return '<button type="button" class="rc-pack' + (ex ? ' promo' : '') + (sel === pk.s ? ' sel' : '') + '" data-a="monto" data-s="' + pk.s + '">' +
-            (ex ? '<i>🎁 +' + (ex - pk.b) + ' GRATIS</i>' : '') + '<b>S/ ' + pk.s + '</b><span>' + (ex || pk.b) + ' créditos</span></button>';
+            (ex ? '<i>🎁 +' + (ex - pk.b) + ' GRATIS</i>' : '') + '<b>S/ ' + pk.s + '</b><span>' + 'S/ ' + (ex || pk.b) + '</span></button>';
         }).join("") + '</div>' +
         '<div class="rc-otro"><label for="rcOtro">Otro monto (S/ ' + PAGOS.min + ' a S/ ' + PAGOS.max + ')</label><div class="rc-row"><input id="rcOtro" type="number" inputmode="numeric" min="' + PAGOS.min + '" max="' + PAGOS.max + '" step="1" placeholder="Ej. 30">' +
         '<button class="rc-btn ghost sm" type="button" data-a="otro">Usar</button></div></div>' +
         (m.err ? '<p class="rc-err" role="alert">' + esc(m.err) + '</p>' : '') +
-        (sel ? '<p class="rc-res">Recibes <b>' + creditosPara(sel) + ' créditos</b>' + (creditosPara(sel) > sel ? ' 🎁' : '') + '</p>' +
+        (sel ? '<p class="rc-res">Recibes <b>S/ ' + creditosPara(sel) + '</b>' + (creditosPara(sel) > sel ? ' 🎁' : '') + '</p>' +
           (m.pagosOn ? '<p class="rc-note">💳 Tarjeta / efectivo / QR: pagas <b>S/ ' + fmtSol(totalTarjeta(sel)) + '</b> (S/ ' + fmtSol(sel) + ' + S/ ' + fmtSol(totalTarjeta(sel) - sel) + ' de comisión de Culqi)</p>' : '') +
           '<p class="rc-note">💜 Yape / WhatsApp: pagas <b>S/ ' + fmtSol(sel) + '</b>, <b>sin comisión</b></p><p class="rc-h"><b>2.</b> Elige cómo quieres pagar</p>' : '') +
         (sel && m.pagosOn ? '<button class="rc-btn red" type="button" data-a="pagar">💳 Pagar con tarjeta · S/ ' + fmtSol(totalTarjeta(sel)) + '</button>' : '') +
         (sel >= PAGOS.minYape && m.pagosOn ? '<button class="rc-btn gold" type="button" data-a="efectivo">💵 Efectivo / QR / billeteras · S/ ' + fmtSol(totalTarjeta(sel)) + '</button>' : '') +
         (sel && m.yape ? '<button class="rc-btn red" type="button" data-a="yape">💜 Pagar con Yape · sin comisión</button>' : '') +
         (sel ? '<a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">💬 Pagar por WhatsApp · sin comisión</a>' : '') +
-        (m.pagosOn ? '<p class="rc-note">Tarjeta: pago seguro con Culqi desde S/ ' + PAGOS.min + ', tus créditos se suman solos. <b>Efectivo (PagoEfectivo), QR y billeteras: desde S/ ' + PAGOS.minYape + '</b>: te damos un código, pagas cuando quieras (hasta 24 h) y tus créditos se suman solos.</p>' +
-          '<p class="rc-note">¿Montos menores a S/ ' + PAGOS.minYape + ' con Yape, o prefieres pagar con una persona? Elige <b>Pagar por WhatsApp</b> y te atiende el encargado, que carga tus créditos él mismo.</p>'
-          : '<p class="rc-note">Elige el monto y pídelo por WhatsApp: el encargado carga tus créditos él mismo.</p>') +
+        (m.pagosOn ? '<p class="rc-note">Tarjeta: pago seguro con Culqi desde S/ ' + PAGOS.min + ', tu saldo se suma solo. <b>Efectivo (PagoEfectivo), QR y billeteras: desde S/ ' + PAGOS.minYape + '</b>: te damos un código, pagas cuando quieras (hasta 24 h) y tu saldo se suma solo.</p>' +
+          '<p class="rc-note">¿Montos menores a S/ ' + PAGOS.minYape + ' con Yape, o prefieres pagar con una persona? Elige <b>Pagar por WhatsApp</b> y te atiende el encargado, que carga tu saldo él mismo.</p>'
+          : '<p class="rc-note">Elige el monto y pídelo por WhatsApp: el encargado carga tu saldo él mismo.</p>') +
         '<button class="rc-btn ghost" type="button" data-a="cerrar">Cerrar</button>';
     }
     raiz.querySelector(".rc-box").innerHTML = h;
@@ -168,7 +168,7 @@
         else { m.vista = "error"; m.err = (C.error && (C.error.user_message || C.error.merchant_message)) || "No se pudo procesar el pago."; raiz.hidden = false; pintar(); }
       };
       C.publicKey = PAGOS.pk;
-      C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de créditos", amount: Math.round(totalTarjeta(soles) * 100) });
+      C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de saldo", amount: Math.round(totalTarjeta(soles) * 100) });
       C.options({ lang: "es", installments: false, paymentMethods: { tarjeta: true, yape: true, billetera: false, bancaMovil: false, agente: false, cuotealo: false } });
       raiz.hidden = true; C.open();
     }).catch(function (e) { m.vista = "error"; m.err = (e && e.message) || "No se pudo abrir el pago."; pintar(); });
@@ -184,7 +184,7 @@
           var C = window.Culqi;
           window.culqi = function () { /* en órdenes no hay token: el pago llega por aviso de Culqi */ };
           C.publicKey = PAGOS.pk;
-          C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de créditos", amount: Math.round(totalTarjeta(soles) * 100), order: x.j.ordenId });
+          C.settings({ title: "LitleJacob Store", currency: "PEN", description: "Recarga de saldo", amount: Math.round(totalTarjeta(soles) * 100), order: x.j.ordenId });
           C.options({ lang: "es", installments: false, paymentMethods: { tarjeta: false, yape: false, billetera: true, bancaMovil: true, agente: true, cuotealo: false } });
           m.vista = "pendiente"; pintar(); C.open();
         });

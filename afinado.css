@@ -98,3 +98,14 @@ html.af .itx-dialog { border-radius: 22px; }
 
 /* ---------- Items relacionados ---------- */
 html.af .rel-f { border-color: var(--af-borde); }
+
+/* Ajustes tras revisar el ícono de gema dentro de las etiquetas */
+html.af .itx-meta span .af-i, html.af .itx-meta .gem .af-i { padding: 0; background: none; border: 0; border-radius: 0; text-transform: none; width: 1.2em; height: 1.2em; vertical-align: -.25em; }
+html.af .itx-meta .gem { display: inline-flex; align-items: center; gap: 4px; }
+@media (max-width: 640px) { html.af .itx-bar select { width: 100%; } }
+@media (max-width: 640px) {
+  html.af #itx-orden { width: 100%; max-width: none; }
+  html.af .itx-price b { font-size: 22px; }
+  html.af .itx-buy { padding: 7px 11px; font-size: 11px; letter-spacing: .06em; }
+  html.af .itx-body { padding: 12px 12px 14px; }
+}
