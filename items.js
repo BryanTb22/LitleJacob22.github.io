@@ -152,7 +152,7 @@
   const ven = { link: "", cargando: false, err: "", lista: null, noTrad: 0, sel: {}, precios: [], pCargado: false, pCargando: false, q: "", f: { tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", min: "", max: "", orden: "mayor" } };
   const adm = { form: null, msg: "", guardando: false, subiendo: false, steamCargando: false, steamInfo: "", itemDel: null, cp: {} };
   const stk = { q: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", estado: "all", orden: "nombre", pag: 0, msg: "", ed: null };
-  const sec = { cargado: false, items: false };   // sección visible para clientes (rayas/estado → secciones.items)
+  const sec = { cargado: false, items: false, rifas: true };   // sección visible para clientes (rayas/estado → secciones.items)
   let modal = null;
 
   const itemPorId = (id) => items.lista.find((x) => x.id === id) || null;
@@ -198,7 +198,7 @@
   }
   function cargarSecciones() {
     fetch(DOC_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
-      try { const j = JSON.parse(d.fields.json.stringValue); sec.items = !!(j.secciones && j.secciones.items); } catch (e) { sec.items = false; }
+      try { const j = JSON.parse(d.fields.json.stringValue); sec.items = !!(j.secciones && j.secciones.items); sec.rifas = !(j.secciones && j.secciones.rifas === false); } catch (e) { sec.items = false; }
     }).catch(() => { /* sin dato: queda oculto */ }).then(() => { sec.cargado = true; renderTodo(); });
   }
   const visible = () => esAdmin() || sec.items;
@@ -479,7 +479,7 @@
   function cambiarSeccion(on) {
     fetch(DOC_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
       let j = {}; try { j = JSON.parse(d.fields.json.stringValue); } catch (e) { throw new Error("No se pudo leer la configuración actual."); }
-      j.secciones = { items: !!on };
+      j.secciones = Object.assign({}, j.secciones || {}, { items: !!on });
       return fsPedir("rayas/estado?updateMask.fieldPaths=json", { method: "PATCH", body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(j) } } }) });
     }).then((r) => { if (!r.ok) throw new Error("No se pudo guardar (" + r.status + ")."); sec.items = !!on; renderTodo(); })
       .catch((e) => { adm.msg = (e && e.message) || "No se pudo cambiar."; renderTodo(); });
@@ -1047,6 +1047,7 @@
       const sin = a.getAttribute("data-itx-label");
       a.textContent = sin + (!sec.items && esAdmin() ? " 🔒" : "");
     });
+    document.querySelectorAll(".nav-link-rifas").forEach((a) => { a.hidden = !(esAdmin() || sec.rifas); a.textContent = "Rifas" + (!sec.rifas && esAdmin() ? " 🔒" : ""); });
     document.querySelectorAll("[data-itx-cart]").forEach((a) => { a.hidden = !on; a.textContent = "🛒 Carrito" + (carroN() ? " (" + carroN() + ")" : ""); });
   }
 

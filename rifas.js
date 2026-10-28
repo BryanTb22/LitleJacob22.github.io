@@ -219,6 +219,7 @@
       return { id: String(c.id || ("c" + i)), nombre: typeof c.nombre === "string" ? c.nombre : "", numero: String(c.numero || "").replace(/\D+/g, ""), activo: c.activo !== false, foto: typeof c.foto === "string" ? c.foto : "" };
     });
     st.pagos = { culqi: !!(st.pagos && st.pagos.culqi) };
+    st.secciones = { items: !!(st.secciones && st.secciones.items), rifas: !(st.secciones && st.secciones.rifas === false) };
     var yp = st.yape && typeof st.yape === "object" ? st.yape : {};
     st.yape = { qr: /^fs:img-[\w\-]+$/.test(String(yp.qr || "")) ? yp.qr : "", numero: String(yp.numero || "").replace(/\D+/g, "").slice(0, 12), nombre: typeof yp.nombre === "string" ? yp.nombre.slice(0, 40) : "" };
     if (!Array.isArray(st.premios)) st.premios = [];
@@ -872,12 +873,13 @@
       (sub ? '<p>' + sub + '</p>' : '') + '<div class="orn">◆</div></div>';
   }
 
+  function rifasOn() { return !(estado.secciones && estado.secciones.rifas === false); }
   function navTienda() {
     var on = !!(admin.puede || (estado.secciones && estado.secciones.items));
     var lock = !(estado.secciones && estado.secciones.items) && admin.puede ? " 🔒" : "";
     return '<a class="nav-link" href="index.html#inicio">Inicio</a><a class="nav-link" href="index.html#sets-cache">Sets Caché</a>' +
       (on ? '<a class="nav-link" href="index.html#items">Comprar items' + lock + '</a><a class="nav-link" href="index.html#vender">Vender items' + lock + '</a>' : '') +
-      '<a class="nav-link" href="index.html#compro">Compro</a><a class="nav-link active" href="rifas.html">Rifas</a>';
+      '<a class="nav-link" href="index.html#compro">Compro</a>' + (admin.puede || rifasOn() ? '<a class="nav-link active" href="rifas.html">Rifas' + (rifasOn() ? '' : ' 🔒') + '</a>' : '');
   }
   function waPill() { return "https://wa.me/51952997030?text=" + encodeURIComponent("Hola LitleJacob, vi tu tienda LitleJacob Store y quiero hacer una consulta."); }
 
@@ -966,6 +968,12 @@
       tx("span", "pie") +
       '</div></footer>';
 
+    if (!rifasOn()) {
+      var hi = html.indexOf('</header>') + 9, fi = html.indexOf('<footer class="footer');
+      if (!admin.puede) html = html.slice(0, hi).replace(/<nav class="subnav"[\s\S]*?<\/nav>/, '') +
+        '<section class="section gutter rifas-off"><div class="wrap"><div class="empty frame"><div class="in"><strong>Rifas en pausa</strong><span>Por ahora no hay rifas disponibles. Mira nuestra tienda mientras tanto.</span><a class="btn btn-yellow" href="index.html#sets-cache">Ir a la tienda</a></div></div></div></section>' + html.slice(fi);
+      else html = html.slice(0, hi) + '<p class="hint" style="text-align:center;margin:18px auto 0;max-width:760px">🔒 Las rifas están ocultas: solo tú (administrador) las ves. Actívalas en Panel admin → Configuraciones principales.</p>' + html.slice(hi);
+    }
     if (ruleta) html += modalRuleta();
     else if (modal) html += modalAviso();
     else if (elegirAbierto && contactos().length > 1) html += modalElegir();
@@ -1174,10 +1182,11 @@
     var cuerpo;
     if (admin.editando) cuerpo = formPremio();
     else cuerpo = '<div class="tabs" role="tablist">' +
+      '<button class="tab" role="tab" type="button" data-a="tab" data-t="config" aria-selected="' + (admin.tab === "config") + '">⚙ Configuraciones principales</button>' +
       '<button class="tab" role="tab" type="button" data-a="tab" data-t="premios" aria-selected="' + (admin.tab === "premios") + '">Premios</button>' +
       '<button class="tab" role="tab" type="button" data-a="tab" data-t="usuarios" aria-selected="' + (admin.tab === "usuarios") + '">Usuarios y saldo</button>' +
       '<button class="tab" role="tab" type="button" data-a="tab" data-t="pagina" aria-selected="' + (admin.tab === "pagina") + '">Textos y contactos</button>' +
-      '</div>' + (admin.tab === "pagina" ? tabPagina() : (admin.tab === "usuarios" ? tabUsuarios() : listaPremios()));
+      '</div>' + (admin.tab === "config" ? tabConfig() : admin.tab === "pagina" ? tabPagina() : (admin.tab === "usuarios" ? tabUsuarios() : listaPremios()));
     return '<aside class="drawer" role="dialog" aria-label="Panel de administración">' +
       '<div class="drawer-head"><h2>' + titulo + '</h2><button class="btn btn-ghost btn-sm" type="button" data-a="cerrar">Cerrar</button></div>' +
       '<div class="drawer-body">' + cuerpo + '</div>' +
@@ -1394,11 +1403,21 @@
       '<div class="field"><label for="yape-nom">A nombre de (opcional)</label><input id="yape-nom" class="y-nom" maxlength="40" value="' + esc(y.nombre || "") + '"></div>' +
       '<p class="hint">Recuerda pulsar <b>Publicar</b> para que los clientes lo vean.</p></div>';
   }
+  function swCfg(cls, on, titulo, desc, si, no) {
+    return '<label class="cfg-row' + (on ? ' on' : '') + '"><span class="cfg-tx"><b>' + titulo + '</b><small>' + desc + '</small><em>' + (on ? si : no) + '</em></span>' +
+      '<input type="checkbox" class="' + cls + '"' + (on ? ' checked' : '') + '><span class="cfg-sw" aria-hidden="true"></span></label>';
+  }
+  function tabConfig() {
+    var it = !!(estado.secciones && estado.secciones.items), cq = !!(estado.pagos && estado.pagos.culqi);
+    return '<div class="grp cfg"><h3>Configuraciones principales</h3><p class="hint">Activa o desactiva las secciones. Lo desactivado solo lo ves tú (administrador). Pulsa <b>Guardar y publicar</b> para que lo vean todos. Estas opciones son las mismas en LitleJacob Store y Rayas Store.</p>' +
+      swCfg("c-rifas", rifasOn(), "🎟️ Rifas", "Página de rifas, cómo participar, ganadores y reglas.", "VISIBLE para los clientes", "OCULTA: solo tú la ves") +
+      swCfg("c-items", it, "🛒 Compra y venta de items", "Comprar items, Vender items y Carrito en la tienda.", "VISIBLE para los clientes", "OCULTA: solo tú la ves") +
+      swCfg("c-pagos", cq, "💳 Culqi (tarjeta / Yape)", "Botón de pago en línea para recargar saldo.", "ACTIVO: pueden recargar con tarjeta o Yape", "APAGADO: solo piden saldo por WhatsApp") +
+      '</div>';
+  }
   function tabPagina() {
     var T = estado.textos;
-    return yapeAdminHtml() + '<div class="grp"><h3>Cobro con Culqi (tarjeta / Yape)</h3>' +
-      '<label class="chk"><input type="checkbox" class="c-pagos"' + (estado.pagos && estado.pagos.culqi ? ' checked' : '') + '> Cobrar con Culqi (los clientes ven el botón de pago)</label>' +
-      '<p class="hint">' + (estado.pagos && estado.pagos.culqi ? 'ACTIVO: los clientes pueden recargar con tarjeta o Yape.' : 'APAGADO: los clientes solo piden saldo por WhatsApp.') + ' Recuerda pulsar <b>Publicar</b> para que el cambio lo vean todos. Este interruptor vale para las dos páginas.</p></div>' +
+    return yapeAdminHtml() +
       (estado.contactos || []).map(function (c, k) {
       return '<div class="grp contacto-ed"><h3>Contacto ' + (k + 1) + ' · ' + esc(c.nombre || "sin nombre") + '</h3>' +
         '<div class="cav">' + avatar(c) +
@@ -1738,6 +1757,8 @@
       }).catch(function (e) { admin.subiendo = null; admin.imgErr = (e && e.message) || "No se pudo subir la imagen."; render(); });
       return;
     }
+    if (tc.classList && tc.classList.contains("c-rifas")) { estado.secciones = { items: !!estado.secciones.items, rifas: tc.checked }; marcarSucio(); render(); return; }
+    if (tc.classList && tc.classList.contains("c-items")) { estado.secciones = { items: tc.checked, rifas: rifasOn() }; marcarSucio(); render(); return; }
     if (tc.classList && tc.classList.contains("c-pagos")) { estado.pagos = { culqi: tc.checked }; marcarSucio(); render(); return; }
     if (tc.classList && tc.classList.contains("c-activo")) { estado.contactos[Number(tc.getAttribute("data-i"))].activo = tc.checked; marcarSucio(); render(); return; }
     if (tc.classList && (tc.classList.contains("c-nombre") || tc.classList.contains("c-num"))) { render(); return; }
@@ -1959,7 +1980,7 @@
     }
     function tecla(ev) { if (ev.key === "Escape") cerrar(); }
     function mostrar() {
-      if (admin.puede || document.getElementById("promoPop")) return;
+      if (admin.puede || !rifasOn() || document.getElementById("promoPop")) return;
       var href = creditoHref();
       var d = document.createElement("div");
       d.id = "promoPop"; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", "Promoción de primera recarga");
