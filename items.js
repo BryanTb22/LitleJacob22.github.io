@@ -353,7 +353,7 @@
       '<div class="ff"><label for="itx-rareza">Rareza</label><select id="itx-rareza">' + opciones(LISTA_RAREZAS, filtros.rareza, "Todas") + "</select></div>" +
       '<div class="ff"><label for="itx-calidad">Calidad</label><select id="itx-calidad">' + opciones(distintos("calidad", ITEM_CALIDADES), filtros.calidad, "Todas") + "</select></div>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="reset" style="width:100%">Restablecer filtros</button></details></aside>';
-    return cabecera("Catálogo", "Comprar", "items", "Elige tu item y págalo con créditos o por WhatsApp.") + aviso() + switchSeccion() +
+    return cabecera("Catálogo", "Comprar", "items", "Elige tu item y págalo con tu saldo o por WhatsApp.") + aviso() + switchSeccion() +
       (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' : "") +
       (filtros.tipo || filtros.heroe ? migaCatalogoHtml(filtros.tipo, filtros.heroe, "") : "") +
       '<div class="itx-tabs">' + tabs + "</div>" +
@@ -669,9 +669,9 @@
       '<div class="itx-pg-grid"><div class="itx-pg-foto" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') +
       '<span class="itx-pg-tag' + (agot ? " off" : "") + '">' + (agot ? "Agotado" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
       '<div class="itx-pg-info"><dl class="itx-pg-attrs">' + attrs + "</dl>" + estilosHtml(it) + descripcionHtml(it) +
-      '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + '<span class="pp-cred">o ' + cred + " créditos</span></div>" +
+      '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + '<span class="pp-cred">o S/ ' + cred + "</span></div>" +
       steamHtml(it, true) +
-      (agot ? "" : (p ? '<p class="itx-hint">Tienes <b>' + p.creditos + "</b> créditos.</p>" : '<p class="itx-hint">Para pagar con créditos entra a tu cuenta.</p>')) +
+      (agot ? "" : (p ? '<p class="itx-hint">Tienes <b>S/ ' + p.creditos + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>')) +
       '<div class="pp-btns">' + btns + "</div></div></div></div>" + ofertasHtml(it) + "</section>" + parecidosHtml(it);
   }
 
@@ -764,9 +764,9 @@
       '<div class="carr-q"><button type="button" class="itx-btn ghost sm" data-itx="carMenos" data-id="' + esc(x.it.id) + '" aria-label="Menos">−</button><span>' + x.qty + "</span>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="carMas" data-id="' + esc(x.it.id) + '" aria-label="Más"' + (x.qty >= x.it.stock ? " disabled" : "") + '>+</button>' +
       '<button type="button" class="itx-btn ghost sm" data-itx="carQuitar" data-id="' + esc(x.it.id) + '" aria-label="Quitar">🗑</button></div></div>').join("") + "</div>" +
-      '<p class="itx-resumen">Total: <b>' + fmtPrecio(T.sol) + "</b> · o <b>" + T.cred + " créditos</b></p>" +
-      (p ? '<p class="itx-hint">Tienes <b>' + p.creditos + "</b> créditos.</p>" : '<p class="itx-hint">Para pagar con créditos entra a tu cuenta.</p>');
-    const btns = '<button class="itx-btn fucsia" type="button" data-itx="carCred">💎 Pagar con ' + T.cred + ' créditos</button>' +
+      '<p class="itx-resumen">Total: <b>' + fmtPrecio(T.sol) + "</b> · o <b>S/ " + T.cred + "</b></p>" +
+      (p ? '<p class="itx-hint">Tienes <b>S/ ' + p.creditos + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>');
+    const btns = '<button class="itx-btn fucsia" type="button" data-itx="carCred">💎 Pagar con tu saldo (S/ ' + T.cred + ')</button>' +
       '<button class="itx-btn gold" type="button" data-itx="carWsp">💬 Pedir por WhatsApp</button>' +
       '<button class="itx-btn ghost sm" type="button" data-itx="carVaciar">Vaciar</button>' + cerrar;
     return { h, btns };
@@ -778,7 +778,7 @@
   }
   function pagarCarro() {
     const l = carroLineas(); if (!l.length) return;
-    if (!perfil()) { modal = null; renderTodo(); if (cuenta()) cuenta().abrir("login", "Entra a tu cuenta para pagar con créditos."); return; }
+    if (!perfil()) { modal = null; renderTodo(); if (cuenta()) cuenta().abrir("login", "Entra a tu cuenta para pagar con tu saldo."); return; }
     const payload = l.map((x) => ({ id: x.it.id, qty: x.qty })), n = l.reduce((a, x) => a + x.qty, 0);
     modal = { tipo: "cargando" }; renderTodo();
     token().then((tk) => fetch(ITEMS_URL, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ items: payload }) }))
@@ -789,7 +789,7 @@
         modal = { tipo: "ok", code: x.j.code, nombre: n + (n === 1 ? " item" : " items"), saldo: x.j.saldo }; renderTodo();
         if (cuenta() && cuenta().recargar) cuenta().recargar();
         cargarItems(true);
-      }).catch((e) => { modal = { tipo: "error", msg: (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : "No se pudo completar la compra. No se descontaron créditos." }; renderTodo(); });
+      }).catch((e) => { modal = { tipo: "error", msg: (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : "No se pudo completar la compra. No se descontó saldo." }; renderTodo(); });
   }
   function modalHtml() {
     if (!modal) return "";
@@ -804,16 +804,16 @@
         h = "<h3>" + esc(it.nombre) + "</h3>" +
           '<div class="itx-thumb big" style="--rar:' + colorRareza(it.rareza) + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') + "</div>" +
           '<p class="itx-hint">' + [it.rareza, it.calidad, it.tipo, it.heroe, it.ranura].filter(Boolean).map(esc).join(" · ") + "</p>" + estilosHtml(it) + descripcionHtml(it) +
-          '<p class="itx-resumen">Precio: <b>' + fmtPrecio(it.precio) + "</b> · o <b>" + cred + " créditos</b></p>" + steamHtml(it, true) +
-          (agot ? '<p class="itx-hint" style="color:#ff6b6b">Este item está agotado.</p>' : (p ? '<p class="itx-hint">Tienes <b>' + p.creditos + "</b> créditos.</p>" : '<p class="itx-hint">Para pagar con créditos entra a tu cuenta.</p>'));
-        btns = (agot ? "" : '<button class="itx-btn fucsia" type="button" data-itx="cred" data-id="' + esc(it.id) + '">💎 Pagar con ' + cred + " créditos</button>" +
+          '<p class="itx-resumen">Precio: <b>' + fmtPrecio(it.precio) + "</b> · o <b>S/ " + cred + "</b></p>" + steamHtml(it, true) +
+          (agot ? '<p class="itx-hint" style="color:#ff6b6b">Este item está agotado.</p>' : (p ? '<p class="itx-hint">Tienes <b>S/ ' + p.creditos + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>'));
+        btns = (agot ? "" : '<button class="itx-btn fucsia" type="button" data-itx="cred" data-id="' + esc(it.id) + '">💎 Pagar con tu saldo (S/ ' + cred + ")</button>" +
           '<button class="itx-btn gold" type="button" data-itx="wsp" data-id="' + esc(it.id) + '">💬 Comprar por WhatsApp</button>') + cerrar;
       }
     } else if (modal.tipo === "carrito") { const mc = carroModal(); h = mc.h; btns = mc.btns; }
     else if (modal.tipo === "cargando") { h = "<h3>Procesando…</h3><p class='itx-hint'>Un momento por favor.</p>"; }
     else if (modal.tipo === "error") { h = "<h3>No se pudo completar</h3><p class='itx-hint'>" + esc(modal.msg) + "</p>"; btns = cerrar; }
     else if (modal.tipo === "ok") {
-      h = "<h3>¡Compra lista! 🎉</h3><p class='itx-hint'>Compraste <b>" + esc(modal.nombre) + "</b>. Pedido <b>" + esc(modal.code) + "</b>. Te quedan <b>" + modal.saldo + "</b> créditos. Te escribiremos para entregártelo por Steam; asegúrate de tener tu link de intercambio en tu cuenta.</p>";
+      h = "<h3>¡Compra lista! 🎉</h3><p class='itx-hint'>Compraste <b>S/ " + esc(modal.nombre) + "</b>. Pedido <b>" + esc(modal.code) + "</b>. Te quedan <b>" + modal.saldo + "</b>. Te escribiremos para entregártelo por Steam; asegúrate de tener tu link de intercambio en tu cuenta.</p>";
       btns = cerrar;
     }
     return '<div class="itx-scrim" data-itx="cerrarModal"></div><div class="itx-dialog" role="dialog" aria-modal="true">' + h + '<div class="itx-dbtns">' + btns + "</div></div>";
@@ -825,7 +825,7 @@
   }
   function comprarConCreditos(id) {
     const it = itemPorId(id); if (!it) return;
-    if (!perfil()) { modal = null; renderTodo(); if (cuenta()) cuenta().abrir("login", "Entra a tu cuenta para pagar con créditos."); return; }
+    if (!perfil()) { modal = null; renderTodo(); if (cuenta()) cuenta().abrir("login", "Entra a tu cuenta para pagar con tu saldo."); return; }
     modal = { tipo: "cargando" }; renderTodo();
     token().then((tk) => fetch(ITEMS_URL, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ id }) }))
       .then((r) => r.json().catch(() => ({})).then((j) => ({ ok: r.ok, j })))
@@ -834,7 +834,7 @@
         modal = { tipo: "ok", code: x.j.code, nombre: it.nombre, saldo: x.j.saldo }; renderTodo();
         if (cuenta() && cuenta().recargar) cuenta().recargar();
         cargarItems(true);
-      }).catch((e) => { modal = { tipo: "error", msg: (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : "No se pudo completar la compra. No se descontaron créditos." }; renderTodo(); });
+      }).catch((e) => { modal = { tipo: "error", msg: (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : "No se pudo completar la compra. No se descontó saldo." }; renderTodo(); });
   }
 
   /* ---------- Vender items ---------- */

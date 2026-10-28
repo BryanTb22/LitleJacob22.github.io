@@ -808,3 +808,6 @@ html, body { overflow-x: clip; max-width: 100%; }
 /* QR de Yape centrado */
 .yapeqr { display: flex; justify-content: center; margin: 10px 0; }
 .yapeqr img { width: 240px; max-width: 100%; height: auto; border-radius: 8px; }
+
+/* Todo en soles */
+.cost b::before { content: "S/ "; font-size: .5em; margin-right: 3px; vertical-align: .35em; }

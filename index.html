@@ -2805,7 +2805,7 @@ html.ljc-lock { overflow: hidden; }
                 <button id="cartClearBtn" type="button" class="lj-btn lj-btn-sm lj-btn-danger">Vaciar carrito</button>
                 <div class="lj-footer-right">
                     <button type="button" class="lj-btn" data-close="cartModal">Seguir viendo</button>
-                    <button id="cartCreditsBtn" type="button" class="lj-btn lj-btn-gold">💎 Pagar con créditos</button>
+                    <button id="cartCreditsBtn" type="button" class="lj-btn lj-btn-gold">💎 Pagar con tu saldo</button>
                     <button id="cartCheckoutBtn" type="button" class="lj-btn lj-btn-green">💬 Enviar pedido por WhatsApp</button>
                 </div>
             </div>
@@ -2911,8 +2911,8 @@ html.ljc-lock { overflow: hidden; }
         if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     </script>
-    <script src="cuenta.js?v=5" defer=""></script>
-    <script src="recarga.js?v=5" defer=""></script>
+    <script src="cuenta.js?v=6" defer=""></script>
+    <script src="recarga.js?v=6" defer=""></script>
     <link rel="stylesheet" href="items.css?v=17">
     <script>
     /* Interruptor del AFINADO de Comprar/Vender items. Encendido por defecto.
@@ -2928,7 +2928,7 @@ html.ljc-lock { overflow: hidden; }
         document.addEventListener("DOMContentLoaded", function () { var s = document.createElement("script"); s.src = "afinado.js?v=1"; document.body.appendChild(s); });
     })();
     </script>
-    <script src="items.js?v=22" defer=""></script>
+    <script src="items.js?v=23" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
     <script>
@@ -3549,7 +3549,7 @@ html.ljc-lock { overflow: hidden; }
             document.getElementById("cartCheckoutBtn").disabled = t.count === 0;
             const credBtn = document.getElementById("cartCreditsBtn");
             credBtn.disabled = t.count === 0 || creditPaying;
-            credBtn.textContent = creditPaying ? "⏳ Pagando…" : t.count ? `💎 Pagar con ${creditCost(t)} créditos` : "💎 Pagar con créditos";
+            credBtn.textContent = creditPaying ? "⏳ Pagando…" : t.count ? `💎 Pagar con tu saldo (S/ ${creditCost(t)})` : "💎 Pagar con tu saldo";
             document.getElementById("cartClearBtn").style.display = t.count ? "" : "none";
             if (t.count === 0) {
                 list.innerHTML = `<div class="cart-empty"><span class="big">🛒</span>Tu carrito está vacío.<br>Toca <strong>🛒 Agregar</strong> en los sets que quieras.</div>`;
@@ -3594,23 +3594,23 @@ html.ljc-lock { overflow: hidden; }
         function creditLineHtml(t) {
             const api = window.ljCuenta, p = api && api.perfil && api.perfil();
             const cost = creditCost(t);
-            if (!api || !api.sesion()) return `<div class="row note cred-note"><span>💎 También puedes pagar con tus créditos (1 crédito = S/1). <a href="#" data-cred="login">Entra a tu cuenta</a></span></div>`;
+            if (!api || !api.sesion()) return `<div class="row note cred-note"><span>💎 También puedes pagar con tu saldo. <a href="#" data-cred="login">Entra a tu cuenta</a></span></div>`;
             if (!p) return "";
             return p.creditos >= cost
-                ? `<div class="row note cred-note ok"><span>💎 Tienes <b>${p.creditos}</b> créditos · pagando con créditos te quedan <b>${p.creditos - cost}</b></span></div>`
-                : `<div class="row note cred-note"><span>💎 Tienes <b>${p.creditos}</b> créditos · te faltan <b>${cost - p.creditos}</b>. <a href="#" data-cred="recargar">Recargar créditos</a></span></div>`;
+                ? `<div class="row note cred-note ok"><span>💎 Tienes <b>S/ ${p.creditos}</b> · pagando con tu saldo te quedan <b>${p.creditos - cost}</b></span></div>`
+                : `<div class="row note cred-note"><span>💎 Tienes <b>S/ ${p.creditos}</b> · te faltan <b>${cost - p.creditos}</b>. <a href="#" data-cred="recargar">Recargar saldo</a></span></div>`;
         }
         async function payWithCredits() {
             const t = cartTotals();
             if (!t.count || creditPaying) return;
             const api = window.ljCuenta;
             if (!api) return;
-            if (!api.sesion()) { closeModal("cartModal"); api.abrir("login", "Entra o crea tu cuenta para pagar con tus créditos."); return; }
+            if (!api.sesion()) { closeModal("cartModal"); api.abrir("login", "Entra o crea tu cuenta para pagar con tu saldo."); return; }
             const p = api.perfil();
             if (!p) { closeModal("cartModal"); api.abrir(); return; }
             const cost = creditCost(t);
-            if (p.creditos < cost) { showToast(`Te faltan ${cost - p.creditos} créditos. Pulsa «💎 Recargar» arriba.`, "Créditos"); return; }
-            if (!(await confirmDialog(`¿Pagar ${cost} créditos por ${setsLabel(t.count)}? Te quedarán ${p.creditos - cost} créditos.`, "💎 Pagar"))) return;
+            if (p.creditos < cost) { showToast(`Te faltan S/ ${cost - p.creditos}. Pulsa «💎 Recargar» arriba.`, "Saldo"); return; }
+            if (!(await confirmDialog(`¿Pagar S/ ${cost} por ${setsLabel(t.count)}? Te quedarán S/ ${p.creditos - cost}.`, "💎 Pagar"))) return;
             creditPaying = true; renderCartModal();
             try {
                 const tk = await api.token();
@@ -3625,12 +3625,12 @@ html.ljc-lock { overflow: hidden; }
                 closeModal("cartModal");
                 notifyNewOrder(j.code);
                 api.recargar();
-                const msg = `Hola LitleJacob, pagué con créditos el pedido ${j.code} (${setsLabel(t.count)}: ${names}). Mi Steam: ${(p.steam || "—")}. ¡Gracias!`;
-                if (await confirmDialog(`✅ ¡Compra lista! Pedido ${j.code}. Pagaste ${j.creditos} créditos y te quedan ${j.saldo}. Te enviaremos tus sets por Steam. ¿Nos avisas por WhatsApp para entregártelos más rápido?`, "💬 Avisar por WhatsApp")) {
+                const msg = `Hola LitleJacob, pagué con mi saldo el pedido ${j.code} (${setsLabel(t.count)}: ${names}). Mi Steam: ${(p.steam || "—")}. ¡Gracias!`;
+                if (await confirmDialog(`✅ ¡Compra lista! Pedido ${j.code}. Pagaste S/ ${j.creditos} y te quedan ${j.saldo}. Te enviaremos tus sets por Steam. ¿Nos avisas por WhatsApp para entregártelos más rápido?`, "💬 Avisar por WhatsApp")) {
                     window.open(waLink(msg), "_blank", "noopener");
                 }
             } catch (e) {
-                showToast((e && e.message) || "No se pudo completar la compra.", "Créditos");
+                showToast((e && e.message) || "No se pudo completar la compra.", "Saldo");
             } finally {
                 creditPaying = false;
                 if (document.getElementById("cartModal").classList.contains("open")) renderCartModal();
@@ -3794,7 +3794,7 @@ html.ljc-lock { overflow: hidden; }
                 if (e.target.closest("[data-cred='recargar']")) { e.preventDefault(); closeModal("cartModal"); if (window.ljRecarga) window.ljRecarga.abrir(); return; }
                 if (!e.target.closest("[data-cred='login']")) return;
                 e.preventDefault(); closeModal("cartModal");
-                if (window.ljCuenta) window.ljCuenta.abrir("login", "Entra o crea tu cuenta para pagar con tus créditos.");
+                if (window.ljCuenta) window.ljCuenta.abrir("login", "Entra o crea tu cuenta para pagar con tu saldo.");
             });
             document.getElementById("cartClearBtn").addEventListener("click", async () => {
                 if (!(await confirmDialog("¿Vaciar el carrito?", "Vaciar"))) return;
@@ -5705,7 +5705,7 @@ service cloud.firestore {
             if (o.discount) notes.push(`Dscto. −${money(o.discount)}`);
             if (o.stockApplied) notes.push("stock descontado");
             else if (needsReserve(o)) notes.push("⚠ stock sin descontar");
-            if (o.paidWith === "creditos") notes.push(`💎 pagado con ${Number(o.creditos) || 0} créditos`);
+            if (o.paidWith === "creditos") notes.push(`💎 pagado con S/ ${Number(o.creditos) || 0}`);
             if (o.paymentMethod) notes.push(`Pago: ${escapeHtml(o.paymentMethod)}`);
             const isOpen = !!ordState.open[o._id] || ordState.phoneEditing === o._id;
             const nSets = Number(o.count) || (o.items || []).reduce((n, it) => n + (it.qty || 1), 0);
@@ -5779,7 +5779,7 @@ service cloud.firestore {
                 </button>
                 <div class="ord-body">
                 <div class="ord-cust-steam">${steamLineHtml(c.steamId)}</div>
-                ${c.account ? `<div class="cust-acc">✅ <b>Cuenta registrada</b> · ${escapeHtml(c.account.email)} · ${c.account.creditos} créditos${c.account.tradelink ? ` · <a href="${escapeHtml(c.account.tradelink)}" target="_blank" rel="noopener noreferrer">Trade link</a>` : " · sin trade link"}</div>` : ""}
+                ${c.account ? `<div class="cust-acc">✅ <b>Cuenta registrada</b> · ${escapeHtml(c.account.email)} · S/ ${c.account.creditos}${c.account.tradelink ? ` · <a href="${escapeHtml(c.account.tradelink)}" target="_blank" rel="noopener noreferrer">Trade link</a>` : " · sin trade link"}</div>` : ""}
                 <div class="ord-cust-steam">📱 ${c.phone ? (isWaUser(c.phone) ? `<b>${escapeHtml(c.phone)}</b>` : `<a href="${waSendLink(c.phone)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(c.phone))}</a>`) : "sin WhatsApp"}</div>
                 <div class="cust-stats">
                     <div><b>${c.orders}</b><span>${c.orders === 1 ? "Pedido" : "Pedidos"}</span></div>

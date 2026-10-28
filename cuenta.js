@@ -152,7 +152,7 @@
     if (!boton) return;
     var s = leerSesion(), p = st.perfil;
     if (recBtn) recBtn.hidden = esAdmin(s);
-    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>' + p.creditos + ' créd.</small>' : "Mi cuenta") : "Entrar / Registrarme";
+    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>S/ ' + p.creditos + '</small>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
     if (!recBtn && boton.parentNode) {
       recBtn = document.createElement("button");
@@ -208,7 +208,7 @@
     } else if (st.modo === "perfil" && s) {
       titulo = "Mi cuenta";
       cuerpo = '<div class="ljc-body">' + (p
-        ? '<div class="ljc-saldo"><small>Tus créditos</small><b>' + p.creditos + '</b><a class="ljc-rec" href="#" data-a="recargar">💎 Recargar créditos</a><a href="rifas.html">Ir a las rifas →</a></div>' +
+        ? '<div class="ljc-saldo"><small>Tu saldo</small><b>' + p.creditos + '</b><a class="ljc-rec" href="#" data-a="recargar">💎 Recargar saldo</a><a href="rifas.html">Ir a las rifas →</a></div>' +
           '<form id="ljcPerfil" novalidate><h3>Mis datos</h3>' + camposCliente("ljp", p) +
           campo("ljp-email", "Correo", "disabled", "", p.email || s.email) +
           (p.steam ? "" : '<p class="ljc-hint warn">Agrega tu ID de Steam para que podamos agregarte y enviarte tus sets.</p>') +
