@@ -254,7 +254,7 @@
       (admin ? '<div class="itx-admb"><button type="button" class="itx-btn ghost sm" data-itx="editar" data-id="' + esc(it.id) + '" aria-label="Editar">✎</button>' +
         (adm.itemDel === it.id ? '<button type="button" class="itx-btn sm del" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar">🗑</button>') + "</div>" : "") +
       '<div class="itx-body"><h4>' + esc(it.nombre) + "</h4>" +
-      '<div class="itx-meta">' + (it.rareza ? '<span style="color:' + col + '">' + esc(it.rareza) + "</span>" : "") + (it.calidad ? "<span>" + esc(it.calidad) + "</span>" : "") + (it.heroe ? "<span>" + esc(it.heroe) + "</span>" : "") + (it.descripcion ? '<span class="gem">💎 ' + lineasDesc(it).length + "</span>" : "") + "</div>" +
+      '<div class="itx-meta">' + (it.rareza ? '<span style="color:' + col + '">' + esc(it.rareza) + "</span>" : "") + (it.calidad ? "<span>" + esc(it.calidad) + "</span>" : "") + (it.heroe ? "<span>" + esc(it.heroe) + "</span>" : "") + (it.descripcion ? '<span class="gem">💎 ' + (efectoUnusual(it) ? esc(efectoUnusual(it)) : lineasDesc(it).length) + "</span>" : "") + "</div>" +
       '<div class="itx-price"><b>' + fmtPrecio(it.precio) + '</b><span class="itx-buy">' + (agot ? "Agotado" : "Comprar") + "</span></div>" + steamHtml(it) + "</div></article>";
   }
   function gridHtml() {
@@ -319,6 +319,15 @@
 
   /* ---------- Admin: formulario de item ---------- */
   const nuevoForm = () => ({ id: "", nombre: "", img: "", precio: "", stock: "1", tipo: "Wearable", heroe: "", ranura: "", rareza: "", calidad: "", estilos: "0", estOk: "1", descripcion: "", activo: true, creado: "", link: "" });
+  function gemasFormHtml(F) {
+    const l = gemasDe(F);
+    return '<div class="field gform"><label>💎 Gemas del item (cada versión con distinta gema lleva su propio precio)</label><datalist id="itx-dl-gtipo">' + GEMA_TIPOS.map((t) => '<option value="' + esc(t) + '">').join("") + "</datalist>" +
+      (l.length ? l.map((g, i) => '<div class="grow-f"><input id="itf-gt-' + i + '" list="itx-dl-gtipo" maxlength="30" placeholder="Tipo (Unusual Effect Gem)" value="' + esc(g.t) + '"><input id="itf-gv-' + i + '" maxlength="60" placeholder="Nombre (Candy Caster)" value="' + esc(g.v) + '">' +
+        '<button type="button" class="itx-btn ghost sm" data-itx="gemaDel" data-i="' + i + '" aria-label="Quitar gema">✕</button></div>').join("") : '<p class="itx-hint">Sin gemas.</p>') +
+      '<div class="cav"><button type="button" class="itx-btn ghost sm" data-itx="gemaMas" data-t="Unusual Effect Gem">+ Efecto Unusual</button><button type="button" class="itx-btn ghost sm" data-itx="gemaMas" data-t="Prismatic Gem">+ Prismatic</button><button type="button" class="itx-btn ghost sm" data-itx="gemaMas" data-t="">+ Otra gema</button>' +
+      (F.id ? '<button type="button" class="itx-btn ghost sm" data-itx="variante">⧉ Crear otra versión (otra gema)</button>' : "") + "</div></div>";
+  }
+  const gemasAString = (l) => l.map((g) => { const t = String(g.t || "").trim(), v = String(g.v || "").trim(); return t ? t + ":" + (v ? " " + v : "") : v; }).filter(Boolean).join("\n");
   function formHtml() {
     const F = adm.form; if (!F) return "";
     const nEst = Number(F.estilos) || 0;
@@ -337,7 +346,7 @@
       '<div class="field"><label for="itf-ranura">Ranura (Weapon, Head, Back…)</label><input id="itf-ranura" list="itx-dl-ranura" maxlength="40" value="' + esc(F.ranura) + '"><datalist id="itx-dl-ranura">' + distintos("ranura", SLOTS_DOTA).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist></div>" +
       '<div class="field"><label for="itf-rareza">Rareza</label><select id="itf-rareza">' + opciones(LISTA_RAREZAS, F.rareza, "—") + "</select></div>" +
       '<div class="field"><label for="itf-calidad">Calidad</label><input id="itf-calidad" list="itx-dl-calidad" maxlength="30" value="' + esc(F.calidad) + '"><datalist id="itx-dl-calidad">' + distintos("calidad", ITEM_CALIDADES).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist></div>" +
-      '<div class="field"><label for="itf-desc">Gemas / descripción (una por línea)</label><textarea id="itf-desc" rows="3" maxlength="600" placeholder="Prismatic Gem: Champion\'s Green">' + esc(F.descripcion || "") + "</textarea></div>" +
+      gemasFormHtml(F) +
       '<div class="field"><label for="itf-estilos">Estilos (solo si el item los tiene)</label><select id="itf-estilos">' + ["0", "2", "3", "4", "5", "6"].map((v) => '<option value="' + v + '"' + (String(F.estilos || 0) === v ? " selected" : "") + ">" + (v === "0" ? "Sin estilos" : v + " estilos") + "</option>").join("") + "</select></div>" +
       (nEst > 0 ? '<div class="field"><label>Estilos que SÍ tiene (los demás saldrán “Bloqueado”)</label><div class="itx-estchk">' + (() => { let o = ""; const ok = estilosOkLista(F); for (let k = 1; k <= nEst; k++) o += '<label class="itx-chk"><input type="checkbox" id="itf-est-' + k + '"' + (ok.indexOf(k) >= 0 ? " checked" : "") + "> Estilo " + k + "</label>"; return o; })() + "</div></div>" : "") +
       '<label class="itx-chk"><input type="checkbox" id="itf-activo"' + (F.activo ? " checked" : "") + "> Visible para los clientes</label>" +
@@ -361,6 +370,8 @@
       if (el.checked && pos < 0) cur.push(num); else if (!el.checked && pos >= 0) cur.splice(pos, 1);
       cur.sort((a, b) => a - b); F.estOk = cur.join(","); return true;
     }
+    const mg = /^itf-g([tv])-(\d+)$/.exec(el.id);
+    if (mg) { const gl = gemasDe(F), gi = parseInt(mg[2], 10); if (gl[gi]) { gl[gi][mg[1]] = el.value; F.descripcion = gemasAString(gl); } return true; }
     if (m[el.id]) { F[m[el.id]] = el.value; return true; }
     return false;
   }
@@ -398,7 +409,7 @@
     if (!isFinite(stock) || stock < 0) stock = 1;
     const it = { id: F.id || ("it-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), nombre: F.nombre.trim(), img: F.img, precio: Math.round(precio * 100) / 100, stock,
       tipo: F.tipo, heroe: F.heroe.trim(), ranura: F.ranura.trim(), rareza: F.rareza, calidad: F.calidad.trim(),
-      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: String(F.descripcion || "").trim().slice(0, 600), steamUsd: Number(F.steamUsd) || 0, steamAct: F.steamAct || "", activo: F.activo, creado: F.creado || new Date().toISOString() };
+      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: gemasAString(gemasDe(F).filter((g) => g.v)).slice(0, 600), steamUsd: Number(F.steamUsd) || 0, steamAct: F.steamAct || "", activo: F.activo, creado: F.creado || new Date().toISOString() };
     adm.guardando = true; adm.msg = ""; renderTodo();
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Entra con la cuenta de administrador." : "No se pudo guardar (" + r.status + ").");
@@ -596,7 +607,7 @@
     const dto = sol && it.precio > 0 && it.precio < sol ? Math.round((1 - it.precio / sol) * 100) : 0;
     const fila = (k, v) => v ? "<div><dt>" + k + "</dt><dd>" + v + "</dd></div>" : "";
     const attrs = fila("Héroe", esc(it.heroe)) + fila("Ranura", esc(it.ranura)) + fila("Tipo", esc(it.tipo)) +
-      fila("Rareza", it.rareza ? '<i class="itx-dot" style="background:' + col + '"></i>' + esc(it.rareza) : "") + fila("Calidad", esc(it.calidad)) +
+      fila("Rareza", it.rareza ? '<i class="itx-dot" style="background:' + col + '"></i>' + esc(it.rareza) : "") + fila("Calidad", esc(it.calidad)) + fila("Efecto Unusual", esc(efectoUnusual(it))) +
       fila("Disponibles", agot ? "Agotado" : String(it.stock));
     const btns = agot ? '<button class="itx-btn ghost" type="button" disabled>Agotado</button>'
       : '<button class="itx-btn fucsia" type="button" data-itx="cred" data-id="' + esc(it.id) + '">💎 Pagar con ' + cred + ' créditos</button>' +
@@ -609,14 +620,31 @@
       '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + '<span class="pp-cred">o ' + cred + " créditos</span></div>" +
       steamHtml(it, true) +
       (agot ? "" : (p ? '<p class="itx-hint">Tienes <b>' + p.creditos + "</b> créditos.</p>" : '<p class="itx-hint">Para pagar con créditos entra a tu cuenta.</p>')) +
-      '<div class="pp-btns">' + btns + "</div></div></div></div></section>";
+      '<div class="pp-btns">' + btns + "</div></div></div>" + ofertasHtml(it) + "</div></section>";
   }
 
   /* ---------- Modal de un item (comprar) ---------- */
   const lineasDesc = (it) => String(it.descripcion || "").split("\n").map((x) => x.trim()).filter(Boolean);
+  const GEMA_TIPOS = ["Unusual Effect Gem", "Prismatic Gem", "Inscribed Gem", "Ethereal Gem", "Kill Eater", "Rune"];
+  const gemasDe = (it) => lineasDesc(it).map((x) => { const k = x.indexOf(":"); return k > 0 && k < 28 ? { t: x.slice(0, k).trim(), v: x.slice(k + 1).trim() } : { t: "", v: x }; });
+  const efectoUnusual = (it) => { const g = gemasDe(it).filter((x) => /unusual/i.test(x.t) && x.v)[0]; return g ? g.v : ""; };
+  const gemaClase = (t) => (/unusual/i.test(t) ? "g-un" : /prismatic/i.test(t) ? "g-pr" : /ethereal/i.test(t) ? "g-et" : /inscribed/i.test(t) ? "g-in" : "");
+  const gemChipsHtml = (it) => gemasDe(it).map((g) => '<span class="gchip ' + gemaClase(g.t) + '" title="' + esc((g.v || "") + (g.t ? " · " + g.t : "")) + '">' + esc(g.v || g.t) + "</span>").join("");
   function descripcionHtml(it) {
-    const l = lineasDesc(it); if (!l.length) return "";
-    return '<div class="itx-desc"><b>💎 Gemas y detalles</b>' + l.map((x) => { const k = x.indexOf(": "); return "<div>" + (k > 0 && k < 24 ? '<span class="gk">' + esc(x.slice(0, k)) + "</span> " + esc(x.slice(k + 2)) : esc(x)) + "</div>"; }).join("") + "</div>";
+    const l = gemasDe(it); if (!l.length) return "";
+    return '<div class="itx-desc"><b>💎 Gemas</b>' + l.map((g) => '<div class="grow ' + gemaClase(g.t) + '"><span class="gdot"></span><span class="gv">' + esc(g.v || g.t) + "</span>" + (g.t && g.v ? '<span class="gk">' + esc(g.t) + "</span>" : "") + "</div>").join("") + "</div>";
+  }
+  // Mismo item con distintas gemas: cada uno es su propia oferta con su precio.
+  const ofertasDe = (it) => { const k = sinTildes(it.nombre); return items.lista.filter((x) => sinTildes(x.nombre) === k && (x.activo || esAdmin())).sort((a, b) => (a.precio || 0) - (b.precio || 0)); };
+  function ofertasHtml(it) {
+    const l = ofertasDe(it); if (l.length < 2) return "";
+    return '<div class="ofr"><h3>' + l.length + ' ofertas de este item</h3><div class="ofr-t"><div class="ofr-h"><span>Gemas</span><span>Estilos</span><span>Precio</span><span></span></div>' +
+      l.map((x) => {
+        const cur = x.id === it.id, agot = x.stock <= 0, ne = Number(x.estilos) || 0;
+        return '<a class="ofr-r' + (cur ? " cur" : "") + (agot ? " agot" : "") + '" href="#item/' + encodeURIComponent(x.id) + '"><span class="ofr-g">' + (gemChipsHtml(x) || "<em>Sin gemas</em>") + "</span>" +
+          '<span class="ofr-e">' + (ne ? (estilosOkLista(x).length || 1) + "/" + ne : "—") + '</span><span class="ofr-p"><b>' + fmtPrecio(x.precio) + "</b>" + (x.stock > 1 ? "<small>x" + x.stock + "</small>" : "") + "</span>" +
+          '<span class="ofr-b">' + (cur ? "Viendo" : (agot ? "Agotado" : "Ver")) + "</span></a>";
+      }).join("") + "</div></div>";
   }
   function modalHtml() {
     if (!modal) return "";
@@ -901,6 +929,9 @@
       case "cerrarForm": adm.form = null; adm.msg = ""; renderTodo(); break;
       case "guardar": guardarItem(); break;
       case "steam": rellenarDesdeSteam(); break;
+      case "gemaMas": if (adm.form) { const gl = gemasDe(adm.form); gl.push({ t: t.getAttribute("data-t") || "", v: "" }); adm.form.descripcion = gemasAString(gl); renderTodo(); } break;
+      case "gemaDel": if (adm.form) { const gl = gemasDe(adm.form); gl.splice(parseInt(t.getAttribute("data-i"), 10), 1); adm.form.descripcion = gemasAString(gl); renderTodo(); } break;
+      case "variante": if (adm.form) { adm.form = Object.assign({}, adm.form, { id: "", precio: "", stock: "1", descripcion: "", creado: "" }); adm.msg = "Versión nueva: pon su gema y su precio."; renderTodo(); irAlForm(); } break;
       case "quitarFoto": if (adm.form) { adm.form.img = ""; renderTodo(); } break;
       case "borrar": adm.itemDel = t.getAttribute("data-id"); renderTodo(); break;
       case "borrarSi": borrarItem(t.getAttribute("data-id")); break;
