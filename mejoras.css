@@ -77,3 +77,60 @@
 .qtot > div:first-child b { color: #fff; }
 #rconfeti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
 @media (prefers-reduced-motion: reduce) { .card .soon, .cbar.hot i { animation: none; } }
+
+/* =====================================================================
+   Catálogo (tema 3): chips de filtros, esqueleto, últimas unidades,
+   mejor precio, zoom de foto y barra fija en celular (plata + rojo)
+   ===================================================================== */
+.itx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.itx-chips:empty { display: none; }
+.itx-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 999px; border: 1px solid var(--mj-line-hi); background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02)); color: var(--mj-steel-hi); font: inherit; font-size: 13px; cursor: pointer; transition: border-color .2s, background .2s; }
+.itx-chip b { color: #fff; font-weight: 800; }
+.itx-chip i { font-style: normal; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(200, 22, 31, .55); color: #fff; font-size: 11px; line-height: 1; }
+.itx-chip:hover, .itx-chip:focus-visible { border-color: var(--mj-blood-hi); outline: none; }
+.itx-chip:hover i { background: var(--mj-blood-hi); }
+.itx-chip.limpiar { padding: 6px 14px; border-style: dashed; background: none; color: var(--mj-dim); }
+.itx-filt summary { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.itx-filt summary #itxFiltN { color: var(--mj-blood-hi); margin-left: 6px; }
+
+/* esqueleto de carga */
+.itx-sk-grid { pointer-events: none; }
+.itx-card.itx-sk { min-height: 330px; cursor: default; }
+.itx-card.itx-sk:hover { transform: none; border-color: var(--itx-line); }
+.itx-sk .itx-thumb, .sk-l { position: relative; overflow: hidden; background: rgba(255, 255, 255, .05); }
+.sk-l { display: block; height: 14px; border-radius: 8px; margin-bottom: 10px; }
+.sk-l.w80 { width: 80%; } .sk-l.w50 { width: 50%; } .sk-l.w60 { width: 60%; } .sk-l.tall { height: 34px; margin-top: 14px; border-radius: 999px; }
+.itx-sk .itx-thumb::before, .sk-l::before { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .1), transparent); animation: itxSh 1.3s infinite; }
+@keyframes itxSh { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .itx-sk .itx-thumb::before, .sk-l::before { animation: none; } }
+
+/* últimas unidades */
+.itx-ult { position: absolute; left: 10px; bottom: 12px; z-index: 2; padding: 4px 10px; border-radius: 999px; background: linear-gradient(90deg, var(--mj-blood), var(--mj-blood-hi)); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; box-shadow: 0 4px 14px rgba(200, 22, 31, .5); }
+.itx-card .itx-meta { align-content: flex-start; }
+
+/* mejor precio */
+.ofr-p { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.ofr-best { font-style: normal; display: inline-block; padding: 2px 9px; border-radius: 999px; background: linear-gradient(180deg, #f4f5f7, #b9bdc4); color: #14151a; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.ofr-r.best { box-shadow: inset 4px 0 0 var(--mj-blood-hi); background: linear-gradient(90deg, rgba(200, 22, 31, .16), rgba(200, 22, 31, .02)); }
+
+/* zoom de foto */
+.itx-pg-foto.zoomable { cursor: zoom-in; }
+.itx-lupa { position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(8, 8, 10, .78); border: 1px solid rgba(255, 255, 255, .25); font-size: 18px; pointer-events: none; }
+.itx-pg-foto.zoomable:hover .itx-lupa { background: var(--mj-blood-hi); }
+.itx-lightbox { position: fixed; inset: 0; z-index: 100000; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .9); cursor: zoom-out; }
+.itx-lightbox img { max-width: min(96vw, 1100px); max-height: 90vh; object-fit: contain; border-radius: 10px; }
+.itx-lb-x { position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--mj-line-hi); background: #15151a; color: #fff; font-size: 18px; cursor: pointer; }
+
+/* barra fija (solo celular) */
+.itx-sticky { display: none; }
+@media (max-width: 760px) {
+  .itx-bar select, #itx-orden { width: 100%; flex: 1 1 100%; min-width: 0; }
+  .itx-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; align-items: center; gap: 12px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(10, 10, 12, .94); backdrop-filter: blur(14px); border-top: 1px solid var(--mj-blood); box-shadow: 0 -10px 30px rgba(0, 0, 0, .5); }
+  .itx-sticky .ips-p { display: flex; flex-direction: column; line-height: 1.1; }
+  .itx-sticky .ips-p small { font-size: 11px; color: var(--mj-dim); letter-spacing: .1em; text-transform: uppercase; }
+  .itx-sticky .ips-p b { font: 700 22px var(--mj-head); color: var(--mj-steel-hi); }
+  .itx-sticky .itx-btn { flex: 1; }
+  body.is-admin .itx-sticky { bottom: 64px; }
+  body:has(.itx-sticky) { padding-bottom: 80px; }
+}
+.itx-card .itx-price { min-height: 80px; align-content: flex-end; }
