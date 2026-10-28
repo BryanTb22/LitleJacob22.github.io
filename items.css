@@ -310,3 +310,13 @@ body.itx-pop-open{overflow:hidden}
 @media (max-width:640px){.rel-fila > .itx-card{flex-basis:170px}.rel-flechas{display:none}}
 
 .itx-price b .desde { display: block; font: 700 10px/1 'Inter', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--itx-muted); margin-bottom: 3px; }
+
+/* tarjeta: botón de carrito + aviso de item nuevo oculto por filtros */
+.itx-act { display: inline-flex; align-items: center; gap: 6px; }
+.itx-cartbtn { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 30px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--itx-gold); background: transparent; color: var(--itx-gold); font-size: 12px; font-weight: 800; cursor: pointer; }
+.itx-cartbtn:hover, .itx-cartbtn.ok { background: var(--itx-gold); color: #1a1205; }
+.itx-avisof { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--itx-gold); background: rgba(255,255,255,.05); font-size: 14px; }
+.itx-avisof span { flex: 1 1 200px; }
+.itx-price { flex-wrap: wrap; row-gap: 6px; }
+.itx-act { margin-left: auto; }
+@media (max-width: 520px) { .itx-act .itx-buy { padding: 6px 8px; font-size: 11px; } .itx-act { gap: 4px; } }

@@ -1988,7 +1988,12 @@
       var d = document.createElement("div");
       d.id = "promoPop"; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", "Promoción de primera recarga");
       d.innerHTML = '<div class="promo-box"><button type="button" class="promo-x" aria-label="Cerrar">✕</button>' +
-        '<img src="img/promo-rifas.jpg" alt="Primera recarga: S/ 50 = S/ 55, S/ 100 = S/ 110" width="1080" height="1350">' +
+        '<div class="promo-card">' +
+          '<div class="pc-brand"><img src="favicon.png" alt="" width="36" height="36"><b>Litlejacob Store</b></div>' +
+          '<p class="pc-kick">PROMO DE BIENVENIDA</p><h3 class="pc-tit">PRIMERA RECARGA</h3>' +
+          '<div class="pc-box"><span>RECARGA</span><b>S/ 50</b><i>▼</i><em>S/ 55</em></div>' +
+          '<div class="pc-box"><span>RECARGA</span><b>S/ 100</b><i>▼</i><em>S/ 110</em></div>' +
+          '<p class="pc-pill">+10% DE SALDO EXTRA</p><p class="pc-url">litlejacob.trade</p></div>' +
         '<div class="promo-acts">' + (recargaOn() ? '<button type="button" class="btn btn-yellow" id="promoPagar">Recargar ahora</button>'
           : (href ? '<a class="btn btn-yellow" id="promoCta" href="' + esc(href) + '"' + (href === "#elegir" ? '' : ' target="_blank" rel="noopener"') + '>Pedir saldo</a>' : '')) +
         '<button type="button" class="btn btn-ghost" id="promoNo">Ahora no</button></div></div>';
