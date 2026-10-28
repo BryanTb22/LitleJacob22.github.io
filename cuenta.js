@@ -126,7 +126,7 @@
       tradelink: { stringValue: d.tradelink }, steam: { stringValue: d.steam },
       creditos: { integerValue: "0" }, creado: { timestampValue: new Date().toISOString() }
     };
-    if (st.steamPre && window.ljSteam) Object.assign(campos, window.ljSteam.camposPerfil(st.steamPre)); // cuenta nueva con Steam: datos públicos para la ficha del admin
+    // Las reglas de Firestore solo aceptan los campos básicos al crear la cuenta; la foto/país de Steam los guarda el servidor al entrar con Steam.
     return fs("rayas_users/" + encodeURIComponent(ses.uid) + "?currentDocument.exists=false", {
       method: "PATCH",
       body: JSON.stringify({ fields: campos })
