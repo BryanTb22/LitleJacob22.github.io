@@ -287,3 +287,6 @@
 .carr-q{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 .carr-q > span{min-width:20px;text-align:center;font-weight:800}
 .carr-q .itx-btn{min-width:34px;padding-inline:10px}
+
+.ofr-ed{white-space:nowrap}
+.itx-edit{margin:12px 0 18px}
