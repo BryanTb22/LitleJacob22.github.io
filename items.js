@@ -216,12 +216,18 @@
   }
 
   /* ---------- filtros y tarjetas ---------- */
+  // Héroe escrito = exacto si coincide con uno conocido (Anti-Mage ≠ Anti-Mage (Wei)); si no, "contiene" sin tildes.
+  function heroeConocido(t) {
+    const x = sinTildes(t).trim(); if (!x) return "";
+    return distintos("heroe", HEROES_DOTA).filter((h) => sinTildes(h) === x)[0] || "";
+  }
   function itemsFiltrados() {
     const q = sinTildes(filtros.q), mn = parseFloat(filtros.min), mx = parseFloat(filtros.max), admin = esAdmin();
+    const hf = sinTildes(filtros.heroe).trim(), hc = heroeConocido(filtros.heroe);
     let l = items.lista.filter((it) => {
       if (!it.activo && !admin) return false;
       if (filtros.tipo && it.tipo !== filtros.tipo) return false;
-      if (filtros.heroe && it.heroe !== filtros.heroe) return false;
+      if (hf) { if (hc) { if (it.heroe !== hc) return false; } else if (sinTildes(it.heroe).indexOf(hf) < 0) return false; }
       if (filtros.ranura && it.ranura !== filtros.ranura) return false;
       if (filtros.rareza && it.rareza !== filtros.rareza) return false;
       if (filtros.calidad && it.calidad !== filtros.calidad) return false;
@@ -256,6 +262,7 @@
       '<a class="itx-steam-go" data-itx="irSteam" href="' + esc(urlSteam(it)) + '" target="_blank" rel="noopener noreferrer" title="Ver en el Mercado de Steam" aria-label="Ver ' + esc(it.nombre) + ' en el Mercado de Steam">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>';
   }
+  const CART_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L21 7H6"/></svg>';
   function itemCardHtml(it) {
     const agot = it.stock <= 0, col = colorRareza(it.rareza), admin = esAdmin();
     return '<article class="itx-card' + (agot ? " agot" : "") + (it.activo ? "" : " oculto") + '" data-itx="ver" data-id="' + esc(it.id) + '" tabindex="0" role="button" aria-label="Ver ' + esc(it.nombre) + '">' +
@@ -265,7 +272,14 @@
         (adm.itemDel === it.id ? '<button type="button" class="itx-btn sm del" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar">🗑</button>') + "</div>" : "") +
       '<div class="itx-body"><h4>' + esc(it.nombre) + "</h4>" +
       '<div class="itx-meta">' + (it.rareza ? '<span style="color:' + col + '">' + esc(it.rareza) + "</span>" : "") + (it.calidad ? "<span>" + esc(it.calidad) + "</span>" : "") + (it.heroe ? "<span>" + esc(it.heroe) + "</span>" : "") + (it.descripcion ? '<span class="gem">💎 ' + (efectoUnusual(it) ? esc(efectoUnusual(it)) : lineasDesc(it).length) + "</span>" : "") + "</div>" +
-      '<div class="itx-price"><b>' + (it._desde ? '<small class="desde">desde</small>' : "") + fmtPrecio(it.precio) + '</b><span class="itx-buy">' + (agot ? "Agotado" : "Comprar") + "</span></div>" + steamHtml(it) + "</div></article>";
+      '<div class="itx-price"><b>' + (it._desde ? '<small class="desde">desde</small>' : "") + fmtPrecio(it.precio) + '</b><span class="itx-act">' + (agot ? "" : '<button type="button" class="itx-cartbtn" data-itx="carAddCard" data-id="' + esc(it.id) + '" aria-label="Agregar al carrito" title="Agregar al carrito">' + CART_SVG + "</button>") + '<span class="itx-buy">' + (agot ? "Agotado" : "Comprar") + "</span></span></div>" + steamHtml(it) + "</div></article>";
+  }
+  function migaActualHtml() { const hc = heroeConocido(filtros.heroe); return filtros.tipo || hc ? migaCatalogoHtml(filtros.tipo, hc, "") : ""; }
+  function avisoFiltrosHtml() {
+    if (!adm.nuevoNombre || !esAdmin()) return "";
+    const n = sinTildes(adm.nuevoNombre);
+    if (itemsFiltrados().some((x) => sinTildes(x.nombre) === n)) { adm.nuevoNombre = ""; return ""; }
+    return '<div class="itx-avisof" role="status"><span>✔ Item agregado (no se ve porque hay filtros activos)</span><button type="button" class="itx-btn gold sm" data-itx="quitarFiltros">Quitar filtros</button><button type="button" class="itx-btn ghost sm" data-itx="avisoCerrar" aria-label="Cerrar aviso">✕</button></div>';
   }
   function gridHtml() {
     if (items.err) return '<div class="itx-empty"><strong>No se pudo cargar</strong><span>' + esc(items.err) + "</span></div>";
@@ -323,7 +337,7 @@
   // Deja la dirección de la barra igual a los filtros (sin recargar ni ensuciar el historial).
   function sincHash() {
     if (!/^#\/?items(\/|$)/.test(location.hash)) return;
-    const r = rutaCatalogo(filtros.tipo, filtros.heroe);
+    const r = rutaCatalogo(filtros.tipo, heroeConocido(filtros.heroe));
     if (location.hash !== r) { try { history.replaceState(null, "", location.pathname + location.search + r); } catch (e) { /* sin historial */ } }
   }
   function migaCatalogoHtml(tipo, heroe, nombre) {
@@ -349,14 +363,15 @@
       '<button type="button" class="itx-tab' + (filtros.tipo === t ? " on" : "") + '" data-itx="tipo" data-v="' + esc(t) + '">' + esc(t) + "</button>")).join("");
     const filt = '<aside class="itx-filt"><details' + (window.innerWidth > 820 ? " open" : "") + "><summary>Filtros</summary>" +
       '<div class="ff"><label>Precio (S/)</label><div class="ff2"><input id="itx-min" inputmode="decimal" placeholder="Desde" value="' + esc(filtros.min) + '"><input id="itx-max" inputmode="decimal" placeholder="Hasta" value="' + esc(filtros.max) + '"></div></div>' +
-      '<div class="ff"><label for="itx-heroe">Héroe</label><select id="itx-heroe">' + opciones(distintos("heroe", HEROES_DOTA), filtros.heroe, "Todos") + "</select></div>" +
+      '<div class="ff"><label for="itx-heroe">Héroe</label><input id="itx-heroe" type="search" list="itx-dl-hfil" autocomplete="off" placeholder="Todos · escribe para buscar" value="' + esc(filtros.heroe) + '"><datalist id="itx-dl-hfil">' + distintos("heroe", HEROES_DOTA).map((v) => '<option value="' + esc(v) + '"></option>').join("") + "</datalist></div>" +
       '<div class="ff"><label for="itx-ranura">Ranura</label><select id="itx-ranura">' + opciones(distintos("ranura", SLOTS_DOTA), filtros.ranura, "Todas") + "</select></div>" +
       '<div class="ff"><label for="itx-rareza">Rareza</label><select id="itx-rareza">' + opciones(LISTA_RAREZAS, filtros.rareza, "Todas") + "</select></div>" +
       '<div class="ff"><label for="itx-calidad">Calidad</label><select id="itx-calidad">' + opciones(distintos("calidad", ITEM_CALIDADES), filtros.calidad, "Todas") + "</select></div>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="reset" style="width:100%">Restablecer filtros</button></details></aside>';
     return cabecera("Catálogo", "Comprar", "items", "Elige tu item y págalo con tu saldo o por WhatsApp.") + aviso() + switchSeccion() +
       (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' : "") +
-      (filtros.tipo || filtros.heroe ? migaCatalogoHtml(filtros.tipo, filtros.heroe, "") : "") +
+      avisoFiltrosHtml() +
+      '<div id="itxMiga">' + migaActualHtml() + "</div>" +
       '<div class="itx-tabs">' + tabs + "</div>" +
       '<div class="itx-shop">' + filt + '<div class="itx-main"><div class="itx-bar"><input id="itx-q" type="search" placeholder="Buscar items…" value="' + esc(filtros.q) + '" autocomplete="off">' +
       '<select id="itx-orden" aria-label="Ordenar">' + [["nuevo", "Más nuevos"], ["menor", "Precio: menor a mayor"], ["mayor", "Precio: mayor a menor"], ["nombre", "Nombre A-Z"]].map((o) => '<option value="' + o[0] + '"' + (filtros.orden === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
@@ -460,7 +475,7 @@
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Entra con la cuenta de administrador." : "No se pudo guardar (" + r.status + ").");
       const k = items.lista.findIndex((x) => x.id === it.id);
-      if (k >= 0) items.lista[k] = it; else { items.lista.unshift(it); Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", pag: 0 }); sincHash(); }
+      if (k >= 0) items.lista[k] = it; else { items.lista.unshift(it); adm.nuevoNombre = it.nombre; }
       const o = F.desdeId ? itemPorId(F.desdeId) : null;
       if (!o) { adm.form = null; adm.guardando = false; renderTodo(); return; }
       // La unidad editada pasó a ser su propio item: se le resta 1 al grupo de donde salió.
@@ -670,7 +685,7 @@
       '<div class="itx-pg-grid"><div class="itx-pg-foto" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') +
       '<span class="itx-pg-tag' + (agot ? " off" : "") + '">' + (agot ? "Agotado" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
       '<div class="itx-pg-info"><dl class="itx-pg-attrs">' + attrs + "</dl>" + estilosHtml(it) + descripcionHtml(it) +
-      '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + '<span class="pp-cred">o S/ ' + cred + "</span></div>" +
+      '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + "</div>" +
       steamHtml(it, true) +
       (agot ? "" : (p ? '<p class="itx-hint">Tienes <b>S/ ' + p.creditos + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>')) +
       '<div class="pp-btns">' + btns + "</div></div></div></div>" + ofertasHtml(it) + "</section>" + parecidosHtml(it);
@@ -765,7 +780,7 @@
       '<div class="carr-q"><button type="button" class="itx-btn ghost sm" data-itx="carMenos" data-id="' + esc(x.it.id) + '" aria-label="Menos">−</button><span>' + x.qty + "</span>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="carMas" data-id="' + esc(x.it.id) + '" aria-label="Más"' + (x.qty >= x.it.stock ? " disabled" : "") + '>+</button>' +
       '<button type="button" class="itx-btn ghost sm" data-itx="carQuitar" data-id="' + esc(x.it.id) + '" aria-label="Quitar">🗑</button></div></div>').join("") + "</div>" +
-      '<p class="itx-resumen">Total: <b>' + fmtPrecio(T.sol) + "</b> · o <b>S/ " + T.cred + "</b></p>" +
+      '<p class="itx-resumen">Total: <b>' + fmtPrecio(T.sol) + "</b></p>" +
       (p ? '<p class="itx-hint">Tienes <b>S/ ' + p.creditos + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>');
     const btns = '<button class="itx-btn fucsia" type="button" data-itx="carCred">💎 Pagar con tu saldo (S/ ' + T.cred + ')</button>' +
       '<button class="itx-btn gold" type="button" data-itx="carWsp">💬 Pedir por WhatsApp</button>' +
@@ -805,7 +820,7 @@
         h = "<h3>" + esc(it.nombre) + "</h3>" +
           '<div class="itx-thumb big" style="--rar:' + colorRareza(it.rareza) + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') + "</div>" +
           '<p class="itx-hint">' + [it.rareza, it.calidad, it.tipo, it.heroe, it.ranura].filter(Boolean).map(esc).join(" · ") + "</p>" + estilosHtml(it) + descripcionHtml(it) +
-          '<p class="itx-resumen">Precio: <b>' + fmtPrecio(it.precio) + "</b> · o <b>S/ " + cred + "</b></p>" + steamHtml(it, true) +
+          '<p class="itx-resumen">Precio: <b>' + fmtPrecio(it.precio) + "</b></p>" + steamHtml(it, true) +
           (agot ? '<p class="itx-hint" style="color:#ff6b6b">Este item está agotado.</p>' : (p ? '<p class="itx-hint">Tienes <b>S/ ' + p.creditos + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>'));
         btns = (agot ? "" : '<button class="itx-btn fucsia" type="button" data-itx="cred" data-id="' + esc(it.id) + '">💎 Pagar con tu saldo (S/ ' + cred + ")</button>" +
           '<button class="itx-btn gold" type="button" data-itx="wsp" data-id="' + esc(it.id) + '">💬 Comprar por WhatsApp</button>') + cerrar;
@@ -1074,7 +1089,19 @@
       case "cerrarModal": modal = null; renderTodo(); break;
       case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.pag = 0; renderTodo(); sincHash(); break;
       case "pag": { filtros.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarGrid(); const gp = document.getElementById("itxGrid"); if (gp && gp.scrollIntoView) gp.scrollIntoView({ block: "start", behavior: "smooth" }); break; }
-      case "reset": Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "mayor", pag: 0 }); renderTodo(); sincHash(); break;
+      case "quitarFiltros": adm.nuevoNombre = ""; Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", pag: 0 }); renderTodo(); sincHash(); break;
+      case "avisoCerrar": adm.nuevoNombre = ""; renderTodo(); break;
+      case "reset": adm.nuevoNombre = ""; Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "mayor", pag: 0 }); renderTodo(); sincHash(); break;
+      case "carAddCard": {
+        const id = t.getAttribute("data-id"), antes = Number(carro[id]) || 0;
+        if (carroAgregar(id)) {
+          pintarNav();
+          const igual = (Number(carro[id]) || 0) === antes;
+          t.classList.add("ok"); t.innerHTML = igual ? "Máx." : "✔";
+          setTimeout(() => { if (t.isConnected) { t.classList.remove("ok"); t.innerHTML = CART_SVG; } }, 1300);
+        }
+        break;
+      }
       case "carAdd": if (carroAgregar(t.getAttribute("data-id"))) renderTodo(); break;
       case "carAhora": if (carroAgregar(t.getAttribute("data-id"))) { modal = { tipo: "carrito" }; renderTodo(); } break;
       case "carMas": carroAgregar(t.getAttribute("data-id")); renderTodo(); break;
@@ -1126,6 +1153,11 @@
       ofe[el.id === "ofe-min" ? "min" : "max"] = el.value;
       const t = document.getElementById("ofrTabla"), it0 = idItemHash() && itemPorId(idItemHash());
       if (t && it0) { t.innerHTML = ofertasTablaHtml(it0); hidratarImgs(); }
+      return true;
+    }
+    if (el.id === "itx-heroe") {
+      if (filtros.heroe !== el.value) { filtros.heroe = el.value; filtros.pag = 0; pintarGrid(); }
+      sincHash(); const mg = document.getElementById("itxMiga"); if (mg) mg.innerHTML = migaActualHtml();
       return true;
     }
     const mapa = { "itx-q": "q", "itx-min": "min", "itx-max": "max", "itx-heroe": "heroe", "itx-ranura": "ranura", "itx-rareza": "rareza", "itx-calidad": "calidad", "itx-orden": "orden" };
