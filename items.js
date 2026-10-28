@@ -260,6 +260,7 @@
   }
   function comprarHtml() {
     if (!visible()) return cabecera("Catálogo", "Comprar", "items", "Esta sección estará disponible pronto.");
+    if (idItemHash()) return aviso() + paginaItemHtml(idItemHash());
     const tabs = ['<button type="button" class="itx-tab' + (!filtros.tipo ? " on" : "") + '" data-itx="tipo" data-v="">Todos</button>'].concat(ITEM_TIPOS.map((t) =>
       '<button type="button" class="itx-tab' + (filtros.tipo === t ? " on" : "") + '" data-itx="tipo" data-v="' + esc(t) + '">' + esc(t) + "</button>")).join("");
     const filt = '<aside class="itx-filt"><details' + (window.innerWidth > 820 ? " open" : "") + "><summary>Filtros</summary>" +
@@ -472,6 +473,36 @@
     n = Math.max(0, Math.min(99999, Math.floor(Number(n) || 0)));
     if (n === it.stock) return;
     it.stock = n; stkRefrescarFila(it); stkGuardar(it);
+  }
+
+
+  /* ---------- Página de un item (#item/<id>) ---------- */
+  const idItemHash = () => { const m = location.hash.match(/^#\/?item\/(.+)$/); if (!m) return null; try { return decodeURIComponent(m[1]); } catch (e) { return null; } };
+  const abrirItem = (id) => { location.hash = "item/" + encodeURIComponent(id); };
+  function paginaItemHtml(id) {
+    const miga = (tipo, n) => '<div class="crumb"><a href="#inicio">Inicio</a> <span>›</span> <a href="#items">Comprar items</a>' + (tipo ? " <span>›</span> <span>" + esc(tipo) + "</span>" : "") + (n ? " <span>›</span> <span>" + esc(n) + "</span>" : "") + "</div>";
+    if (!items.cargado && !items.err) return miga("") + '<div class="itx-empty"><strong>Cargando item…</strong></div>';
+    const it = itemPorId(id);
+    if (!it || (!it.activo && !esAdmin())) return miga("") + '<div class="itx-empty"><strong>Este item no está disponible</strong><span>Puede que ya se haya vendido o que aún no esté publicado.</span><a class="itx-btn gold" href="#items" style="margin-top:12px">Ver todos los items</a></div>';
+    const col = colorRareza(it.rareza), agot = it.stock <= 0, cred = Math.ceil(it.precio - 1e-9), p = perfil();
+    const sol = Number(it.steamUsd) > 0 ? Number(it.steamUsd) * TC : 0;
+    const dto = sol && it.precio > 0 && it.precio < sol ? Math.round((1 - it.precio / sol) * 100) : 0;
+    const fila = (k, v) => v ? "<div><dt>" + k + "</dt><dd>" + v + "</dd></div>" : "";
+    const attrs = fila("Héroe", esc(it.heroe)) + fila("Ranura", esc(it.ranura)) + fila("Tipo", esc(it.tipo)) +
+      fila("Rareza", it.rareza ? '<i class="itx-dot" style="background:' + col + '"></i>' + esc(it.rareza) : "") + fila("Calidad", esc(it.calidad)) +
+      fila("Disponibles", agot ? "Agotado" : String(it.stock));
+    const btns = agot ? '<button class="itx-btn ghost" type="button" disabled>Agotado</button>'
+      : '<button class="itx-btn fucsia" type="button" data-itx="cred" data-id="' + esc(it.id) + '">💎 Pagar con ' + cred + ' créditos</button>' +
+        '<button class="itx-btn gold" type="button" data-itx="wsp" data-id="' + esc(it.id) + '">💬 Comprar por WhatsApp</button>';
+    return miga(it.tipo, it.nombre) +
+      '<section class="itx-pg"><h1>' + esc(it.nombre) + (it.activo ? "" : ' <small>(oculto)</small>') + "</h1>" +
+      '<div class="itx-pg-grid"><div class="itx-pg-foto" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') +
+      '<span class="itx-pg-tag' + (agot ? " off" : "") + '">' + (agot ? "Agotado" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
+      '<div class="itx-pg-info"><dl class="itx-pg-attrs">' + attrs + "</dl>" + estilosHtml(it) + descripcionHtml(it) +
+      '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + '<span class="pp-cred">o ' + cred + " créditos</span></div>" +
+      steamHtml(it, true) +
+      (agot ? "" : (p ? '<p class="itx-hint">Tienes <b>' + p.creditos + "</b> créditos.</p>" : '<p class="itx-hint">Para pagar con créditos entra a tu cuenta.</p>')) +
+      '<div class="pp-btns">' + btns + "</div></div></div></div></section>";
   }
 
   /* ---------- Modal de un item (comprar) ---------- */
@@ -747,7 +778,7 @@
       case "stkPag": stk.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarStock(); { const d = document.querySelector(".itx-dialog.stk"); if (d) d.scrollTop = 0; } break;
       case "stkMas": case "stkMenos": { const row = t.closest(".stk-row"), it = row && itemPorId(row.getAttribute("data-id")); if (it) stkCambiar(it, it.stock + (a === "stkMas" ? 1 : -1)); break; }
       case "irSteam": break; // el enlace se abre solo; no abre la ficha
-      case "ver": modal = { tipo: "item", id: t.getAttribute("data-id") }; renderTodo(); break;
+      case "ver": abrirItem(t.getAttribute("data-id")); break;
       case "cerrarModal": modal = null; renderTodo(); break;
       case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.pag = 0; renderTodo(); break;
       case "pag": { filtros.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarGrid(); const gp = document.getElementById("itxGrid"); if (gp && gp.scrollIntoView) gp.scrollIntoView({ block: "start", behavior: "smooth" }); break; }
@@ -815,7 +846,7 @@
   }
   function alCambiarRuta() {
     const h = location.hash.replace(/^#\/?/, "");
-    if (h === "items" || h === "vender") { cargarItems(); if (h === "vender") cargarPrecios(); setTimeout(renderTodo, 0); }
+    if (h === "items" || h === "vender" || /^item\//.test(h)) { cargarItems(); if (h === "vender") cargarPrecios(); setTimeout(() => { renderTodo(); const it = idItemHash() && itemPorId(idItemHash()); if (it) document.title = it.nombre + " • " + TIENDA; }, 0); }
   }
   function iniciar() {
     cargarSecciones(); cargarItems();

@@ -2912,8 +2912,8 @@ html.ljc-lock { overflow: hidden; }
     </script>
     <script src="cuenta.js?v=5" defer=""></script>
     <script src="recarga.js?v=5" defer=""></script>
-    <link rel="stylesheet" href="items.css?v=6">
-    <script src="items.js?v=8" defer=""></script>
+    <link rel="stylesheet" href="items.css?v=7">
+    <script src="items.js?v=9" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
     <script>
@@ -4027,6 +4027,7 @@ html.ljc-lock { overflow: hidden; }
         const ROUTES = { "inicio": "view-home", "sets-cache": "view-sets", "items": "view-items", "vender": "view-vender", "compro": "view-compro" };
         function currentRoute() {
             const h = location.hash.replace(/^#\/?/, "");
+            if (/^item\//.test(h)) return "items";
             return ROUTES[h] ? h : "inicio";
         }
         function applyRoute(scroll) {
