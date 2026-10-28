@@ -108,3 +108,9 @@
 /* Lista desplegable de los selectores: fondo oscuro y texto claro (antes salía gris con letras blancas) */
 .itx select option { background-color: #1a0a0a; color: #f8fafc; }
 .itx select option:checked, .itx select option:hover { background-color: #4a1414; color: #fff; }
+
+/* Paginador del catálogo */
+.itx-pager { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-top: 20px; }
+.itx-pager .itx-btn { min-width: 40px; }
+.itx-dots { color: var(--itx-muted); padding: 0 4px; }
+#itxGrid { scroll-margin-top: 90px; }
