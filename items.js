@@ -80,6 +80,45 @@
     });
   }
   // Achica la foto en el navegador y la guarda como documento en Firestore.
+  // Editor de foto: encuadra a 3:2 (640x427) antes de subir. Devuelve un File listo, o null si cancela.
+  function editorFoto(file) {
+    return new Promise((ok, fail) => {
+      if (!file || !/^image\//.test(file.type)) return fail(new Error("Elige un archivo de imagen (JPG, PNG o WEBP)."));
+      const W = 640, H = 427, url = URL.createObjectURL(file), im = new Image();
+      im.onerror = () => { URL.revokeObjectURL(url); fail(new Error("No se pudo leer la imagen.")); };
+      im.onload = () => {
+        URL.revokeObjectURL(url);
+        const st = { modo: "llenar", zoom: 1, ox: 0, oy: 0 };
+        const ov = document.createElement("div"); ov.className = "fed-ov";
+        ov.innerHTML = '<div class="fed" role="dialog" aria-label="Preparar foto"><h3>Preparar foto</h3><canvas width="' + W + '" height="' + H + '"></canvas>' +
+          '<p class="itx-hint">Arrastra la foto para centrar el item. Salen 3:2 · 640×427.</p>' +
+          '<div class="fed-row"><button type="button" class="itx-btn ghost sm sel" data-m="llenar">Llenar</button><button type="button" class="itx-btn ghost sm" data-m="completo">Completo</button><label>Zoom <input type="range" min="1" max="3" step="0.01" value="1"></label></div>' +
+          '<div class="fed-row"><button type="button" class="itx-btn gold sm" data-x="ok">Usar esta foto</button><button type="button" class="itx-btn ghost sm" data-x="no">Cancelar</button></div>' +
+          (im.naturalWidth < 400 ? '<p class="itx-hint">⚠ La foto es pequeña y puede verse borrosa.</p>' : "") + "</div>";
+        document.body.appendChild(ov);
+        const cv = ov.querySelector("canvas"), g = cv.getContext("2d"), rg = ov.querySelector("input");
+        const dib = () => {
+          g.fillStyle = "#6e6e6e"; g.fillRect(0, 0, W, H);
+          const b = st.modo === "llenar" ? Math.max(W / im.naturalWidth, H / im.naturalHeight) : Math.min(W / im.naturalWidth, H / im.naturalHeight);
+          const sc = b * st.zoom, w = im.naturalWidth * sc, h = im.naturalHeight * sc;
+          g.imageSmoothingQuality = "high"; g.drawImage(im, (W - w) / 2 + st.ox, (H - h) / 2 + st.oy, w, h);
+        };
+        dib();
+        let arr = null;
+        cv.addEventListener("pointerdown", (e) => { arr = { x: e.clientX, y: e.clientY, ox: st.ox, oy: st.oy }; cv.setPointerCapture(e.pointerId); });
+        cv.addEventListener("pointermove", (e) => { if (!arr) return; const k = W / cv.getBoundingClientRect().width; st.ox = arr.ox + (e.clientX - arr.x) * k; st.oy = arr.oy + (e.clientY - arr.y) * k; dib(); });
+        cv.addEventListener("pointerup", () => { arr = null; });
+        rg.addEventListener("input", () => { st.zoom = parseFloat(rg.value); dib(); });
+        ov.addEventListener("click", (e) => {
+          const m = e.target.getAttribute && e.target.getAttribute("data-m"), x = e.target.getAttribute && e.target.getAttribute("data-x");
+          if (m) { st.modo = m; st.ox = 0; st.oy = 0; st.zoom = 1; rg.value = "1"; ov.querySelectorAll("[data-m]").forEach((b) => b.classList.toggle("sel", b === e.target)); dib(); }
+          else if (x === "no" || e.target === ov) { ov.remove(); ok(null); }
+          else if (x === "ok") cv.toBlob((b) => { ov.remove(); if (!b) return fail(new Error("No se pudo preparar la foto.")); ok(new File([b], "item.webp", { type: b.type })); }, "image/webp", 0.85);
+        });
+      };
+      im.src = url;
+    });
+  }
   function subirImagen(file, maxPx) {
     return new Promise((ok, fail) => {
       if (!file || !/^image\//.test(file.type)) return fail(new Error("Elige un archivo de imagen (JPG, PNG o WEBP)."));
@@ -112,7 +151,7 @@
   const filtros = { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "mayor", pag: 0 };
   const ven = { link: "", cargando: false, err: "", lista: null, noTrad: 0, sel: {}, precios: [], pCargado: false, pCargando: false, q: "", f: { tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", min: "", max: "", orden: "mayor" } };
   const adm = { form: null, msg: "", guardando: false, subiendo: false, steamCargando: false, steamInfo: "", itemDel: null, cp: {} };
-  const stk = { q: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", estado: "all", orden: "nombre", pag: 0, msg: "" };
+  const stk = { q: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", estado: "all", orden: "nombre", pag: 0, msg: "", ed: null };
   const sec = { cargado: false, items: false };   // sección visible para clientes (rayas/estado → secciones.items)
   let modal = null;
 
@@ -427,8 +466,76 @@
     return '<div class="stk-row" data-id="' + esc(it.id) + '"><div class="stk-thumb" style="--rar:' + col + '">' + (imgTag(it.img, "", ' loading="lazy"') || "") + "</div>" +
       '<div class="stk-info"><div class="stk-name">' + esc(it.nombre) + (it.activo ? "" : ' <em>(oculto)</em>') + '</div><div class="stk-meta"><span style="color:' + col + '">' + esc(it.rareza || "—") + "</span>" + (it.heroe ? " • " + esc(it.heroe) : "") + " • " + (it.precio > 0 ? fmtPrecio(it.precio) : "sin precio") +
       (it.descripcion ? " • 💎 " + lineasDesc(it).length : "") + "</div></div>" +
-      '<span class="stk-status ' + e.cls + '">' + e.txt + "</span>" +
-      '<div class="stk-qty"><button type="button" data-itx="stkMenos" aria-label="Menos">−</button><input type="number" min="0" step="1" value="' + it.stock + '" id="stk-in-' + esc(it.id) + '" data-stk-in="' + esc(it.id) + '" aria-label="Stock de ' + esc(it.nombre) + '"><button type="button" data-itx="stkMas" aria-label="Más">+</button></div></div>';
+      '<button type="button" class="stk-edbtn' + (stk.ed && stk.ed.id === it.id ? " on" : "") + '" data-itx="stkEd" aria-label="Editar ' + esc(it.nombre) + '" title="Editar todos los detalles">✎</button><span class="stk-status ' + e.cls + '">' + e.txt + "</span>" +
+      '<div class="stk-qty"><button type="button" data-itx="stkMenos" aria-label="Menos">−</button><input type="number" min="0" step="1" value="' + it.stock + '" id="stk-in-' + esc(it.id) + '" data-stk-in="' + esc(it.id) + '" aria-label="Stock de ' + esc(it.nombre) + '"><button type="button" data-itx="stkMas" aria-label="Más">+</button></div></div>' + (stk.ed && stk.ed.id === it.id ? stkEdHtml() : "");
+  }
+  function stkEdHtml() {
+    const F = stk.ed.F, nEst = Number(F.estilos) || 0, f = (id, lab, inner) => '<div class="field"><label for="sk-' + id + '">' + lab + "</label>" + inner + "</div>";
+    return '<div class="stk-ed" data-ed="' + esc(stk.ed.id) + '">' +
+      '<div class="stk-ed-foto">' + (F.img ? '<div class="itx-fotoprev">' + imgTag(F.img, "", ' width="140"') + "</div>" : "") +
+      '<label class="itx-btn ghost sm" for="sk-file">' + (stk.ed.subiendo ? "Subiendo…" : (F.img ? "Cambiar foto" : "Subir foto")) + '</label><input id="sk-file" type="file" accept="image/*" hidden>' +
+      (F.img ? '<button type="button" class="itx-btn ghost sm" data-itx="stkQuitarFoto">Quitar foto</button>' : "") + "</div>" +
+      '<div class="stk-ed-grid">' +
+      f("nombre", "Nombre", '<input id="sk-nombre" maxlength="90" value="' + esc(F.nombre) + '">') +
+      f("precio", "Precio en soles (S/)", '<input id="sk-precio" inputmode="decimal" value="' + esc(F.precio) + '">') +
+      f("stock", "Stock", '<input id="sk-stock" inputmode="numeric" value="' + esc(F.stock) + '">') +
+      f("tipo", "Tipo", '<select id="sk-tipo">' + opciones(ITEM_TIPOS, F.tipo, "—") + "</select>") +
+      f("heroe", "Héroe", '<input id="sk-heroe" list="itx-dl-heroe2" maxlength="40" value="' + esc(F.heroe) + '"><datalist id="itx-dl-heroe2">' + distintos("heroe", HEROES_DOTA).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist>") +
+      f("ranura", "Ranura", '<input id="sk-ranura" list="itx-dl-ranura2" maxlength="40" value="' + esc(F.ranura) + '"><datalist id="itx-dl-ranura2">' + distintos("ranura", SLOTS_DOTA).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist>") +
+      f("rareza", "Rareza", '<select id="sk-rareza">' + opciones(LISTA_RAREZAS, F.rareza, "—") + "</select>") +
+      f("calidad", "Calidad", '<input id="sk-calidad" list="itx-dl-calidad2" maxlength="30" value="' + esc(F.calidad) + '"><datalist id="itx-dl-calidad2">' + distintos("calidad", ITEM_CALIDADES).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist>") +
+      f("estilos", "Estilos", '<select id="sk-estilos">' + ["0", "2", "3", "4", "5", "6"].map((v) => '<option value="' + v + '"' + (String(F.estilos || 0) === v ? " selected" : "") + ">" + (v === "0" ? "Sin estilos" : v + " estilos") + "</option>").join("") + "</select>") +
+      "</div>" +
+      (nEst > 0 ? '<div class="field"><label>Estilos que SÍ tiene</label><div class="itx-estchk">' + (() => { let o = ""; const ok = estilosOkLista(F); for (let k = 1; k <= nEst; k++) o += '<label class="itx-chk"><input type="checkbox" id="sk-est-' + k + '"' + (ok.indexOf(k) >= 0 ? " checked" : "") + "> " + k + "</label>"; return o; })() + "</div></div>" : "") +
+      f("desc", "Gemas / descripción (una por línea)", '<textarea id="sk-desc" rows="3" maxlength="600">' + esc(F.descripcion || "") + "</textarea>") +
+      '<label class="itx-chk"><input type="checkbox" id="sk-activo"' + (F.activo ? " checked" : "") + "> Visible para los clientes</label>" +
+      (stk.ed.msg ? '<p class="itx-hint" style="color:#ff6b6b">' + esc(stk.ed.msg) + "</p>" : "") +
+      '<div class="cav"><button type="button" class="itx-btn gold sm" data-itx="stkEdGuardar">' + (stk.ed.guardando ? "Guardando…" : "💾 Guardar cambios") + '</button><button type="button" class="itx-btn ghost sm" data-itx="stkEdCerrar">Cancelar</button></div></div>';
+  }
+  function stkEdAbrir(id) {
+    if (stk.ed && stk.ed.id === id) { stk.ed = null; pintarStock(); return; }
+    const it = itemPorId(id); if (!it) return;
+    stk.ed = { id, F: Object.assign({}, it, { precio: String(it.precio || ""), stock: String(it.stock), estilos: String(it.estilos || 0) }), msg: "", guardando: false, subiendo: false };
+    pintarStock();
+    const e = document.querySelector(".stk-ed"); if (e && e.scrollIntoView) e.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  function stkFoto(el) {
+    const ed = stk.ed; if (!ed) return; const fi = el.files[0]; el.value = "";
+    editorFoto(fi).then((listo) => {
+      if (!listo) return;
+      ed.subiendo = true; ed.msg = ""; pintarStock();
+      return subirImagen(listo, 640).then((ref) => { ed.F.img = ref; ed.subiendo = false; pintarStock(); });
+    }).catch((e) => { ed.subiendo = false; ed.msg = (e && e.message) || "No se pudo subir la foto."; pintarStock(); });
+  }
+  function stkEdCampo(el) {
+    const ed = stk.ed, F = ed.F, m = { "sk-nombre": "nombre", "sk-precio": "precio", "sk-stock": "stock", "sk-tipo": "tipo", "sk-heroe": "heroe", "sk-ranura": "ranura", "sk-rareza": "rareza", "sk-calidad": "calidad", "sk-desc": "descripcion" };
+    if (el.id === "sk-activo") { F.activo = el.checked; return; }
+    if (el.id === "sk-estilos") {
+      F.estilos = el.value; const nn = Number(el.value) || 0; let oks = estilosOkLista(F).filter((x) => x <= nn);
+      if (nn > 0 && !oks.length) oks = [1]; F.estOk = oks.join(","); pintarStock(); return;
+    }
+    if (/^sk-est-\d+$/.test(el.id)) {
+      const num = parseInt(el.id.slice(7), 10), cur = estilosOkLista(F), pos = cur.indexOf(num);
+      if (el.checked && pos < 0) cur.push(num); else if (!el.checked && pos >= 0) cur.splice(pos, 1);
+      cur.sort((a, b) => a - b); F.estOk = cur.join(","); return;
+    }
+    if (m[el.id]) F[m[el.id]] = el.value;
+  }
+  function stkEdGuardar() {
+    const ed = stk.ed; if (!ed || ed.guardando) return; const F = ed.F;
+    const precio = parseFloat(String(F.precio).replace(",", ".")); let stock = parseInt(F.stock, 10);
+    const fallo = (t) => { ed.msg = t; pintarStock(); };
+    if (!String(F.nombre).trim()) return fallo("Escribe el nombre del item.");
+    if (!isFinite(precio) || precio <= 0) return fallo("Pon un precio mayor a 0.");
+    if (!isFinite(stock) || stock < 0) stock = 0;
+    const it = Object.assign({}, F, { id: ed.id, nombre: String(F.nombre).trim(), precio: Math.round(precio * 100) / 100, stock, heroe: String(F.heroe || "").trim(), ranura: String(F.ranura || "").trim(), calidad: String(F.calidad || "").trim(),
+      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: String(F.descripcion || "").trim().slice(0, 600), activo: F.activo !== false });
+    ed.guardando = true; ed.msg = ""; pintarStock();
+    fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
+      if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Vuelve a entrar." : "No se pudo guardar (" + r.status + ").");
+      const k = items.lista.findIndex((x) => x.id === it.id); if (k >= 0) items.lista[k] = it;
+      stk.ed = null; stk.msg = "✔ Item guardado"; pintarStock(); const m = document.getElementById("stkMsg"); if (m) m.textContent = stk.msg;
+    }).catch((e) => { ed.guardando = false; ed.msg = (e && e.message) || "No se pudo guardar."; pintarStock(); });
   }
   function stkHtml() {
     const sel = (id, lista, val, vacio) => '<select id="' + id + '">' + opciones(lista, val, vacio) + "</select>";
@@ -773,7 +880,11 @@
     // dentro de una tarjeta, los botones de admin no deben abrir el item
     if (a === "ver" && ev.target.closest("[data-itx='editar'],[data-itx='borrar'],[data-itx='borrarSi']")) return;
     switch (a) {
-      case "stkAbrir": modal = { tipo: "stock" }; stk.msg = ""; renderTodo(); break;
+      case "stkEd": { const row = t.closest(".stk-row"); if (row) stkEdAbrir(row.getAttribute("data-id")); break; }
+      case "stkEdCerrar": stk.ed = null; pintarStock(); break;
+      case "stkEdGuardar": stkEdGuardar(); break;
+      case "stkQuitarFoto": if (stk.ed) { stk.ed.F.img = ""; pintarStock(); } break;
+      case "stkAbrir": modal = { tipo: "stock" }; stk.msg = ""; stk.ed = null; renderTodo(); break;
       case "stkReset": Object.assign(stk, { q: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", estado: "all", orden: "nombre", pag: 0 }); renderTodo(); break;
       case "stkPag": stk.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarStock(); { const d = document.querySelector(".itx-dialog.stk"); if (d) d.scrollTop = 0; } break;
       case "stkMas": case "stkMenos": { const row = t.closest(".stk-row"), it = row && itemPorId(row.getAttribute("data-id")); if (it) stkCambiar(it, it.stock + (a === "stkMas" ? 1 : -1)); break; }
@@ -818,6 +929,7 @@
     const SK = { "stk-q": "q", "stk-tipo": "tipo", "stk-heroe": "heroe", "stk-ranura": "ranura", "stk-rareza": "rareza", "stk-calidad": "calidad", "stk-estado": "estado", "stk-orden": "orden" };
     if (SK[el.id]) { if (stk[SK[el.id]] === el.value) return true; stk[SK[el.id]] = el.value; stk.pag = 0; pintarStock(); return true; }
     if (el.getAttribute && el.getAttribute("data-stk-in")) { if (tipo === "change") { const it = itemPorId(el.getAttribute("data-stk-in")); if (it) { stkCambiar(it, el.value); el.value = it.stock; } } return true; }
+    if (el.id && el.id.indexOf("sk-") === 0 && stk.ed) { if (el.type !== "file") { if (tipo === "change" || !/^(sk-estilos)$/.test(el.id)) stkEdCampo(el); } return true; }
     if (el.id === "itv-link") { ven.link = el.value; return true; }
     const VF = { "itv-min": "min", "itv-max": "max", "itv-heroe": "heroe", "itv-ranura": "ranura", "itv-rareza": "rareza", "itv-calidad": "calidad", "itv-orden": "orden" };
     if (VF[el.id]) { ven.f[VF[el.id]] = el.value; renderTodo(); return true; }
@@ -829,11 +941,15 @@
   document.addEventListener("change", (ev) => {
     const el = ev.target; if (!cont().some((c) => c.contains(el))) return;
     if (el.id === "itf-file" && el.files && el.files[0]) {
-      adm.subiendo = true; adm.msg = ""; renderTodo();
-      subirImagen(el.files[0], 640).then((ref) => { if (adm.form) adm.form.img = ref; adm.subiendo = false; renderTodo(); })
-        .catch((e) => { adm.subiendo = false; adm.msg = (e && e.message) || "No se pudo subir la foto."; renderTodo(); });
+      const fi = el.files[0]; el.value = "";
+      editorFoto(fi).then((listo) => {
+        if (!listo) return;
+        adm.subiendo = true; adm.msg = ""; renderTodo();
+        return subirImagen(listo, 640).then((ref) => { if (adm.form) adm.form.img = ref; adm.subiendo = false; renderTodo(); });
+      }).catch((e) => { adm.subiendo = false; adm.msg = (e && e.message) || "No se pudo subir la foto."; renderTodo(); });
       return;
     }
+    if (el.id === "sk-file" && el.files && el.files[0]) { stkFoto(el); return; }
     if (el.getAttribute && el.getAttribute("data-itx") === "secciones") { cambiarSeccion(el.checked); return; }
     campoEvento(el, "change");
   });
