@@ -80,3 +80,7 @@ html.lj-rifas .nav-right .lock[data-a="admin"], html.lj-rifas .nav-right .lock.m
 html.lj-rifas .nav-right .lock.hot { background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16); box-shadow: none; }
 html.lj-rifas .nav-right .lock:hover { filter: brightness(1.15); color: #fff; }
 @media (max-width: 720px) { html.lj-rifas .topbar .wrap { padding-top: 14px !important; } html.lj-rifas .nav-right .lock { padding: 8px 12px; font-size: 10.5px; } }
+
+/* Botón Recargar del menú (igual que en Rayas Store, con el acento de LitleJacob) */
+.nav-link.nav-link-recargar { color: #fff !important; background: linear-gradient(180deg, #ff4fa6, #c4126b) !important; border-color: transparent !important; }
+.nav-link.nav-link-recargar:hover { filter: brightness(1.12); border-color: transparent !important; }

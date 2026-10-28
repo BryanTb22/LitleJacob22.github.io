@@ -186,6 +186,10 @@
     raiz.addEventListener("click", alClic);
     raiz.addEventListener("submit", alEnviar);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && st.abierto) cerrar(); });
+    document.addEventListener("click", function (e) {   // botón "💎 Recargar" del menú
+      var a = e.target.closest && e.target.closest("[data-recargar]"); if (!a) return;
+      e.preventDefault(); if (window.ljRecarga) window.ljRecarga.abrir();
+    });
     pintarBoton();
     if (leerSesion()) cargarPerfil();
     // Permite abrir la cuenta con #cuenta en la dirección
@@ -195,9 +199,10 @@
     if (!boton) return;
     var s = leerSesion(), p = st.perfil;
     if (recBtn) recBtn.hidden = esAdmin(s);
+    document.querySelectorAll("[data-recargar]").forEach(function (a) { a.hidden = esAdmin(s); });   // el administrador no recarga
     boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>S/ ' + p.creditos + '</small>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
-    if (!recBtn && boton.parentNode) {
+    if (!recBtn && boton.parentNode && !document.querySelector("[data-recargar]")) {   // si el menú ya trae Recargar, no se duplica
       recBtn = document.createElement("button");
       recBtn.id = "ljRecargarBtn"; recBtn.type = "button"; recBtn.className = "ljc-navbtn ljc-recbtn";
       recBtn.addEventListener("click", function () { if (window.ljRecarga) window.ljRecarga.abrir(); });

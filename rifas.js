@@ -911,10 +911,11 @@
   function navTienda() {
     var on = !!(admin.puede || (estado.secciones && estado.secciones.items));
     var lock = !(estado.secciones && estado.secciones.items) && admin.puede ? " 🔒" : "";
-    return '<a class="nav-link" href="index.html#inicio">Inicio</a><a class="nav-link" href="index.html#sets-cache">Sets Caché</a>' +
+    return '<a class="nav-link" href="index.html#inicio">Inicio</a><a class="nav-link" href="index.html#sets-cache">Sets Caché</a><a class="nav-link" href="index.html#compro">Compro</a>' +
       (on ? '<a class="nav-link" href="index.html#items">Comprar items' + lock + '</a><a class="nav-link" href="index.html#vender">Vender items' + lock + '</a>' : '') +
       (on ? '<a class="nav-link" href="index.html?carrito=1#items">🛒 Carrito' + carroN() + '</a>' : '') +
-      '<a class="nav-link" href="index.html#compro">Compro</a>' + (admin.puede || rifasOn() ? '<a class="nav-link active" href="rifas.html">Rifas' + (rifasOn() ? '' : ' 🔒') + '</a>' : '');
+      (admin.puede || rifasOn() ? '<a class="nav-link active" href="rifas.html">Rifas' + (rifasOn() ? '' : ' 🔒') + '</a>' : '') +
+      (admin.puede ? '' : '<a class="nav-link nav-link-recargar" href="#recargar" data-a="recargar" role="button">💎 Recargar</a>');
   }
   function waPill() { return "https://wa.me/51952997030?text=" + encodeURIComponent("Hola LitleJacob, vi tu tienda LitleJacob Store y quiero hacer una consulta."); }
 
@@ -1623,7 +1624,7 @@
       case "quitarPartNo": admin.quitarP = null; render(); break;
       case "quitarPartSi": quitarParticipacion(t.getAttribute("data-id"), t.getAttribute("data-uid"), t.getAttribute("data-dev") === "1"); break;
       case "participar": iniciarParticipar(t.getAttribute("data-id")); break;
-      case "recargar": abrirRecarga(); break;
+      case "recargar": ev.preventDefault(); abrirRecarga(); break;
       case "monto": if (modal && modal.tipo === "recarga") { modal.sel = Number(t.getAttribute("data-s")); modal.err = ""; render(); } break;
       case "montoOtro":
         if (modal && modal.tipo === "recarga") {
