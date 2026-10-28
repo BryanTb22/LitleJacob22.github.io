@@ -14,6 +14,7 @@
   const ITEMS_URL = "https://compraritem-seqcayr4iq-uc.a.run.app";
   const INV_URL = "https://inventario-seqcayr4iq-uc.a.run.app";
   const STEAM_URL = "https://us-central1-" + FB.projectId + ".cloudfunctions.net/itemSteam";
+  const PRECIOS_URL = "https://us-central1-" + FB.projectId + ".cloudfunctions.net/preciosSteam";
   const WA = "51952997030";
   const TIENDA = "LITLEJACOB STORE";
   const TRADE_AYUDA = '<a href="https://steamcommunity.com/my/tradeoffers/privacy#trade_offer_access_url" target="_blank" rel="noopener">¿Dónde encuentro mi link?</a>';
@@ -150,6 +151,8 @@
   const items = { lista: [], cargado: false, cargando: false, err: "" };
   const filtros = { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "mayor", pag: 0 };
   const ven = { link: "", cargando: false, err: "", lista: null, noTrad: 0, sel: {}, precios: [], pCargado: false, pCargando: false, q: "", f: { tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", min: "", max: "", orden: "mayor" } };
+  const stp = { corriendo: false, msg: "" };   // actualización de precios de Steam (admin)
+  const imp = { abierto: false, link: "", cargando: false, subiendo: false, err: "", msg: "", lista: null, repo: [], sel: {}, selR: {}, yaEstaban: 0, total: 0, diag: [] };   // importar inventario (admin)
   const adm = { form: null, msg: "", guardando: false, subiendo: false, steamCargando: false, steamInfo: "", itemDel: null, cp: {} };
   const stk = { q: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", estado: "all", orden: "nombre", pag: 0, msg: "", ed: null };
   const sec = { cargado: false, items: false, rifas: true };   // sección visible para clientes (rayas/estado → secciones.items)
@@ -390,7 +393,7 @@
       '<div class="ff"><label for="itx-calidad">Calidad</label><select id="itx-calidad">' + opciones(distintos("calidad", ITEM_CALIDADES), filtros.calidad, "Todas") + "</select></div>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="reset" style="width:100%">Restablecer filtros</button></details></aside>';
     return cabecera("Catálogo", "Comprar", "items", "Elige tu item y págalo con tu saldo o por WhatsApp.") + aviso() + switchSeccion() +
-      (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' : "") +
+      (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><button type="button" class="itx-btn ghost sm" data-itx="stRefrescar"' + (stp.corriendo ? " disabled" : "") + '>' + (stp.corriendo ? "Actualizando…" : "↻ Precios de Steam") + '</button>' + (stp.msg ? '<span class="itx-hint">' + esc(stp.msg) + '</span>' : '') + '<span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' + importarHtml() : "") +
       avisoFiltrosHtml() +
       '<div id="itxMiga">' + migaActualHtml() + "</div>" +
       '<div class="itx-tabs">' + tabs + "</div>" +
@@ -1106,6 +1109,154 @@
     document.querySelectorAll("[data-itx-cart]").forEach((a) => { a.hidden = !on; a.textContent = "🛒 Carrito" + (carroN() ? " (" + carroN() + ")" : ""); });
   }
 
+
+  /* ---------- Admin: precios de Steam (US$ -> se muestran en soles bajo el precio) ---------- */
+  function steamRefrescar() {
+    if (stp.corriendo) return;
+    const hace = Date.now() - 6 * 3600 * 1000;
+    const cola = items.lista.filter((it) => it.activo && (!it.steamAct || Date.parse(it.steamAct) < hace || !(it.steamUsd > 0)));
+    if (!cola.length) { stp.msg = "Los precios de Steam están al día."; renderTodo(); return; }
+    stp.corriendo = true; stp.msg = "0 de " + cola.length + "…"; renderTodo();
+    const base = "projects/" + FB.projectId + "/databases/(default)/documents/", url = BASE.replace(/documents\/$/, "documents:commit");
+    let hechos = 0, ok = 0;
+    const fin = (m) => { stp.corriendo = false; stp.msg = m; renderTodo(); };
+    const lote = (i) => {
+      if (i >= cola.length) return fin("✔ Listo: " + ok + " precios actualizados.");
+      const parte = cola.slice(i, i + 6), ahora = new Date().toISOString();
+      return token().then((tk) =>
+        fetch(PRECIOS_URL, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ nombres: parte.map((x) => x.nombre) }) })
+          .then((r) => r.json().catch(() => ({})).then((j) => { if (!r.ok) throw new Error(j.error || "Error " + r.status); return j; }))
+          .then((j) => {
+            const w = [];
+            parte.forEach((it) => {
+              const u = j.precios && j.precios[it.nombre];
+              if (u > 0) { it.steamUsd = u; it.steamAct = ahora; ok++; w.push({ update: { name: base + "rayas_items/" + it.id, fields: { steamUsd: { doubleValue: u }, steamAct: { timestampValue: ahora } } }, updateMask: { fieldPaths: ["steamUsd", "steamAct"] }, currentDocument: { exists: true } }); }
+            });
+            hechos = i + parte.length;
+            const g = w.length ? fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ writes: w }) }) : Promise.resolve({ ok: true });
+            return g.then((rr) => {
+              if (!rr.ok) throw new Error("No se pudo guardar (" + rr.status + ").");
+              stp.msg = hechos + " de " + cola.length + "…"; renderTodo();
+              if (j.limite) return fin("Steam pidió esperar. Se actualizaron " + ok + " de " + cola.length + "; vuelve a pulsar en unos minutos para seguir.");
+              return lote(i + 6);
+            });
+          })
+      ).catch((e) => { fin(((e && e.message === "NO_SESSION") ? "Vuelve a iniciar sesión." : (e && e.message) || "No se pudo actualizar.") + (ok ? " (" + ok + " ya guardados)" : "")); });
+    };
+    lote(0);
+  }
+
+  /* ---------- Admin: importar a Comprar los items de un inventario de Steam (por trade link) ---------- */
+  const IMP_RAREZAS = ["ARCANO", "INMORTAL", "MÍTICO", "LEGENDARIO"];
+  const impId = (g) => "inv-" + slugCompra(g.name) + (g.sig ? "-" + g.sig : "");
+  function impCuenta() { let n = 0; (imp.lista || []).forEach((g, k) => { if (imp.sel[k]) n++; }); (imp.repo || []).forEach((r, k) => { if (imp.selR[k]) n++; }); return n; }
+  function impTextoSubir() {
+    if (imp.subiendo) return "Subiendo…";
+    let n = 0, r = 0; (imp.lista || []).forEach((g, k) => { if (imp.sel[k]) n++; }); (imp.repo || []).forEach((x, k) => { if (imp.selR[k]) r++; });
+    return "Subir " + n + " de " + (imp.lista || []).length + " nuevos" + ((imp.repo || []).length ? " · reponer " + r + " de " + imp.repo.length : "");
+  }
+  function impRepoHtml() {
+    const R = imp.repo || []; if (!R.length) return "";
+    return '<p class="itx-hint"><b>Reponer stock</b> (items que ya tienes en el catálogo)</p><div class="imprepo">' + R.map((r, k) => {
+      const on = !!imp.selR[k], col = colorRareza(r.it.rareza);
+      return '<label class="improw' + (on ? "" : " off") + '"><input type="checkbox" id="imp-rep-' + k + '"' + (on ? " checked" : "") + ">" +
+        '<span class="improw-t">' + (r.it.img ? imgTag(r.it.img, "", ' width="40" height="40" loading="lazy"') : "") + '<span><b style="color:' + col + '">' + esc(r.it.nombre) + "</b>" + (r.it.descripcion ? "<small>💎 " + lineasDesc(r.it).length + " gemas/detalles</small>" : "") + "</span></span>" +
+        '<span class="improw-s">stock ' + r.de + " → <b>" + r.a + "</b>" + (r.a < r.de ? " <small>(baja)</small>" : "") + "</span></label>";
+    }).join("") + "</div>";
+  }
+  function impPrevisualHtml() {
+    return '<div class="impgrid">' + imp.lista.map((g, k) => {
+      const col = colorRareza(g.rareza), on = !!imp.sel[k], gem = g.gemas || [];
+      return '<label class="impcard' + (on ? "" : " off") + '" style="--rar:' + col + '"><input type="checkbox" id="imp-sel-' + k + '"' + (on ? " checked" : "") + ">" +
+        '<div class="itx-thumb" style="--rar:' + col + '">' + (imgTag(String(g.icon || "").replace(/\/\d+fx\d+f$/, "/256fx256f"), g.name, ' loading="lazy"') || '<span class="sinfoto">Sin foto</span>') + (g.n > 1 ? '<span class="itx-tag">x' + g.n + "</span>" : "") + "</div>" +
+        '<b class="impn">' + esc(g.name) + '</b><span class="impm" style="color:' + col + '">' + esc(g.rareza) + (g.heroe ? " · " + esc(g.heroe) : "") + "</span>" +
+        (gem.length ? '<span class="impg">💎 ' + gem.slice(0, 3).map(esc).join("<br>") + (gem.length > 3 ? "<br>+" + (gem.length - 3) + " más" : "") + "</span>" : "") +
+        "</label>";
+    }).join("") + "</div>";
+  }
+  function importarHtml() {
+    if (!imp.abierto) return '<div class="itx-admin"><b>Importar desde Steam</b><button type="button" class="itx-btn ghost sm" data-itx="impAbrir">⬇ Importar items de mi inventario</button><span class="itx-hint">Sube de una vez tus items intercambiables Arcano, Inmortal, Mítico y Legendario.</span></div>';
+    const cuenta2 = {}; let conGemas = 0;
+    (imp.lista || []).forEach((g) => { cuenta2[g.rareza] = (cuenta2[g.rareza] || 0) + 1; if (g.sig) conGemas++; });
+    const resumen = imp.lista ? IMP_RAREZAS.map((r) => (cuenta2[r] || 0) + " " + r.toLowerCase()).join(" · ") : "";
+    const notas = [];
+    if (imp.lista && imp.yaEstaban) notas.push(imp.yaEstaban + " ya están en el catálogo con el mismo stock y <b>no se tocan</b>");
+    if (imp.lista && (imp.repo || []).length) notas.push((imp.repo || []).length + " ya están y solo cambia su <b>stock</b> (el precio y la descripción no se modifican)");
+    return '<div class="itx-admin" style="display:block"><b>Importar desde Steam</b>' +
+      '<div class="imp-row"><input id="imp-link" type="url" inputmode="url" placeholder="Trade link: https://steamcommunity.com/tradeoffer/new/?partner=…&token=…" value="' + esc(imp.link) + '" autocomplete="off">' +
+      '<button type="button" class="itx-btn gold sm" data-itx="impTraer"' + (imp.cargando || imp.subiendo ? " disabled" : "") + ">" + (imp.cargando ? "Leyendo…" : "Traer items") + "</button>" +
+      '<button type="button" class="itx-btn ghost sm" data-itx="impCerrar">Cerrar</button></div>' +
+      (imp.err ? '<p class="itx-hint" style="color:var(--itx-danger)" role="alert">' + esc(imp.err) + "</p>" : "") +
+      (imp.lista ? '<p class="itx-hint"><b>' + imp.lista.length + "</b> items nuevos para subir (" + esc(resumen) + ")" + (conGemas ? ", <b>" + conGemas + "</b> con gemas" : "") + "." + (notas.length ? "<br>" + notas.join(".<br>") + "." : "") + "<br>Se suben <b>ocultos y sin precio</b>: pon el precio con ✎ y actívalos para que los vean los clientes.</p>" +
+        ((imp.diag || []).length ? '<p class="itx-hint" style="color:var(--itx-danger)">No pude leer las gemas de: ' + imp.diag.map((d) => esc(d.name) + " (" + esc(d.lineas.join(" / ")) + ")").join("; ") + ". Mándale esta pantalla a Claude para ajustarlo.</p>" : "") +
+        ((imp.lista.length || (imp.repo || []).length) ? (imp.lista.length ? '<p class="itx-hint"><b>Items nuevos</b></p>' + impPrevisualHtml() : "") + impRepoHtml() + '<div class="impbar"><button type="button" class="itx-btn ghost sm" data-itx="impTodos">Marcar todos</button><button type="button" class="itx-btn ghost sm" data-itx="impNinguno">Quitar todos</button>' +
+          '<button type="button" class="itx-btn gold sm" id="imp-subir" data-itx="impSubir"' + (imp.subiendo || !impCuenta() ? " disabled" : "") + ">" + impTextoSubir() + "</button></div>" : "") : "") +
+      (imp.msg ? '<p class="itx-hint" role="status">' + esc(imp.msg) + "</p>" : "") + "</div>";
+  }
+  function impTraer() {
+    const link = String(imp.link || "").trim();
+    if (!/[?&]partner=\d+/.test(link)) { imp.err = "Pega el trade link completo (debe incluir partner= y token=)."; renderTodo(); return; }
+    imp.cargando = true; imp.err = ""; imp.msg = ""; imp.lista = null; imp.repo = []; renderTodo();
+    fetch(INV_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ link, detalle: true }) })
+      .then((r) => r.json().catch(() => ({})).then((j) => ({ ok: r.ok, j })))
+      .then((x) => {
+        imp.cargando = false;
+        if (!x.ok) { imp.err = (x.j && x.j.error) || "No se pudo leer el inventario."; renderTodo(); return; }
+        const porId = {}, porNombre = {};
+        items.lista.forEach((it) => { porId[it.id] = it; if (!porNombre[claveCompra(it.nombre)]) porNombre[claveCompra(it.nombre)] = it; });
+        const todos = (x.j.items || []).filter((g) => IMP_RAREZAS.indexOf(g.rareza) >= 0);
+        const nuevos = [], repo = []; let ya = 0;
+        todos.forEach((g) => {
+          // Mismo item = mismo nombre y mismas gemas. Si ya está, solo se repone su stock; precio, descripción y estado no se tocan.
+          const ex = porId[impId(g)] || (!g.sig ? porNombre[claveCompra(g.name)] : null);
+          if (!ex) { nuevos.push(g); return; }
+          if (Number(ex.stock) === g.n) { ya++; return; }
+          repo.push({ it: ex, g, de: Number(ex.stock) || 0, a: g.n });
+        });
+        imp.lista = nuevos; imp.sel = {}; nuevos.forEach((g, k) => { imp.sel[k] = true; });
+        imp.repo = repo; imp.selR = {}; repo.forEach((r, k) => { imp.selR[k] = r.a > r.de; });   // las bajas de stock vienen sin marcar
+        imp.yaEstaban = ya; imp.total = todos.length; imp.diag = x.j.diag || [];
+        if (!todos.length) imp.msg = "No hay items intercambiables de esas rarezas en este inventario.";
+        renderTodo();
+      }).catch(() => { imp.cargando = false; imp.err = "No se pudo conectar. Intenta de nuevo."; renderTodo(); });
+  }
+  function impSubir() {
+    if (!imp.lista || imp.subiendo) return;
+    const elegidos = imp.lista.filter((g, k) => imp.sel[k]);
+    const repos = (imp.repo || []).filter((r, k) => imp.selR[k]);
+    if (!elegidos.length && !repos.length) { imp.err = "Marca al menos un item."; renderTodo(); return; }
+    const base = "projects/" + FB.projectId + "/databases/(default)/documents/", ahora = Date.now(), lote = [], nuevos = [];
+    elegidos.forEach((g, k) => {
+      const it = { id: impId(g), nombre: g.name, img: String(g.icon || "").replace(/\/\d+fx\d+f$/, "/256fx256f"), precio: 0, stock: g.n,
+        tipo: g.tipo || "Otro", heroe: g.heroe || "", ranura: g.ranura || "", rareza: g.rareza, calidad: g.calidad || "", estilos: 0, estOk: "", descripcion: (g.gemas || []).join("\n"), activo: false,
+        creado: new Date(ahora - k).toISOString() };
+      nuevos.push(it);
+      lote.push({ update: Object.assign({ name: base + "rayas_items/" + it.id }, itemAFields(it)), currentDocument: { exists: false } });
+    });
+    repos.forEach((r) => {   // solo el stock: nada más se toca
+      lote.push({ update: { name: base + "rayas_items/" + r.it.id, fields: { stock: { integerValue: String(r.a) } } }, updateMask: { fieldPaths: ["stock"] }, currentDocument: { exists: true } });
+    });
+    imp.subiendo = true; imp.err = ""; imp.msg = ""; renderTodo();
+    const url = BASE.replace(/documents\/$/, "documents:commit"); let hechos = 0;
+    const lotes = (i) => {
+      if (i >= lote.length) return Promise.resolve();
+      return token().then((tk) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ writes: lote.slice(i, i + 50) }) })).then((r) => {
+        if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Vuelve a entrar." : r.status === 409 ? "Alguno de esos items cambió. Recarga la página e intenta de nuevo." : "No se pudo subir (" + r.status + ").");
+        hechos = Math.min(lote.length, i + 50);
+        return lotes(i + 50);
+      });
+    };
+    lotes(0).then(() => {
+      repos.forEach((r) => { r.it.stock = r.a; });
+      items.lista = nuevos.concat(items.lista);
+      imp.subiendo = false; imp.lista = []; imp.sel = {}; imp.repo = []; imp.selR = {};
+      imp.msg = "✔ " + (nuevos.length ? "Se subieron " + nuevos.length + " items nuevos (ocultos y sin precio: edítalos con ✎ para ponerles precio y activarlos). " : "") + (repos.length ? "Se repuso el stock de " + repos.length + " items. " : "") + "Nada más de lo que ya tenías se modificó.";
+      renderTodo();
+    }).catch((e) => {
+      imp.subiendo = false; imp.err = ((e && e.message) || "No se pudo subir.") + (hechos ? " (ya se subieron " + hechos + ")" : ""); renderTodo();
+    });
+  }
+
   /* ---------- eventos ---------- */
   const cont = () => [document.getElementById("itemsRoot"), document.getElementById("venderRoot"), document.getElementById("itxModal")].filter(Boolean);
   document.addEventListener("click", (ev) => {
@@ -1115,6 +1266,12 @@
     // dentro de una tarjeta, los botones de admin no deben abrir el item
     if (a === "ver" && ev.target.closest("[data-itx='editar'],[data-itx='borrar'],[data-itx='borrarSi']")) return;
     switch (a) {
+      case "stRefrescar": steamRefrescar(); break;
+      case "impAbrir": imp.abierto = true; renderTodo(); break;
+      case "impCerrar": imp.abierto = false; renderTodo(); break;
+      case "impTraer": impTraer(); break;
+      case "impTodos": case "impNinguno": { const onT = a === "impTodos"; imp.sel = {}; imp.selR = {}; (imp.lista || []).forEach((g, k) => { imp.sel[k] = onT; }); (imp.repo || []).forEach((r, k) => { imp.selR[k] = onT; }); renderTodo(); break; }
+      case "impSubir": impSubir(); break;
       case "stkEd": { const row = t.closest(".stk-row"); if (row) stkEdAbrir(row.getAttribute("data-id")); break; }
       case "stkEdCerrar": stk.ed = null; pintarStock(); break;
       case "stkEdGuardar": stkEdGuardar(); break;
@@ -1207,6 +1364,19 @@
     if (SK[el.id]) { if (stk[SK[el.id]] === el.value) return true; stk[SK[el.id]] = el.value; stk.pag = 0; pintarStock(); return true; }
     if (el.getAttribute && el.getAttribute("data-stk-in")) { if (tipo === "change") { const it = itemPorId(el.getAttribute("data-stk-in")); if (it) { stkCambiar(it, el.value); el.value = it.stock; } } return true; }
     if (el.id && el.id.indexOf("sk-") === 0 && stk.ed) { if (el.type !== "file") { if (tipo === "change" || !/^(sk-estilos)$/.test(el.id)) stkEdCampo(el); } return true; }
+    if (el.id === "imp-link") { imp.link = el.value; return true; }
+    if (el.id.indexOf("imp-rep-") === 0) {
+      imp.selR[el.id.slice(8)] = el.checked;
+      const lr = el.closest && el.closest(".improw"); if (lr) lr.classList.toggle("off", !el.checked);
+      const br = document.getElementById("imp-subir"); if (br) { br.textContent = impTextoSubir(); br.disabled = !!imp.subiendo || !impCuenta(); }
+      return true;
+    }
+    if (el.id.indexOf("imp-sel-") === 0) {
+      imp.sel[el.id.slice(8)] = el.checked;
+      const lab = el.closest && el.closest(".impcard"); if (lab) lab.classList.toggle("off", !el.checked);
+      const bt = document.getElementById("imp-subir"); if (bt) { bt.textContent = impTextoSubir(); bt.disabled = !!imp.subiendo || !impCuenta(); }
+      return true;
+    }
     if (el.id === "itv-link") { ven.link = el.value; return true; }
     const VF = { "itv-min": "min", "itv-max": "max", "itv-heroe": "heroe", "itv-ranura": "ranura", "itv-rareza": "rareza", "itv-calidad": "calidad", "itv-orden": "orden" };
     if (VF[el.id]) { ven.f[VF[el.id]] = el.value; renderTodo(); return true; }
