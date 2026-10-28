@@ -37,7 +37,7 @@
     if (o.steam === "ok") return { tipo: "vinculado", msg: "✔ Steam vinculado a tu cuenta." };
     if (!o.steamtoken) return null;
     return {
-      tipo: "token", pre: { sid: String(o.sid || "").replace(/\D/g, ""), nom: String(o.nom || "").slice(0, 40) },
+      tipo: "token", pre: { sid: String(o.sid || "").replace(/\D/g, ""), nom: String(o.nom || "").slice(0, 40), av: imgOk(o.av) ? String(o.av) : "", pa: String(o.pa || "").replace(/[<>\u0000-\u001f]/g, "").slice(0, 60), pu: o.pu === "1" ? true : (o.pu === "0" ? false : null) },
       entrar: function () {
         return fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=" + encodeURIComponent(FB.apiKey), {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: o.steamtoken, returnSecureToken: true })
@@ -61,7 +61,21 @@
     } catch (e) { return ""; }
   }
 
+  // Datos de Steam = texto externo: la foto solo si es https de Steam; el enlace solo si es de steamcommunity.com.
+  function imgOk(u) { return /^https:\/\/[a-z0-9.-]+\.(steamstatic\.com|akamaihd\.net|steamusercontent\.com|steamcommunity\.com)\/[^\s"'<>]{1,300}$/i.test(String(u || "")); }
+  function urlOk(u) { return /^https:\/\/steamcommunity\.com\/[^\s"'<>]{1,200}$/.test(String(u || "")); }
+  // Campos extra del perfil (formato Firestore) para una cuenta nueva con Steam: se guardan al crear el perfil.
+  function camposPerfil(pre) {
+    var c = {}; if (!pre || !pre.sid) return c;
+    c.steamId = { stringValue: pre.sid }; c.steamPerfilUrl = { stringValue: "https://steamcommunity.com/profiles/" + pre.sid };
+    if (pre.av && imgOk(pre.av)) c.steamAvatar = { stringValue: pre.av };
+    if (pre.pa) c.steamPais = { stringValue: pre.pa };
+    if (typeof pre.pu === "boolean") c.steamPublico = { booleanValue: pre.pu };
+    return c;
+  }
+
   window.ljSteam = {
+    imgOk: imgOk, urlOk: urlOk, camposPerfil: camposPerfil,
     logo: LOGO, ir: ir, alCargar: alCargar, vinculado: vinculado,
     boton: function (clase, acc) { return '<button type="button" class="' + clase + '" data-a="' + acc + '">' + LOGO + '<span>Entrar con Steam</span></button>'; },
     botonVincular: function (clase) { return '<button type="button" class="' + clase + '" data-a="steamVincular">' + LOGO + '<span>Vincular mi Steam</span></button>'; },

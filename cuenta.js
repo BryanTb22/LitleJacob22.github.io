@@ -121,13 +121,15 @@
       promoUsada: !!(f.promoUsada && f.promoUsada.booleanValue === true) };
   }
   function crearPerfil(ses, d) {
+    var campos = {
+      nombre: { stringValue: d.nombre }, whatsapp: { stringValue: d.whatsapp }, email: { stringValue: d.email },
+      tradelink: { stringValue: d.tradelink }, steam: { stringValue: d.steam },
+      creditos: { integerValue: "0" }, creado: { timestampValue: new Date().toISOString() }
+    };
+    if (st.steamPre && window.ljSteam) Object.assign(campos, window.ljSteam.camposPerfil(st.steamPre)); // cuenta nueva con Steam: datos públicos para la ficha del admin
     return fs("rayas_users/" + encodeURIComponent(ses.uid) + "?currentDocument.exists=false", {
       method: "PATCH",
-      body: JSON.stringify({ fields: {
-        nombre: { stringValue: d.nombre }, whatsapp: { stringValue: d.whatsapp }, email: { stringValue: d.email },
-        tradelink: { stringValue: d.tradelink }, steam: { stringValue: d.steam },
-        creditos: { integerValue: "0" }, creado: { timestampValue: new Date().toISOString() }
-      } })
+      body: JSON.stringify({ fields: campos })
     }).then(function (r) { if (!r.ok) throw new Error("PERFIL_" + r.status); });
   }
   // Rellena el formulario de pedido de la tienda con los datos de la cuenta
