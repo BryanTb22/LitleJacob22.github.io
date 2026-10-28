@@ -19,6 +19,7 @@
     min: 3, max: 500, minYape: 6,   // monto libre (solo para mostrar; el servidor valida lo mismo en functions/packs.js)
     url: "https://us-central1-" + FB.projectId + ".cloudfunctions.net/cobrar",
     urlOrden: "https://us-central1-" + FB.projectId + ".cloudfunctions.net/crearOrden",
+    urlProbarCorreos: "https://us-central1-" + FB.projectId + ".cloudfunctions.net/probarCorreos",
     js: "https://checkout.culqi.com/js/v4"
   };
   var PACKS_UI = [
@@ -1443,12 +1444,27 @@
     return '<label class="cfg-row' + (on ? ' on' : '') + '"><span class="cfg-tx"><b>' + titulo + '</b><small>' + desc + '</small><em>' + (on ? si : no) + '</em></span>' +
       '<input type="checkbox" class="' + cls + '"' + (on ? ' checked' : '') + '><span class="cfg-sw" aria-hidden="true"></span></label>';
   }
+  function correosPruebaHtml() {
+    return '<div class="grp"><h3>✉️ Correos de pago</h3><p class="hint">Envía a tu correo de administrador 4 correos de ejemplo (pago confirmado y pago pendiente, con el diseño de Rayas y de LitleJacob) para ver cómo les llegan a los clientes. No cobra ni suma nada.</p>' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-a="probarCorreos"' + (admin.correoMsg === "Enviando…" ? ' disabled' : '') + '>Enviar correos de prueba</button>' +
+      (admin.correoMsg ? '<p class="hint">' + esc(admin.correoMsg) + '</p>' : '') + '</div>';
+  }
+  function probarCorreos() {
+    admin.correoMsg = "Enviando…"; render();
+    token().then(function (tk) {
+      return fetch(PAGOS.urlProbarCorreos, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: "{}" });
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        admin.correoMsg = x.ok && x.j.ok ? "✔ Enviados " + x.j.enviados + " correos a " + x.j.a + ". Revisa tu bandeja y la carpeta de spam." + (x.j.fallaron ? " Fallaron " + x.j.fallaron + ": " + x.j.error : "") : ((x.j && x.j.error) || "No se pudo enviar.");
+        render();
+      }).catch(function (e) { admin.correoMsg = (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : "No se pudo conectar. Intenta de nuevo."; render(); });
+  }
   function tabConfig() {
     var it = !!(estado.secciones && estado.secciones.items), cq = !!(estado.pagos && estado.pagos.culqi);
     return '<div class="grp cfg"><h3>Configuración de rifas</h3><p class="hint">Lo desactivado solo lo ves tú (administrador). Pulsa <b>Guardar y publicar</b> para que lo vean todos. La compra y venta de items se configura en el panel de la tienda.</p>' +
       swCfg("c-rifas", rifasOn(), "🎟️ Rifas", "Página de rifas, cómo participar, ganadores y reglas.", "VISIBLE para los clientes", "OCULTA: solo tú la ves") +
       swCfg("c-pagos", cq, "💳 Culqi (tarjeta / Yape)", "Botón de pago en línea para recargar saldo.", "ACTIVO: pueden recargar con tarjeta o Yape", "APAGADO: solo piden saldo por WhatsApp") +
-      '</div>';
+      '</div>' + correosPruebaHtml();
   }
   function tabPagina() {
     var T = estado.textos;
@@ -1668,6 +1684,7 @@
       case "cerrarElegir": elegirAbierto = false; montoWsp = 0; render(); break;
       case "editContactos": admin.abierto = true; admin.tab = "pagina"; render(); break;
       case "quitarGan": var kg = buscarPremio(t.getAttribute("data-id")); if (kg >= 0) { estado.premios[kg].ganador = ""; estado.premios[kg].ganadorUid = ""; estado.premios[kg].resultado = ""; delete estado.premios[kg].replay; marcarSucio(); render(); } break;
+      case "probarCorreos": probarCorreos(); break;
       case "quitarFoto": estado.contactos[i].foto = ""; marcarSucio(); render(); break;
       case "cerrarCuenta": quitarHash(); cuenta.modo = null; render(); break;
       case "cred": var uu = (admin.usuarios || []).filter(function (x) { return x.uid === t.getAttribute("data-uid"); })[0]; if (uu && !uu.guardando) guardarCreditos(uu.uid, uu.creditos + Number(t.getAttribute("data-d"))); break;
