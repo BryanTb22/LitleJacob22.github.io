@@ -112,6 +112,7 @@
   const filtros = { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", pag: 0 };
   const ven = { link: "", cargando: false, err: "", lista: null, noTrad: 0, sel: {}, precios: [], pCargado: false, pCargando: false, q: "", f: { tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", min: "", max: "", orden: "mayor" } };
   const adm = { form: null, msg: "", guardando: false, subiendo: false, steamCargando: false, steamInfo: "", itemDel: null, cp: {} };
+  const stk = { q: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", estado: "all", orden: "nombre", pag: 0, msg: "" };
   const sec = { cargado: false, items: false };   // sección visible para clientes (rayas/estado → secciones.items)
   let modal = null;
 
@@ -227,16 +228,17 @@
     return '<div class="itx-grid">' + l.slice(filtros.pag * porPag, filtros.pag * porPag + porPag).map(itemCardHtml).join("") + "</div>" + paginadorHtml(total, filtros.pag);
   }
   /* Botones de página: « 1 … 4 5 6 … 18 » (la actual resaltada). */
-  function paginadorHtml(total, act) {
+  function paginadorHtml(total, act, accion) {
+    accion = accion || "pag";
     if (total <= 1) return "";
     const nums = [];
     for (let i = 0; i < total; i++) if (i === 0 || i === total - 1 || Math.abs(i - act) <= 1) nums.push(i);
-    let h = '<nav class="itx-pager" aria-label="Páginas"><button type="button" class="itx-btn ghost sm" data-itx="pag" data-p="' + (act - 1) + '"' + (act <= 0 ? " disabled" : "") + ' aria-label="Página anterior">‹</button>';
+    let h = '<nav class="itx-pager" aria-label="Páginas"><button type="button" class="itx-btn ghost sm" data-itx="' + accion + '" data-p="' + (act - 1) + '"' + (act <= 0 ? " disabled" : "") + ' aria-label="Página anterior">‹</button>';
     nums.forEach((n, k) => {
       if (k && n - nums[k - 1] > 1) h += '<span class="itx-dots">…</span>';
-      h += '<button type="button" class="itx-btn ' + (n === act ? "gold" : "ghost") + ' sm" data-itx="pag" data-p="' + n + '"' + (n === act ? ' aria-current="page"' : "") + ">" + (n + 1) + "</button>";
+      h += '<button type="button" class="itx-btn ' + (n === act ? "gold" : "ghost") + ' sm" data-itx="' + accion + '" data-p="' + n + '"' + (n === act ? ' aria-current="page"' : "") + ">" + (n + 1) + "</button>";
     });
-    return h + '<button type="button" class="itx-btn ghost sm" data-itx="pag" data-p="' + (act + 1) + '"' + (act >= total - 1 ? " disabled" : "") + ' aria-label="Página siguiente">›</button></nav>';
+    return h + '<button type="button" class="itx-btn ghost sm" data-itx="' + accion + '" data-p="' + (act + 1) + '"' + (act >= total - 1 ? " disabled" : "") + ' aria-label="Página siguiente">›</button></nav>';
   }
   function pintarGrid() {
     const g = document.getElementById("itxGrid"); if (!g) return;
@@ -268,7 +270,7 @@
       '<div class="ff"><label for="itx-calidad">Calidad</label><select id="itx-calidad">' + opciones(distintos("calidad", ITEM_CALIDADES), filtros.calidad, "Todas") + "</select></div>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="reset" style="width:100%">Restablecer filtros</button></details></aside>';
     return cabecera("Catálogo", "Comprar", "items", "Elige tu item y págalo con créditos o por WhatsApp.") + aviso() + switchSeccion() +
-      (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' + formHtml() : "") +
+      (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' + formHtml() : "") +
       '<div class="itx-tabs">' + tabs + "</div>" +
       '<div class="itx-shop">' + filt + '<div class="itx-main"><div class="itx-bar"><input id="itx-q" type="search" placeholder="Buscar items…" value="' + esc(filtros.q) + '" autocomplete="off">' +
       '<select id="itx-orden" aria-label="Ordenar">' + [["nuevo", "Más nuevos"], ["menor", "Precio: menor a mayor"], ["mayor", "Precio: mayor a menor"], ["nombre", "Nombre A-Z"]].map((o) => '<option value="' + o[0] + '"' + (filtros.orden === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
@@ -380,6 +382,98 @@
       .catch((e) => { adm.msg = (e && e.message) || "No se pudo cambiar."; renderTodo(); });
   }
 
+
+  /* ---------- Admin: panel de stock de items (como el de Sets Caché) ---------- */
+  const STK_POR_PAG = 40, STK_TIMERS = {};
+  function stkEstado(it) {
+    if (it.stock <= 0) return { cls: "st-zero", txt: "Agotado", key: "zero" };
+    if (it.stock <= 2) return { cls: "st-low", txt: "Pocas", key: "low" };
+    return { cls: "st-ok", txt: "En stock", key: "ok" };
+  }
+  function stkFiltrados() {
+    const q = sinTildes(stk.q);
+    const l = items.lista.filter((it) => {
+      if (stk.tipo && it.tipo !== stk.tipo) return false;
+      if (stk.heroe && it.heroe !== stk.heroe) return false;
+      if (stk.ranura && it.ranura !== stk.ranura) return false;
+      if (stk.rareza && it.rareza !== stk.rareza) return false;
+      if (stk.calidad && it.calidad !== stk.calidad) return false;
+      if (stk.estado === "oculto") { if (it.activo) return false; }
+      else if (stk.estado !== "all" && stkEstado(it).key !== stk.estado) return false;
+      if (q && sinTildes(it.nombre + " " + it.heroe + " " + it.tipo + " " + it.descripcion).indexOf(q) < 0) return false;
+      return true;
+    });
+    l.sort((a, b) => {
+      if (stk.orden === "stockMenor") return a.stock - b.stock || a.nombre.localeCompare(b.nombre);
+      if (stk.orden === "stockMayor") return b.stock - a.stock || a.nombre.localeCompare(b.nombre);
+      if (stk.orden === "valor") return b.precio * b.stock - a.precio * a.stock;
+      if (stk.orden === "nuevo") return String(b.creado).localeCompare(String(a.creado));
+      return a.nombre.localeCompare(b.nombre);
+    });
+    return l;
+  }
+  function stkStatsHtml(l) {
+    const uni = l.reduce((n, it) => n + Math.max(0, it.stock), 0);
+    const val = l.reduce((t, it) => t + Math.max(0, it.stock) * (it.precio > 0 ? it.precio : 0), 0);
+    const valSteam = l.reduce((t, it) => t + Math.max(0, it.stock) * (it.steamUsd > 0 ? it.steamUsd * TC : 0), 0);
+    const conStock = l.filter((it) => it.stock > 0).length, zero = l.filter((it) => it.stock <= 0).length, low = l.filter((it) => it.stock > 0 && it.stock <= 2).length;
+    const st = (b, t, w, sub) => '<div class="stk-stat' + (w ? " warn" : "") + '"><b>' + b + "</b><span>" + t + "</span>" + (sub ? "<small>" + sub + "</small>" : "") + "</div>";
+    return st(conStock + "/" + l.length, "Items con stock") + st(uni, "Unidades") + st(fmtPrecio(val), "Valor del stock", false, valSteam ? "Steam ≈ " + fmtPrecio(valSteam) : "") +
+      st(low, "Pocas (1-2)", low) + st(zero, "Agotados", zero);
+  }
+  function stkFilaHtml(it) {
+    const e = stkEstado(it), col = colorRareza(it.rareza);
+    return '<div class="stk-row" data-id="' + esc(it.id) + '"><div class="stk-thumb" style="--rar:' + col + '">' + (imgTag(it.img, "", ' loading="lazy"') || "") + "</div>" +
+      '<div class="stk-info"><div class="stk-name">' + esc(it.nombre) + (it.activo ? "" : ' <em>(oculto)</em>') + '</div><div class="stk-meta"><span style="color:' + col + '">' + esc(it.rareza || "—") + "</span>" + (it.heroe ? " • " + esc(it.heroe) : "") + " • " + (it.precio > 0 ? fmtPrecio(it.precio) : "sin precio") +
+      (it.descripcion ? " • 💎 " + lineasDesc(it).length : "") + "</div></div>" +
+      '<span class="stk-status ' + e.cls + '">' + e.txt + "</span>" +
+      '<div class="stk-qty"><button type="button" data-itx="stkMenos" aria-label="Menos">−</button><input type="number" min="0" step="1" value="' + it.stock + '" id="stk-in-' + esc(it.id) + '" data-stk-in="' + esc(it.id) + '" aria-label="Stock de ' + esc(it.nombre) + '"><button type="button" data-itx="stkMas" aria-label="Más">+</button></div></div>';
+  }
+  function stkHtml() {
+    const sel = (id, lista, val, vacio) => '<select id="' + id + '">' + opciones(lista, val, vacio) + "</select>";
+    return '<div class="itx-dialog stk"><button type="button" class="stk-x" data-itx="cerrarModal" aria-label="Cerrar">×</button><h3>📦 Stock de items</h3>' +
+      '<div id="stkStats" class="stk-stats"></div>' +
+      '<div class="stk-ctl"><input id="stk-q" type="search" placeholder="Buscar item…" value="' + esc(stk.q) + '" autocomplete="off">' +
+      sel("stk-tipo", ITEM_TIPOS, stk.tipo, "Todos los tipos") + sel("stk-heroe", distintos("heroe", HEROES_DOTA), stk.heroe, "Todos los héroes") + sel("stk-ranura", distintos("ranura", SLOTS_DOTA), stk.ranura, "Todas las ranuras") +
+      sel("stk-rareza", LISTA_RAREZAS, stk.rareza, "Todas las rarezas") + sel("stk-calidad", distintos("calidad", ITEM_CALIDADES), stk.calidad, "Todas las calidades") +
+      '<select id="stk-estado">' + [["all", "Todos"], ["ok", "Con stock"], ["low", "Pocas unidades (1-2)"], ["zero", "Agotados (0)"], ["oculto", "Ocultos"]].map((o) => '<option value="' + o[0] + '"' + (stk.estado === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
+      '<select id="stk-orden">' + [["nombre", "Nombre A-Z"], ["stockMenor", "Stock: menor a mayor"], ["stockMayor", "Stock: mayor a menor"], ["valor", "Mayor valor"], ["nuevo", "Más nuevos"]].map((o) => '<option value="' + o[0] + '"' + (stk.orden === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
+      '<button type="button" class="itx-btn ghost sm" data-itx="stkReset">Restablecer</button></div>' +
+      '<div id="stkList" class="stk-list"></div>' +
+      '<div class="stk-pie"><span id="stkMsg" class="itx-hint">' + esc(stk.msg) + '</span><span class="itx-hint">Los cambios se guardan solos. Con 0 el item aparece como AGOTADO. Las estadísticas siguen los filtros.</span><button type="button" class="itx-btn gold" data-itx="cerrarModal">Listo</button></div></div>';
+  }
+  function pintarStock() {
+    const lst = document.getElementById("stkList"); if (!lst) return;
+    const l = stkFiltrados(), total = Math.ceil(l.length / STK_POR_PAG);
+    if (stk.pag >= total) stk.pag = Math.max(0, total - 1);
+    document.getElementById("stkStats").innerHTML = stkStatsHtml(l);
+    lst.innerHTML = !items.cargado ? '<div class="itx-empty"><strong>Cargando items…</strong></div>' : (l.length
+      ? l.slice(stk.pag * STK_POR_PAG, stk.pag * STK_POR_PAG + STK_POR_PAG).map(stkFilaHtml).join("") + paginadorHtml(total, stk.pag, "stkPag")
+      : '<div class="itx-empty"><strong>Ningún item con ese filtro</strong></div>');
+    hidratarImgs();
+  }
+  function stkRefrescarFila(it) {
+    const row = document.querySelector('.stk-row[data-id="' + (window.CSS && CSS.escape ? CSS.escape(it.id) : it.id) + '"]'); if (!row) return;
+    const e = stkEstado(it), b = row.querySelector(".stk-status"); b.className = "stk-status " + e.cls; b.textContent = e.txt;
+    const inp = row.querySelector("input"); if (document.activeElement !== inp) inp.value = it.stock;
+    document.getElementById("stkStats").innerHTML = stkStatsHtml(stkFiltrados());
+  }
+  function stkGuardar(it) {
+    clearTimeout(STK_TIMERS[it.id]);
+    STK_TIMERS[it.id] = setTimeout(() => {
+      const m = document.getElementById("stkMsg"); if (m) m.textContent = "Guardando…";
+      fsPedir("rayas_items/" + encodeURIComponent(it.id) + "?updateMask.fieldPaths=stock", { method: "PATCH", body: JSON.stringify({ fields: { stock: { integerValue: String(it.stock) } } }) }).then((r) => {
+        if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Vuelve a entrar." : "No se pudo guardar (" + r.status + ").");
+        stk.msg = "✔ Guardado"; const m2 = document.getElementById("stkMsg"); if (m2) m2.textContent = stk.msg;
+      }).catch((e) => { stk.msg = (e && e.message === "NO_SESSION" ? "Vuelve a iniciar sesión." : e.message) || "No se pudo guardar."; const m2 = document.getElementById("stkMsg"); if (m2) m2.textContent = stk.msg; });
+    }, 450);
+  }
+  function stkCambiar(it, n) {
+    n = Math.max(0, Math.min(99999, Math.floor(Number(n) || 0)));
+    if (n === it.stock) return;
+    it.stock = n; stkRefrescarFila(it); stkGuardar(it);
+  }
+
   /* ---------- Modal de un item (comprar) ---------- */
   const lineasDesc = (it) => String(it.descripcion || "").split("\n").map((x) => x.trim()).filter(Boolean);
   function descripcionHtml(it) {
@@ -388,6 +482,7 @@
   }
   function modalHtml() {
     if (!modal) return "";
+    if (modal.tipo === "stock") return '<div class="itx-scrim" data-itx="cerrarModal"></div>' + stkHtml();
     let h = "", btns = "";
     const cerrar = '<button class="itx-btn ghost" type="button" data-itx="cerrarModal">Cerrar</button>';
     if (modal.tipo === "item") {
@@ -623,6 +718,7 @@
       let m = document.getElementById("itxModal");
       if (!m) { m = document.createElement("div"); m.id = "itxModal"; m.className = "itx"; document.body.appendChild(m); }
       m.innerHTML = modalHtml(); m.hidden = !modal;
+      if (modal && modal.tipo === "stock") pintarStock();
       pintarNav();
       if (r1 && !r1.hidden) pintarGrid();
     });
@@ -646,6 +742,10 @@
     // dentro de una tarjeta, los botones de admin no deben abrir el item
     if (a === "ver" && ev.target.closest("[data-itx='editar'],[data-itx='borrar'],[data-itx='borrarSi']")) return;
     switch (a) {
+      case "stkAbrir": modal = { tipo: "stock" }; stk.msg = ""; renderTodo(); break;
+      case "stkReset": Object.assign(stk, { q: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", estado: "all", orden: "nombre", pag: 0 }); renderTodo(); break;
+      case "stkPag": stk.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarStock(); { const d = document.querySelector(".itx-dialog.stk"); if (d) d.scrollTop = 0; } break;
+      case "stkMas": case "stkMenos": { const row = t.closest(".stk-row"), it = row && itemPorId(row.getAttribute("data-id")); if (it) stkCambiar(it, it.stock + (a === "stkMas" ? 1 : -1)); break; }
       case "irSteam": break; // el enlace se abre solo; no abre la ficha
       case "ver": modal = { tipo: "item", id: t.getAttribute("data-id") }; renderTodo(); break;
       case "cerrarModal": modal = null; renderTodo(); break;
@@ -684,6 +784,9 @@
     if (!el.id) return false;
     const mapa = { "itx-q": "q", "itx-min": "min", "itx-max": "max", "itx-heroe": "heroe", "itx-ranura": "ranura", "itx-rareza": "rareza", "itx-calidad": "calidad", "itx-orden": "orden" };
     if (mapa[el.id]) { filtros[mapa[el.id]] = el.value; filtros.pag = 0; pintarGrid(); return true; }
+    const SK = { "stk-q": "q", "stk-tipo": "tipo", "stk-heroe": "heroe", "stk-ranura": "ranura", "stk-rareza": "rareza", "stk-calidad": "calidad", "stk-estado": "estado", "stk-orden": "orden" };
+    if (SK[el.id]) { stk[SK[el.id]] = el.value; stk.pag = 0; pintarStock(); return true; }
+    if (el.getAttribute && el.getAttribute("data-stk-in")) { if (tipo === "change") { const it = itemPorId(el.getAttribute("data-stk-in")); if (it) { stkCambiar(it, el.value); el.value = it.stock; } } return true; }
     if (el.id === "itv-link") { ven.link = el.value; return true; }
     const VF = { "itv-min": "min", "itv-max": "max", "itv-heroe": "heroe", "itv-ranura": "ranura", "itv-rareza": "rareza", "itv-calidad": "calidad", "itv-orden": "orden" };
     if (VF[el.id]) { ven.f[VF[el.id]] = el.value; renderTodo(); return true; }
