@@ -310,7 +310,7 @@
       '<div class="ff"><label for="itx-calidad">Calidad</label><select id="itx-calidad">' + opciones(distintos("calidad", ITEM_CALIDADES), filtros.calidad, "Todas") + "</select></div>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="reset" style="width:100%">Restablecer filtros</button></details></aside>';
     return cabecera("Catálogo", "Comprar", "items", "Elige tu item y págalo con créditos o por WhatsApp.") + aviso() + switchSeccion() +
-      (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' + formHtml() : "") +
+      (esAdmin() ? '<div class="itx-admin"><b>Modo administrador</b><button type="button" class="itx-btn gold sm" data-itx="nuevo">+ Agregar item</button><button type="button" class="itx-btn ghost sm" data-itx="stkAbrir">📦 Stock de items</button><span class="itx-hint">Pasa por una tarjeta y usa ✎ para editar o 🗑 para quitarla. Los cambios se guardan al instante.</span></div>' : "") +
       '<div class="itx-tabs">' + tabs + "</div>" +
       '<div class="itx-shop">' + filt + '<div class="itx-main"><div class="itx-bar"><input id="itx-q" type="search" placeholder="Buscar items…" value="' + esc(filtros.q) + '" autocomplete="off">' +
       '<select id="itx-orden" aria-label="Ordenar">' + [["nuevo", "Más nuevos"], ["menor", "Precio: menor a mayor"], ["mayor", "Precio: mayor a menor"], ["nombre", "Nombre A-Z"]].map((o) => '<option value="' + o[0] + '"' + (filtros.orden === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
@@ -612,7 +612,7 @@
     const btns = agot ? '<button class="itx-btn ghost" type="button" disabled>Agotado</button>'
       : '<button class="itx-btn fucsia" type="button" data-itx="carAdd" data-id="' + esc(it.id) + '">🛒 ' + (carro[it.id] ? "✔ En el carrito (" + carro[it.id] + ") · agregar otro" : "Al carrito") + '</button>' +
         '<button class="itx-btn gold" type="button" data-itx="carAhora" data-id="' + esc(it.id) + '">⚡ Comprar ahora</button>';
-    return miga(it.tipo, it.nombre) + (esAdmin() && adm.form ? '<div class="itx-edit">' + formHtml() + '</div>' : '') +
+    return miga(it.tipo, it.nombre) + 
       '<section class="itx-pg"><h1>' + esc(it.nombre) + (it.activo ? "" : ' <small>(oculto)</small>') + "</h1>" +
       '<div class="itx-pg-grid"><div class="itx-pg-foto" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') +
       '<span class="itx-pg-tag' + (agot ? " off" : "") + '">' + (agot ? "Agotado" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
@@ -977,7 +977,11 @@
       if (r2 && !r2.hidden) { r2.innerHTML = venderHtml(); }
       let m = document.getElementById("itxModal");
       if (!m) { m = document.createElement("div"); m.id = "itxModal"; m.className = "itx"; document.body.appendChild(m); }
-      m.innerHTML = modalHtml(); m.hidden = !modal;
+      const fOn = esAdmin() && !!adm.form, vb = m.querySelector(".itx-pop"), vs = vb ? vb.scrollTop : 0;
+      m.innerHTML = fOn ? '<div class="itx-scrim itx-fscrim" data-itx="cerrarForm"></div><div class="itx-pop" role="dialog" aria-modal="true"><button type="button" class="itx-popx" data-itx="cerrarForm" aria-label="Cerrar">✕</button>' + formHtml() + "</div>" : modalHtml();
+      m.hidden = !(modal || fOn);
+      document.body.classList.toggle("itx-pop-open", fOn);
+      if (fOn && vb) { const nb = m.querySelector(".itx-pop"); if (nb) nb.scrollTop = vs; }
       if (modal && modal.tipo === "stock") pintarStock();
       pintarNav();
       if (r1 && !r1.hidden) pintarGrid();
@@ -1057,6 +1061,7 @@
     ev.preventDefault(); cargarItems(); modal = { tipo: "carrito" }; renderTodo();
   });
   document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && adm.form) { adm.form = null; adm.msg = ""; renderTodo(); return; }
     if (ev.key === "Escape" && modal) { modal = null; renderTodo(); return; }
     if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches && ev.target.matches(".itx-card[data-itx='ver']")) { ev.preventDefault(); ev.target.click(); }
   });
