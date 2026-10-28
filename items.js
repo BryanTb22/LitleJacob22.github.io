@@ -109,7 +109,7 @@
 
   /* ---------- estado ---------- */
   const items = { lista: [], cargado: false, cargando: false, err: "" };
-  const filtros = { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", limite: 24 };
+  const filtros = { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", pag: 0 };
   const ven = { link: "", cargando: false, err: "", lista: null, noTrad: 0, sel: {}, precios: [], pCargado: false, pCargando: false, q: "", f: { tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", min: "", max: "", orden: "mayor" } };
   const adm = { form: null, msg: "", guardando: false, subiendo: false, steamCargando: false, steamInfo: "", itemDel: null, cp: {} };
   const sec = { cargado: false, items: false };   // sección visible para clientes (rayas/estado → secciones.items)
@@ -212,8 +212,21 @@
     if (!items.cargado) return '<div class="itx-empty"><strong>Cargando items…</strong></div>';
     const l = itemsFiltrados();
     if (!l.length) return '<div class="itx-empty"><strong>' + (items.lista.length ? "Ningún item coincide" : "Pronto nuevos items") + "</strong><span>" + (items.lista.length ? "Prueba con otros filtros." : "Estamos subiendo el catálogo.") + "</span></div>";
-    return '<div class="itx-grid">' + l.slice(0, filtros.limite).map(itemCardHtml).join("") + "</div>" +
-      (l.length > filtros.limite ? '<div style="text-align:center;margin-top:18px"><button class="itx-btn ghost" type="button" data-itx="mas">Ver más (' + (l.length - filtros.limite) + ")</button></div>" : "");
+    const porPag = 24, total = Math.ceil(l.length / porPag);
+    if (filtros.pag >= total) filtros.pag = Math.max(0, total - 1);
+    return '<div class="itx-grid">' + l.slice(filtros.pag * porPag, filtros.pag * porPag + porPag).map(itemCardHtml).join("") + "</div>" + paginadorHtml(total, filtros.pag);
+  }
+  /* Botones de página: « 1 … 4 5 6 … 18 » (la actual resaltada). */
+  function paginadorHtml(total, act) {
+    if (total <= 1) return "";
+    const nums = [];
+    for (let i = 0; i < total; i++) if (i === 0 || i === total - 1 || Math.abs(i - act) <= 1) nums.push(i);
+    let h = '<nav class="itx-pager" aria-label="Páginas"><button type="button" class="itx-btn ghost sm" data-itx="pag" data-p="' + (act - 1) + '"' + (act <= 0 ? " disabled" : "") + ' aria-label="Página anterior">‹</button>';
+    nums.forEach((n, k) => {
+      if (k && n - nums[k - 1] > 1) h += '<span class="itx-dots">…</span>';
+      h += '<button type="button" class="itx-btn ' + (n === act ? "gold" : "ghost") + ' sm" data-itx="pag" data-p="' + n + '"' + (n === act ? ' aria-current="page"' : "") + ">" + (n + 1) + "</button>";
+    });
+    return h + '<button type="button" class="itx-btn ghost sm" data-itx="pag" data-p="' + (act + 1) + '"' + (act >= total - 1 ? " disabled" : "") + ' aria-label="Página siguiente">›</button></nav>';
   }
   function pintarGrid() {
     const g = document.getElementById("itxGrid"); if (!g) return;
@@ -618,9 +631,9 @@
     switch (a) {
       case "ver": modal = { tipo: "item", id: t.getAttribute("data-id") }; renderTodo(); break;
       case "cerrarModal": modal = null; renderTodo(); break;
-      case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.limite = 24; renderTodo(); break;
-      case "mas": filtros.limite += 24; pintarGrid(); break;
-      case "reset": Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", limite: 24 }); renderTodo(); break;
+      case "tipo": filtros.tipo = t.getAttribute("data-v") || ""; filtros.pag = 0; renderTodo(); break;
+      case "pag": { filtros.pag = Math.max(0, Number(t.getAttribute("data-p")) || 0); pintarGrid(); const gp = document.getElementById("itxGrid"); if (gp && gp.scrollIntoView) gp.scrollIntoView({ block: "start", behavior: "smooth" }); break; }
+      case "reset": Object.assign(filtros, { q: "", min: "", max: "", tipo: "", heroe: "", ranura: "", rareza: "", calidad: "", orden: "nuevo", pag: 0 }); renderTodo(); break;
       case "cred": comprarConCreditos(t.getAttribute("data-id")); break;
       case "wsp": { const it = itemPorId(t.getAttribute("data-id")); if (it) window.open(waLink(mensajeItem(it)), "_blank", "noopener"); break; }
       case "nuevo": adm.form = nuevoForm(); adm.msg = ""; adm.steamInfo = ""; renderTodo(); irAlForm(); break;
@@ -652,7 +665,7 @@
   function campoEvento(el, tipo) {
     if (!el.id) return false;
     const mapa = { "itx-q": "q", "itx-min": "min", "itx-max": "max", "itx-heroe": "heroe", "itx-ranura": "ranura", "itx-rareza": "rareza", "itx-calidad": "calidad", "itx-orden": "orden" };
-    if (mapa[el.id]) { filtros[mapa[el.id]] = el.value; filtros.limite = 24; pintarGrid(); return true; }
+    if (mapa[el.id]) { filtros[mapa[el.id]] = el.value; filtros.pag = 0; pintarGrid(); return true; }
     if (el.id === "itv-link") { ven.link = el.value; return true; }
     const VF = { "itv-min": "min", "itv-max": "max", "itv-heroe": "heroe", "itv-ranura": "ranura", "itv-rareza": "rareza", "itv-calidad": "calidad", "itv-orden": "orden" };
     if (VF[el.id]) { ven.f[VF[el.id]] = el.value; renderTodo(); return true; }
