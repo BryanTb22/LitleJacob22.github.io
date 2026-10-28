@@ -814,9 +814,9 @@
   function campoEvento(el, tipo) {
     if (!el.id) return false;
     const mapa = { "itx-q": "q", "itx-min": "min", "itx-max": "max", "itx-heroe": "heroe", "itx-ranura": "ranura", "itx-rareza": "rareza", "itx-calidad": "calidad", "itx-orden": "orden" };
-    if (mapa[el.id]) { filtros[mapa[el.id]] = el.value; filtros.pag = 0; pintarGrid(); return true; }
+    if (mapa[el.id]) { if (filtros[mapa[el.id]] === el.value) return true; filtros[mapa[el.id]] = el.value; filtros.pag = 0; pintarGrid(); return true; }
     const SK = { "stk-q": "q", "stk-tipo": "tipo", "stk-heroe": "heroe", "stk-ranura": "ranura", "stk-rareza": "rareza", "stk-calidad": "calidad", "stk-estado": "estado", "stk-orden": "orden" };
-    if (SK[el.id]) { stk[SK[el.id]] = el.value; stk.pag = 0; pintarStock(); return true; }
+    if (SK[el.id]) { if (stk[SK[el.id]] === el.value) return true; stk[SK[el.id]] = el.value; stk.pag = 0; pintarStock(); return true; }
     if (el.getAttribute && el.getAttribute("data-stk-in")) { if (tipo === "change") { const it = itemPorId(el.getAttribute("data-stk-in")); if (it) { stkCambiar(it, el.value); el.value = it.stock; } } return true; }
     if (el.id === "itv-link") { ven.link = el.value; return true; }
     const VF = { "itv-min": "min", "itv-max": "max", "itv-heroe": "heroe", "itv-ranura": "ranura", "itv-rareza": "rareza", "itv-calidad": "calidad", "itv-orden": "orden" };
