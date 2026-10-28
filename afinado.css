@@ -1,0 +1,100 @@
+/* =====================================================================
+   AFINADO de "Comprar items" y "Vender items" (opcional, archivo aparte).
+   Todo va bajo  html.af : si esa clase no está, nada de esto se aplica.
+   Mismos colores de siempre (dorado y rojo oscuro de LitleJacob).
+   ===================================================================== */
+html.af .itx { --af-borde: rgba(245, 208, 97, .2); --af-cristal: rgba(28, 10, 10, .66); --af-glow: rgba(212, 175, 55, .35); --af-ui: 'Inter', system-ui, sans-serif; --af-num: 'Rajdhani', 'Oswald', 'Inter', sans-serif; }
+
+/* ---------- Íconos ---------- */
+html.af .af-i { display: inline-flex; width: 1.15em; height: 1.15em; vertical-align: -.2em; flex: none; }
+html.af .af-i svg { width: 100%; height: 100%; }
+html.af .nav-link .af-i { width: 1.05em; height: 1.05em; margin-right: 2px; }
+html.af .itx-btn .af-i { width: 1.2em; height: 1.2em; vertical-align: -.22em; }
+html.af .af-badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; font: 800 11.5px/1 'Inter', sans-serif; letter-spacing: 0; background: linear-gradient(180deg, #ff4fa6, #c4126b); color: #fff; box-shadow: 0 0 12px rgba(255, 45, 143, .55); }
+
+/* ---------- Tipografía: Cinzel solo para títulos; el resto en una sola familia ---------- */
+html.af .itx-btn, html.af .itx-tab, html.af .itx-buy { font-family: var(--af-ui, 'Inter', sans-serif); font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+html.af .itx-btn { font-size: 13px; border-radius: 999px; }
+html.af .itx-btn.sm { font-size: 12px; }
+html.af .itx-tab { font-size: 13px; border-radius: 999px; padding: 9px 16px; transition: all .2s; }
+html.af .itx-tab.on { background: linear-gradient(180deg, #f3d36b, #d4af37); box-shadow: 0 4px 18px rgba(212, 175, 55, .4); }
+html.af .itx-price b, html.af .itx-pg-precio .pp-top b, html.af .ofr-p b { font-family: var(--af-num, 'Rajdhani', sans-serif); font-weight: 700; letter-spacing: .02em; color: var(--itx-gold-l); }
+html.af .itx-price b { font-size: 27px; line-height: 1; white-space: nowrap; }
+html.af .itx-pg-precio .pp-top b { font-size: 46px; line-height: 1; }
+html.af .ofr-p b { font-size: 24px; line-height: 1; }
+html.af .itx-body h4 { font-weight: 700; font-size: 15px; line-height: 1.3; }
+html.af .ofr-top h3, html.af .ofr h3 { font-family: var(--af-ui, 'Inter', sans-serif); font-size: 17px; font-weight: 800; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
+html.af .ofr h3 .af-i { color: var(--itx-gold); }
+html.af .itx .field label, html.af .itx-filt .ff label { font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+
+/* ---------- Barra de navegación ---------- */
+html.af .nav-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 999px; letter-spacing: .09em; text-transform: uppercase; font-size: 12.5px; }
+html.af .nav-links { border-radius: 999px; }
+
+/* ---------- Tarjetas de items ---------- */
+html.af .itx-card { border-radius: 20px; border-color: var(--af-borde); background: linear-gradient(180deg, rgba(42, 16, 16, .78), rgba(20, 8, 8, .82)); backdrop-filter: blur(8px); transition: transform .25s cubic-bezier(.2, .8, .2, 1), border-color .2s, box-shadow .25s; }
+html.af .itx-card:hover, html.af .itx-card:focus-visible { transform: translateY(-6px); border-color: rgba(245, 208, 97, .7); box-shadow: 0 18px 38px rgba(0, 0, 0, .5), 0 0 26px rgba(212, 175, 55, .2); }
+html.af .itx-card .itx-thumb { border-bottom: 0; position: relative; }
+html.af .itx-card .itx-thumb::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--rar, var(--itx-gold)), transparent); box-shadow: 0 0 16px var(--rar, transparent); }
+html.af .itx-body { padding: 14px 16px 16px; gap: 10px; }
+html.af .itx-meta { gap: 6px; font-size: 10.5px; }
+html.af .itx-card .itx-meta { height: auto; min-height: 52px; overflow: visible; }
+html.af .itx-meta span { padding: 3px 9px; border-radius: 999px; background: rgba(255, 255, 255, .07); letter-spacing: .06em; text-transform: uppercase; line-height: 1.2; color: #e2d4b4; }
+html.af .itx-meta span:first-child { background: color-mix(in srgb, currentColor 14%, transparent); border: 1px solid color-mix(in srgb, currentColor 45%, transparent); }
+html.af .itx-meta .gem { color: #9ee8ff; background: rgba(120, 220, 255, .1); }
+html.af .itx-buy { background: linear-gradient(180deg, #f3d36b, #d4af37); padding: 8px 16px; border-radius: 999px; box-shadow: 0 4px 14px rgba(212, 175, 55, .3); }
+html.af .itx-card:hover .itx-buy { box-shadow: 0 6px 20px rgba(212, 175, 55, .55); }
+html.af .itx-steam { border-top: 1px solid rgba(255, 224, 138, .1); font-size: 12px; }
+html.af .itx-steam-go { border-radius: 999px; background: rgba(255, 255, 255, .05); }
+html.af .itx-tag { top: 10px; right: 10px; background: rgba(10, 4, 4, .75); backdrop-filter: blur(6px); border-color: var(--af-borde); letter-spacing: .04em; }
+html.af .itx-tag.agotado { left: 10px; bottom: 12px; background: rgba(122, 16, 32, .88); }
+html.af .itx-tag.oc { left: 10px; bottom: 12px; color: var(--itx-gold-l); }
+html.af .itx-card.agot { opacity: .55; filter: saturate(.6); }
+html.af .itx-admb { top: 10px; left: 10px; gap: 6px; }
+html.af .itx-admb .itx-btn { width: 32px; height: 32px; min-height: 0; padding: 0; border-radius: 50%; background: rgba(10, 4, 4, .8); backdrop-filter: blur(8px); border-color: var(--af-borde); }
+html.af .itx-admb .itx-btn:hover { background: var(--itx-gold); color: #1a1205; }
+html.af .itx-admb .itx-btn .af-i { width: 15px; height: 15px; }
+html.af .itx-admb .itx-btn.del { width: auto; padding: 0 12px; }
+
+/* ---------- Panel de administrador: barra compacta ---------- */
+html.af .itx-admin { gap: 8px 10px; padding: 8px 14px; border-radius: 16px; border-color: var(--af-borde); background: rgba(255, 255, 255, .035); }
+html.af .itx-admin > b { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--itx-gold-l); }
+html.af .itx-admin .itx-hint { flex: 1 1 100%; font-size: 12px; opacity: .75; order: 9; }
+@media (min-width: 1000px) { html.af .itx-admin .itx-hint { flex: 1 1 280px; order: 0; } }
+
+/* ---------- Filtros, pestañas y buscador ---------- */
+html.af .itx-tabs { border-radius: 999px; padding: 8px 10px; border-color: var(--af-borde); background: var(--af-cristal); backdrop-filter: blur(10px); }
+html.af .itx-filt { border-radius: 20px; padding: 6px 18px 18px; border-color: var(--af-borde); background: var(--af-cristal); backdrop-filter: blur(10px); }
+html.af .itx-filt summary { font-family: var(--af-ui, 'Inter', sans-serif); font-weight: 800; letter-spacing: .16em; font-size: 13px; }
+html.af .itx-filt input, html.af .itx-filt select, html.af .itx-bar input, html.af .itx-bar select { height: 44px; border-radius: 14px; }
+html.af .itx-bar input { padding-left: 16px; }
+
+/* ---------- Ruta de navegación ---------- */
+html.af .crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; letter-spacing: .04em; margin-bottom: 14px; }
+html.af .crumb a { color: var(--itx-muted); text-decoration: none; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .05); }
+html.af .crumb a:hover { color: var(--itx-gold-l); background: rgba(212, 175, 55, .12); }
+html.af .crumb > span:not(:last-child) { opacity: .5; }
+html.af .crumb > span:last-child { color: var(--itx-gold-l); font-weight: 700; }
+
+/* ---------- Página de un item y ofertas ---------- */
+html.af .itx-pg h1 { letter-spacing: .03em; }
+html.af .itx-pg-foto { border-radius: 24px; border-color: var(--af-borde); }
+html.af .itx-pg-attrs > div { padding: 12px 8px; font-size: 15px; border-bottom: 1px solid rgba(255, 224, 138, .1); }
+html.af .itx-pg-attrs dt { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; align-self: center; }
+html.af .itx-pg-attrs dd { font-weight: 700; }
+html.af .itx-pg-precio { border-radius: 22px; border-left-width: 1px; box-shadow: 0 0 34px rgba(212, 175, 55, .12); }
+html.af .itx-pg-tag { border-radius: 999px; }
+html.af .ofr-t { border-radius: 20px; overflow: hidden; border-color: var(--af-borde); }
+html.af .ofr-h { font-family: var(--af-ui, 'Inter', sans-serif); font-weight: 800; font-size: 11px; letter-spacing: .14em; padding: 12px 18px; }
+html.af .ofr-r { padding: 14px 18px; border-top: 1px solid rgba(255, 224, 138, .08); transition: background .2s; }
+html.af .ofr-r:hover { background: rgba(212, 175, 55, .07); }
+html.af .ofr-f input { height: 42px; border-radius: 14px; }
+html.af .pp-btns .itx-btn { white-space: normal; text-align: center; line-height: 1.25; }
+
+/* ---------- Ventanas (carrito, editor, stock) ---------- */
+html.af .itx-pop { border-radius: 22px; border-color: var(--af-borde); backdrop-filter: blur(18px); }
+html.af .itx-scrim { backdrop-filter: blur(4px); }
+html.af .itx-dialog { border-radius: 22px; }
+
+/* ---------- Items relacionados ---------- */
+html.af .rel-f { border-color: var(--af-borde); }

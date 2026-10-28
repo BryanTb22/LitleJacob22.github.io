@@ -2,7 +2,7 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="lj-build" content="2026-10-27-rutas-niveles">
+    <meta name="lj-build" content="2026-10-27-afinado">
     <title>LitleJacob Store · Sets Míticos de Dota 2 | Precios en soles</title>
     <meta name="description" content="Sets Míticos e Inmortales de Dota 2 con precios en soles. Arma tu carrito y pide por WhatsApp. Pagas con Yape, Plin, PayPal o Binance.">
     <meta name="theme-color" content="#0b0505">
@@ -2914,6 +2914,20 @@ html.ljc-lock { overflow: hidden; }
     <script src="cuenta.js?v=5" defer=""></script>
     <script src="recarga.js?v=5" defer=""></script>
     <link rel="stylesheet" href="items.css?v=16">
+    <script>
+    /* Interruptor del AFINADO de Comprar/Vender items. Encendido por defecto.
+       Para volver al diseño anterior:  litlejacob.trade/?tema=clasico  (se recuerda en este navegador).  Para el afinado otra vez:  ?tema=nuevo */
+    (function () {
+        try {
+            var q = (location.search.match(/[?&]tema=([a-z]+)/) || [])[1];
+            if (q === "clasico") localStorage.setItem("lj_tema", "clasico"); else if (q === "nuevo") localStorage.removeItem("lj_tema");
+            if (localStorage.getItem("lj_tema") === "clasico") return;
+        } catch (e) { /* sin almacenamiento: se queda el afinado */ }
+        document.documentElement.className += " af";
+        var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "afinado.css?v=1"; document.head.appendChild(l);
+        document.addEventListener("DOMContentLoaded", function () { var s = document.createElement("script"); s.src = "afinado.js?v=1"; document.body.appendChild(s); });
+    })();
+    </script>
     <script src="items.js?v=21" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
