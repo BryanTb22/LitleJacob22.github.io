@@ -328,9 +328,9 @@
     const l = items.lista.filter((x) => x.id !== it.id && sinTildes(x.nombre) !== sinTildes(it.nombre) && x.stock > 0 && (x.activo || esAdmin()));
     const mismo = l.filter((x) => it.heroe && x.heroe === it.heroe), tipo = l.filter((x) => x.tipo === it.tipo && (!it.heroe || x.heroe !== it.heroe));
     const vistos = {}, out = [];
-    mismo.concat(tipo).forEach((x) => { const k = sinTildes(x.nombre); if (!vistos[k] && out.length < 6) { vistos[k] = 1; out.push(x); } });
+    mismo.concat(tipo).forEach((x) => { const k = sinTildes(x.nombre); if (!vistos[k] && out.length < 14) { vistos[k] = 1; out.push(x); } });
     if (!out.length) return "";
-    return '<div class="ofr"><div class="ofr-top"><h3>✨ También te puede interesar</h3></div><div class="itx-grid">' + out.map(itemCardHtml).join("") + "</div></div>";
+    return '<div class="ofr"><div class="ofr-top"><h3>✨ También te puede interesar</h3><div class="rel-flechas"><button type="button" class="rel-f" data-itx="relMov" data-d="-1" aria-label="Anterior">←</button><button type="button" class="rel-f" data-itx="relMov" data-d="1" aria-label="Siguiente">→</button></div></div><div class="rel-fila">' + out.map(itemCardHtml).join("") + "</div></div>";
   }
   function comprarHtml() {
     if (!visible()) return cabecera("Catálogo", "Comprar", "items", "Esta sección estará disponible pronto.");
@@ -1076,6 +1076,7 @@
       case "wsp": { const it = itemPorId(t.getAttribute("data-id")); if (it) window.open(waLink(mensajeItem(it)), "_blank", "noopener"); break; }
       case "nuevo": adm.form = nuevoForm(); adm.msg = ""; adm.steamInfo = ""; renderTodo(); irAlForm(); break;
       case "editar": { const ie = itemPorId(t.getAttribute("data-id")); if (ie) { const sep = t.getAttribute("data-u") === "1" && ie.stock > 1; adm.form = Object.assign({}, ie, { precio: String(ie.precio), stock: sep ? "1" : String(ie.stock), estilos: String(ie.estilos || 0), estOk: ie.estOk || (ie.estilos ? "1" : ""), link: "" }, sep ? { id: "", creado: "", desdeId: ie.id } : {}); adm.msg = sep ? "Estás editando solo esta unidad: se guarda aparte con su propio precio y gemas, y las demás unidades no cambian." : ""; adm.steamInfo = ""; renderTodo(); irAlForm(); } break; }
+      case "relMov": { const rf = t.closest(".ofr").querySelector(".rel-fila"); if (rf) rf.scrollBy({ left: Number(t.getAttribute("data-d")) * Math.max(220, rf.clientWidth * 0.8), behavior: "smooth" }); break; }
       case "cerrarForm": adm.form = null; adm.msg = ""; renderTodo(); break;
       case "guardar": guardarItem(); break;
       case "steam": rellenarDesdeSteam(); break;
