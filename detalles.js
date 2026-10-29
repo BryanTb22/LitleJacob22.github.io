@@ -22,15 +22,21 @@
       el.classList.add("lj-rev"); io.observe(el);
     });
   }
-  /* pie */
+  /* pie: el mismo de Rayas Store (logo + WhatsApp, enlaces de secciones y aviso de Valve), en todas las vistas de la tienda */
   function pie() {
-    var host = document.getElementById("view-home") ? document.querySelector("#view-home footer") : null;
-    var esRifas = document.documentElement.classList.contains("lj-rifas");
     if (document.getElementById("ljPie")) return;
-    var d = document.createElement("div"); d.id = "ljPie"; d.className = "lj-pie";
-    d.innerHTML = '<nav aria-label="Pie"><a href="index.html#inicio">Inicio</a><a href="index.html#sets-cache">Sets Caché</a><a href="rifas.html">Rifas</a><a href="https://wa.me/51952997030" target="_blank" rel="noopener noreferrer">WhatsApp</a></nav><small>© LitleJacob Store · Tienda de Dota 2 · Todos los precios en soles (S/)</small>';
-    if (esRifas) { var a = document.getElementById("app"); if (a) a.appendChild(d); }
-    else if (host) host.insertAdjacentElement("afterend", d);
+    if (document.documentElement.classList.contains("lj-rifas")) return;   // Rifas pinta su propio pie (rifas.js), con el mismo diseño
+    var vistas = document.querySelectorAll(".view"); if (!vistas.length) return;
+    var ult = vistas[vistas.length - 1];
+    var d = document.createElement("footer"); d.id = "ljPie"; d.className = "lj-pie2";
+    d.innerHTML = '<div class="lj-pie2-top"><a class="lj-pie2-logo" href="index.html#inicio"><img src="favicon.png" alt="" width="36" height="36" loading="lazy"><span>Litlejacob <i>Store</i></span></a>' +
+      '<span class="lj-pie2-wa">WhatsApp: LitleJacob <b>+51 952 997 030</b> · Rayas <b>+51 900 049 694</b></span></div>' +
+      '<nav class="lj-pie2-nav" aria-label="Enlaces rápidos"><a href="index.html#inicio">Inicio</a><a href="index.html#sets-cache">Sets Caché</a><a href="index.html#compro">Compro</a>' +
+      '<a href="index.html#items" data-itx-nav="" data-itx-label="Comprar items" hidden>Comprar items</a><a href="index.html#vender" data-itx-nav="" data-itx-label="Vender items" hidden>Vender items</a>' +
+      '<a href="rifas.html" class="nav-link-rifas">Rifas</a></nav>' +
+      '<small>No afiliado a Valve. Dota 2 es una marca de Valve Corporation.</small>';
+    ult.insertAdjacentElement("afterend", d);
+    try { window.dispatchEvent(new Event("lj-cfg")); } catch (e) { /* nada */ }   // items.js muestra u oculta Comprar/Vender según la configuración
   }
   /* aviso corto reutilizable */
   var tt;

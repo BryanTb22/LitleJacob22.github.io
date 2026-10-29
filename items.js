@@ -864,7 +864,7 @@
     carro[id] = Math.min(it.stock, (Number(carro[id]) || 0) + 1); carroGuardar(); return true;
   }
   function pasosHtml(n) {
-    return '<ol class="cpasos" aria-label="Pasos de la compra">' + ["Carrito", "Pago", "Listo"].map((t, i) => '<li class="' + (i + 1 < n ? "hecho" : i + 1 === n ? "act" : "") + '"><i>' + (i + 1 < n ? "✔" : i + 1) + "</i>" + t + "</li>").join("") + "</ol>";
+    return '<ol class="cpasos" aria-label="Pasos de la compra">' + ["Elegir", "Pagar", "Listo"].map((t, i) => '<li class="' + (i + 1 < n ? "hecho" : i + 1 === n ? "act" : "") + '"><i>' + (i + 1 < n ? "✔" : i + 1) + "</i>" + t + "</li>").join("") + "</ol>";
   }
   function carroModal() {
     const cerrar = '<button class="itx-btn ghost sm" type="button" data-itx="cerrarModal">Cerrar</button>';
@@ -872,7 +872,7 @@
     const l = carroLineas(), T = carroTotales(), p = perfil();
     if (!l.length) return { h: "<h3>Tu carrito 🛒</h3><p class='itx-hint'>Está vacío. Elige items del catálogo y pulsa <b>Al carrito</b>.</p>", btns: cerrar };
     const falta = p ? Math.max(0, Math.round((T.cred - p.creditos) * 100) / 100) : 0, nUni = l.reduce((a, x) => a + x.qty, 0);
-    const h = "<h3>Tu carrito 🛒</h3>" + pasosHtml(1) + "<div class=\"carl\">" + l.map((x) =>
+    const h = pasosHtml(1) + "<h3>Tu carrito 🛒</h3>" + "<div class=\"carl\">" + l.map((x) =>
       '<div class="carr"><div class="carr-t">' + (x.it.img ? imgTag(x.it.img, "", ' width="48" height="48"') : '<span class="sinfoto">—</span>') + "<span><b>" + esc(x.it.nombre) + "</b><small>" + fmtPrecio(x.it.precio) + " c/u</small></span></div>" +
       '<div class="carr-q"><button type="button" class="itx-btn ghost sm" data-itx="carMenos" data-id="' + esc(x.it.id) + '" aria-label="Menos">−</button><span>' + x.qty + "</span>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="carMas" data-id="' + esc(x.it.id) + '" aria-label="Más"' + (x.qty >= x.it.stock ? " disabled" : "") + '>+</button>' +
@@ -925,10 +925,10 @@
           '<button class="itx-btn gold" type="button" data-itx="wsp" data-id="' + esc(it.id) + '">💬 Comprar por WhatsApp</button>') + cerrar;
       }
     } else if (modal.tipo === "carrito") { const mc = carroModal(); h = mc.h; btns = mc.btns; }
-    else if (modal.tipo === "cargando") { h = "<h3>Procesando…</h3>" + pasosHtml(2) + "<p class='itx-hint'>Un momento por favor.</p>"; }
+    else if (modal.tipo === "cargando") { h = pasosHtml(2) + "<h3>Procesando…</h3>" + "<p class='itx-hint'>Un momento por favor.</p>"; }
     else if (modal.tipo === "error") { h = "<h3>No se pudo completar</h3><p class='itx-hint'>" + esc(modal.msg) + "</p>"; btns = cerrar; }
     else if (modal.tipo === "ok") {
-      h = "<h3>¡Compra lista! 🎉</h3>" + pasosHtml(4) + "<p class='itx-hint'>Compraste <b>" + esc(modal.nombre) + "</b>. Pedido <b>" + esc(modal.code) + "</b>. Te quedan <b>" + fmtPrecio(modal.saldo) + "</b>. Te escribiremos para entregártelo por Steam; asegúrate de tener tu link de intercambio en tu cuenta.</p>";
+      h = pasosHtml(3) + "<h3>¡Compra lista! 🎉</h3>" + "<p class='itx-hint'>Compraste <b>" + esc(modal.nombre) + "</b>. Pedido <b>" + esc(modal.code) + "</b>. Te quedan <b>" + fmtPrecio(modal.saldo) + "</b>. Te escribiremos para entregártelo por Steam; asegúrate de tener tu link de intercambio en tu cuenta.</p>";
       btns = cerrar;
     }
     return '<div class="itx-scrim" data-itx="cerrarModal"></div><div class="itx-dialog" role="dialog" aria-modal="true">' + h + '<div class="itx-dbtns">' + btns + "</div></div>";
@@ -1163,6 +1163,8 @@
       a.textContent = sin + (!sec.items && esAdmin() ? " 🔒" : "");
     });
     document.querySelectorAll(".nav-link-rifas").forEach((a) => { a.hidden = !(esAdmin() || sec.rifas); a.textContent = "Rifas" + (!sec.rifas && esAdmin() ? " 🔒" : ""); });
+    // Tarjetas de "¿Qué buscas?" en el Inicio: siguen la misma configuración que el menú.
+    document.querySelectorAll("[data-lj-card]").forEach((c) => { c.hidden = c.getAttribute("data-lj-card") === "rifas" ? !(esAdmin() || sec.rifas) : !on; });
     document.querySelectorAll("[data-itx-cart]").forEach((a) => { a.hidden = !on; a.textContent = "🛒 Carrito" + (carroN() ? " (" + carroN() + ")" : ""); });
   }
 
