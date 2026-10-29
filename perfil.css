@@ -1,0 +1,116 @@
+/* Perfil del cliente de LitleJacob Store (tienda + rifas): Información personal · Transacciones · Seguridad
+   Tema plata / rojo / negro. Todo va bajo #ljPerfil para no depender de los estilos de cada página. */
+html.ljc-lock { overflow: hidden; }
+#ljPerfil { position: fixed; inset: 0; z-index: 130; }
+#ljPerfil[hidden] { display: none; }
+#ljPerfil .ljc-back { position: absolute; inset: 0; background: rgba(0, 0, 0, .78); opacity: 0; transition: opacity .2s; }
+#ljPerfil.open .ljc-back { opacity: 1; }
+#ljPerfil .pf-pag { position: absolute; top: 0; bottom: 0; left: 50%; width: min(100%, 1120px); display: flex; flex-direction: column; background: #131316; color: #e6e8eb;
+  border-left: 1px solid #3d3f45; border-right: 1px solid #3d3f45; box-shadow: 0 0 60px rgba(0, 0, 0, .7); font-family: Inter, system-ui, sans-serif;
+  transform: translateX(-50%) translateY(18px); opacity: 0; transition: transform .22s, opacity .22s; }
+#ljPerfil.open .pf-pag { transform: translateX(-50%); opacity: 1; }
+
+#ljPerfil .pf-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; padding: 18px 28px; background: #131316; border-bottom: 1px solid #3d3f45; }
+#ljPerfil .pf-tit { display: grid; gap: 4px; margin-right: auto; }
+#ljPerfil .pf-mig { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #8b9097; }
+#ljPerfil .pf-mig a { color: #8b9097; text-decoration: none; }
+#ljPerfil .pf-mig a:hover { color: #ff6b73; }
+#ljPerfil .pf-head h2 { margin: 0; font-family: "Oswald", Impact, sans-serif; font-weight: 700; font-size: 36px; line-height: 1; text-transform: uppercase; letter-spacing: .03em; color: #fff; }
+#ljPerfil .pf-saldo { display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 16px; border: 1px solid #3d3f45; border-radius: 999px; background: #1b1b1f; }
+#ljPerfil .pf-saldo span { display: grid; line-height: 1.05; }
+#ljPerfil .pf-saldo small { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #8b9097; }
+#ljPerfil .pf-saldo b { font-family: "Oswald", Impact, sans-serif; font-size: 26px; font-weight: 600; background: linear-gradient(180deg, #f4f5f7, #c4c8ce 55%, #8b9097); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#ljPerfil .pf-body { flex: 1; overflow-y: auto; padding: 22px 28px 40px; display: grid; gap: 18px; align-content: start; grid-auto-rows: max-content; }
+
+/* botones, campos y mensajes (mismos que el panel de cuenta de la tienda) */
+#ljPerfil .ljc-btn { display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; font: 800 13px Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; padding: 13px 24px; border-radius: 999px; }
+#ljPerfil .ljc-btn:hover { filter: brightness(1.12); }
+#ljPerfil .ljc-btn.red { background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16); color: #fff; }
+#ljPerfil .ljc-btn.silver { background: linear-gradient(180deg, #eef0f3, #c4c8ce 55%, #8b9097); color: #0b0b0d; }
+#ljPerfil .ljc-btn.ghost { background: #1b1b1f; color: #eef0f3; box-shadow: inset 0 0 0 1px #3d3f45; }
+#ljPerfil .ljc-btn.sm { padding: 9px 16px; font-size: 11.5px; }
+#ljPerfil .ljc-field { display: grid; gap: 6px; }
+#ljPerfil .ljc-field label { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #c4c8ce; }
+#ljPerfil .ljc-field input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #3d3f45; background: #0c0c0e; color: #fff; font-size: 15px; }
+#ljPerfil .ljc-field input:focus { outline: none; border-color: #c4c8ce; box-shadow: 0 0 0 2px rgba(196, 200, 206, .15); }
+#ljPerfil .ljc-field input:disabled { opacity: .6; }
+#ljPerfil .ljc-hint { margin: 0; font-size: 12.5px; color: #8b9097; line-height: 1.45; }
+#ljPerfil .ljc-hint b { color: #c4c8ce; } #ljPerfil .ljc-hint a { color: #ff6b73; }
+#ljPerfil .ljc-hint.warn { color: #ffb4b8; }
+#ljPerfil .ljc-msg { margin: 0; min-height: 1.2em; font-size: 13px; color: #c4c8ce; }
+#ljPerfil .ljc-msg.err { color: #ff6b73; } #ljPerfil .ljc-msg.ok { color: #6fd08c; }
+
+/* pestañas */
+#ljPerfil .pf-tabs { display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; background: #18181c; border: 1px solid #2f3136; }
+#ljPerfil .pf-tab { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px 10px; background: transparent; border: 0; border-right: 1px solid #2f3136; color: #8b9097; cursor: pointer; font: inherit; transition: background .15s, color .15s; }
+#ljPerfil .pf-tab:last-child { border-right: 0; }
+#ljPerfil .pf-tab b { font-family: "Oswald", Impact, sans-serif; font-weight: 500; font-size: 16px; letter-spacing: .06em; text-transform: uppercase; }
+#ljPerfil .pf-tab:hover { color: #fff; background: rgba(255, 255, 255, .05); }
+#ljPerfil .pf-tab[aria-selected="true"] { color: #fff; background: linear-gradient(180deg, rgba(200, 22, 31, .28), rgba(200, 22, 31, .08)); box-shadow: inset 0 -3px 0 #c8161f; }
+
+#ljPerfil .pf-panel { display: grid; gap: 18px; align-content: start; }
+#ljPerfil .pf-h { margin: 0; font-family: "Oswald", Impact, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.1; text-transform: none; letter-spacing: .01em; color: #fff; }
+#ljPerfil .pf-tools { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+#ljPerfil .pf-filtros { display: flex; gap: 10px; flex-wrap: wrap; flex: 1 1 420px; justify-content: flex-end; }
+#ljPerfil .pf-filtros select, #ljPerfil .pf-filtros input { height: 46px; padding: 0 14px; border-radius: 8px; background: #0c0c0e; border: 1px solid #3d3f45; color: #e6e8eb; font: inherit; min-width: 0; }
+#ljPerfil .pf-filtros select { flex: 0 1 240px; } #ljPerfil .pf-filtros input { flex: 1 1 280px; }
+#ljPerfil .pf-filtros select:focus, #ljPerfil .pf-filtros input:focus { outline: none; border-color: #c4c8ce; }
+
+/* tabla de transacciones */
+#ljPerfil .pf-tabla { display: grid; }
+#ljPerfil .pf-th, #ljPerfil .pf-row { display: grid; grid-template-columns: minmax(200px, 2.1fr) 1.1fr 1.5fr 1.2fr 1fr 1.3fr; align-items: center; gap: 12px; padding: 0 16px; }
+#ljPerfil .pf-th { min-height: 44px; background: #1f2024; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #8b9097; }
+#ljPerfil .pf-tx { border-bottom: 1px solid #2a2b30; } #ljPerfil .pf-tx[hidden] { display: none; }
+#ljPerfil .pf-tx.open { background: rgba(255, 255, 255, .03); border-bottom-color: transparent; margin-bottom: 4px; }
+#ljPerfil .pf-row { width: 100%; min-height: 72px; background: transparent; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+#ljPerfil .pf-row:hover { background: rgba(255, 255, 255, .04); }
+#ljPerfil .c-tipo { display: grid; gap: 4px; min-width: 0; }
+#ljPerfil .c-tipo b { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; color: #fff; }
+#ljPerfil .c-tipo small { color: #8b9097; font-size: 14px; }
+#ljPerfil .pf-fl { font-style: normal; font-size: 14px; opacity: .7; transition: transform .2s; }
+#ljPerfil .pf-tx.open .pf-fl { transform: rotate(180deg); }
+#ljPerfil .c-id { font-weight: 700; letter-spacing: .02em; overflow-wrap: anywhere; color: #fff; }
+#ljPerfil .c-est, #ljPerfil .pf-dr [data-l="Estado"] { display: flex; align-items: center; gap: 8px; }
+#ljPerfil .pf-dot { width: 8px; height: 8px; border-radius: 50%; background: #8b9097; flex: none; }
+#ljPerfil .pf-dot.est-pagado, #ljPerfil .pf-dot.est-curso { background: #ffc93c; }
+#ljPerfil .pf-dot.est-entregado { background: #38d98a; } #ljPerfil .pf-dot.est-cancelado { background: #ff6b6b; }
+#ljPerfil .c-imp { font-weight: 800; font-size: 16px; color: #fff; }
+#ljPerfil .r { text-align: right; justify-self: end; }
+#ljPerfil .c-sal.neg { color: #ff6b73; font-weight: 700; }
+
+/* detalle desplegado */
+#ljPerfil .pf-det { display: none; margin: 0 8px 10px; background: rgba(0, 0, 0, .3); overflow: hidden; }
+#ljPerfil .pf-tx.open .pf-det { display: block; }
+#ljPerfil .pf-dh, #ljPerfil .pf-dr { display: grid; grid-template-columns: minmax(220px, 2.6fr) 1fr 1.4fr 1.3fr 1.2fr; align-items: center; gap: 12px; padding: 0 16px; }
+#ljPerfil .pf-dh { min-height: 38px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #8b9097; border-bottom: 1px solid #2a2b30; }
+#ljPerfil .pf-dr { min-height: 82px; } #ljPerfil .pf-dr + .pf-dr { border-top: 1px solid rgba(255, 255, 255, .06); }
+#ljPerfil .pf-it { display: flex; align-items: center; gap: 14px; min-width: 0; }
+#ljPerfil .pf-it b { font-weight: 600; font-size: 15px; line-height: 1.3; color: #fff; }
+#ljPerfil .pf-foto { width: 90px; aspect-ratio: 3 / 2; flex: none; overflow: hidden; background: #1b1b1f; display: grid; place-items: center; }
+#ljPerfil .pf-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#ljPerfil .pf-foto i { font-style: normal; font-size: 26px; opacity: .6; }
+#ljPerfil .pf-pie { padding: 10px 16px 14px; font-size: 13px; color: #8b9097; border-top: 1px solid rgba(255, 255, 255, .06); }
+#ljPerfil .pf-vacio, #ljPerfil .pf-nada { padding: 34px 16px; text-align: center; color: #8b9097; border: 1px dashed #3d3f45; margin: 0; }
+
+/* formularios */
+#ljPerfil .pf-form, #ljPerfil .pf-bloque { display: grid; gap: 14px; max-width: 760px; }
+#ljPerfil .pf-bloque { padding-bottom: 18px; border-bottom: 1px solid #2f3136; }
+#ljPerfil .pf-bloque > h3 { margin: 0; font-family: "Oswald", Impact, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.1; text-transform: none; letter-spacing: .01em; color: #fff; }
+#ljPerfil .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+#ljPerfil .pf-ancho { grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+  #ljPerfil .pf-head { padding: 14px 16px; } #ljPerfil .pf-head h2 { font-size: 28px; }
+  #ljPerfil .pf-body { padding: 16px 14px 36px; }
+  #ljPerfil .pf-tab { flex-direction: column; gap: 4px; padding: 12px 4px; } #ljPerfil .pf-tab b { font-size: 12px; text-align: center; line-height: 1.2; }
+  #ljPerfil .pf-h, #ljPerfil .pf-bloque > h3 { font-size: 28px; }
+  #ljPerfil .pf-filtros { justify-content: stretch; flex-basis: 100%; } #ljPerfil .pf-filtros select, #ljPerfil .pf-filtros input { flex: 1 1 100%; }
+  #ljPerfil .pf-th, #ljPerfil .pf-dh { display: none; }
+  #ljPerfil .pf-row { grid-template-columns: 1fr auto; grid-template-areas: "tipo imp" "est sal" "id id"; padding: 12px; row-gap: 6px; min-height: 0; }
+  #ljPerfil .c-tipo { grid-area: tipo; } #ljPerfil .c-imp { grid-area: imp; justify-self: end; } #ljPerfil .c-est { grid-area: est; } #ljPerfil .c-sal { grid-area: sal; }
+  #ljPerfil .c-id { grid-area: id; font-size: 13px; color: #8b9097; } #ljPerfil .c-pago { display: none; } #ljPerfil .c-id::before { content: "ID: "; }
+  #ljPerfil .pf-dr { grid-template-columns: 1fr 1fr; padding: 12px; row-gap: 8px; } #ljPerfil .pf-dr .pf-it { grid-column: 1 / -1; }
+  #ljPerfil .pf-dr > span[data-l]::before { content: attr(data-l) ": "; color: #8b9097; font-size: 12px; }
+  #ljPerfil .pf-dr > .r { justify-self: start; text-align: left; }
+  #ljPerfil .pf-grid { grid-template-columns: 1fr; }
+}

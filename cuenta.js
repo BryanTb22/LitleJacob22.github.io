@@ -210,7 +210,7 @@
         vs.entrar().then(function () { st.msg = ""; st.modo = "perfil"; return cargarPerfil(); })
           .catch(function (er) { st.modo = "login"; st.msg = "No se pudo entrar con Steam (" + ((er && er.message) || "error") + ")."; st.tipo = "err"; pintar(); });
       } else if (vs.tipo === "vinculado") {
-        st.msg = vs.msg; st.tipo = "ok"; st.modo = "perfil"; abrir("perfil"); cargarPerfil().then(function () { st.msg = vs.msg; st.tipo = "ok"; pintar(); });
+        st.msg = vs.msg; st.tipo = "ok"; st.modo = "perfil"; abrir("perfil", "seg"); cargarPerfil().then(function () { st.msg = vs.msg; st.tipo = "ok"; pintar(); });
       } else { st.msg = vs.msg; st.tipo = "err"; st.modo = "login"; abrir("login"); }
     } else if (leerSesion()) cargarPerfil();
     // Permite abrir la cuenta con #cuenta en la dirección
@@ -251,8 +251,8 @@
     var b = e.target.closest("[data-m]"); if (!b) return;
     var m = b.getAttribute("data-m"); cerrarMenu();
     if (m === "recargar") { if (window.ljRecarga) window.ljRecarga.abrir(); }
-    else if (m === "perfil") abrir("perfil");
-    else if (m === "movs") { abrir("perfil"); setTimeout(function () { var x = raiz && raiz.querySelector(".ljc-movs"); if (x && x.scrollIntoView) x.scrollIntoView({ block: "start", behavior: "smooth" }); }, 280); }
+    else if (m === "perfil") abrir("perfil", "info");
+    else if (m === "movs") abrir("perfil", "trans");
     else if (m === "salir") window.ljCuenta.salir();
   }
 
@@ -292,13 +292,20 @@
     }).join("") + '</ul>' : '<p class="ljc-hint">' + (l ? "Todavía no tienes compras. Aquí verás los items que compres." : "Cargando…") + '</p>') + '</div>';
   }
 
-  function abrir(modo) {
+  // El perfil (Información personal / Transacciones / Seguridad) vive en perfil.js; aquí solo se delega.
+  function irPerfil(tab) {
+    if (!window.ljPerfil || !leerSesion() || esAdmin()) return false;
+    var m = st.tipo === "ok" && st.msg ? st.msg : ""; st.msg = ""; st.tipo = "";
+    return window.ljPerfil.abrir(tab || "info", m);
+  }
+  function abrir(modo, tab) {
     st.abierto = true;
     if (modo) st.modo = modo;
     else if (!leerSesion()) st.modo = st.modo === "registro" ? "registro" : "login";
     else if (!st.perfil && !st.cargando) { st.modo = "perfil"; cargarPerfil(); }
     else st.modo = st.perfil ? "perfil" : st.modo;
     if (esAdmin()) { st.modo = "admin"; entrarAdmin(); }
+    if (st.modo === "perfil" && irPerfil(tab)) { st.abierto = false; return; }
     raiz.hidden = false; document.documentElement.classList.add("ljc-lock");
     pintar();
     requestAnimationFrame(function () { raiz.classList.add("open"); var f = raiz.querySelector("input:not([disabled])"); if (f) f.focus(); });
@@ -321,6 +328,7 @@
   function pintar() {
     if (!raiz || raiz.hidden && !st.abierto) return;
     var s = leerSesion(), p = st.perfil, titulo = "", cuerpo = "";
+    if (st.modo === "perfil" && s && !esAdmin(s) && window.ljPerfil) { cerrar(); irPerfil(); return; }   // p. ej. justo después de entrar
     if (st.modo === "registro") {
       titulo = "Crear mi cuenta";
       cuerpo = '<form class="ljc-body" id="ljcRegistro" novalidate>' + gBtn() +
@@ -476,5 +484,6 @@
     salir: function () { try { if (window.ljAdminSalir) window.ljAdminSalir(); } catch (er) { /* nada */ } guardarSesion(null); st.perfil = null; st.modo = "login"; pintarBoton(); pintar(); }
   };
 
+  window.addEventListener("lj-perfil-cambio", function () { cargarPerfil(); });   // el perfil guardó cambios: refresca nombre y saldo del botón
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar); else montar();
 })();
