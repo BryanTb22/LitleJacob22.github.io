@@ -828,6 +828,7 @@
       '<div class="cresumen"><div><span>Productos (' + nUni + ')</span><b>' + fmtPrecio(T.sol) + "</b></div>" +
       (p ? "<div><span>Tu saldo</span><b>S/ " + p.creditos + "</b></div>" + (falta ? '<div class="falta"><span>Te faltan</span><b>S/ ' + falta + "</b></div>" : "<div><span>Saldo después</span><b>S/ " + (p.creditos - T.cred) + "</b></div>") : "") +
       '<div class="total"><span>Total a pagar</span><b>' + fmtPrecio(T.sol) + "</b></div></div>" +
+      (T.cred - T.sol > 0.005 ? '<p class="itx-hint">El saldo se usa en soles enteros: el precio de cada item se redondea hacia arriba. Con saldo se descuentan <b>S/ ' + T.cred + '</b> (precio real ' + fmtPrecio(T.sol) + ').</p>' : "") +
       (p ? (falta ? '<p class="itx-hint warn">Tu saldo no alcanza. Recarga o pide por WhatsApp.</p>' : "") : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>');
     const btns = '<button class="itx-btn fucsia" type="button" data-itx="carCred">💎 Pagar con tu saldo (S/ ' + T.cred + ')</button>' +
       '<button class="itx-btn gold" type="button" data-itx="carWsp">💬 Pedir por WhatsApp</button>' +
