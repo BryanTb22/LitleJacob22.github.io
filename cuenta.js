@@ -61,6 +61,7 @@
 
   /* ---------- utilidades ---------- */
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function fmtS(n) { return (Math.round(Number(n) * 100) / 100).toFixed(2).replace(/\.00$/, ""); }
   function leerSesion() { try { return JSON.parse(localStorage.getItem(SES_KEY) || "null"); } catch (e) { return null; } }
   function guardarSesion(s) { try { if (s) localStorage.setItem(SES_KEY, JSON.stringify(s)); else localStorage.removeItem(SES_KEY); } catch (e) { /* sin almacenamiento */ } }
   function tradeValido(u) { return /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[\w-]+$/.test(String(u || "").trim()); }
@@ -211,7 +212,7 @@
     var s = leerSesion(), p = st.perfil;
     if (recBtn) recBtn.hidden = esAdmin(s);
     document.querySelectorAll("[data-recargar]").forEach(function (a) { a.hidden = esAdmin(s); });   // el administrador no recarga
-    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>S/ ' + p.creditos + '</small>' : "Mi cuenta") : "Entrar / Registrarme";
+    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>S/ ' + fmtS(p.creditos) + '</small>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
     if (!recBtn && boton.parentNode && !document.querySelector("[data-recargar]")) {   // si el menú ya trae Recargar, no se duplica
       recBtn = document.createElement("button");
@@ -267,7 +268,7 @@
     } else if (st.modo === "perfil" && s) {
       titulo = "Mi cuenta";
       cuerpo = '<div class="ljc-body">' + (p
-        ? '<div class="ljc-saldo"><small>Tu saldo</small><b>' + p.creditos + '</b><a class="ljc-rec" href="#" data-a="recargar">💎 Recargar saldo</a><a href="rifas.html">Ir a las rifas →</a></div>' +
+        ? '<div class="ljc-saldo"><small>Tu saldo</small><b>' + fmtS(p.creditos) + '</b><a class="ljc-rec" href="#" data-a="recargar">💎 Recargar saldo</a><a href="rifas.html">Ir a las rifas →</a></div>' +
           (window.ljSteam ? window.ljSteam.bloqueVinculo(p.steamId, "ljc-btn steam", "ljc-hint", "ljc-steam") : "") + '<form id="ljcPerfil" novalidate><h3>Mis datos</h3>' + camposCliente("ljp", p) +
           campo("ljp-email", "Correo", "disabled", "", p.email || s.email) +
           (p.steam ? "" : '<p class="ljc-hint warn">Agrega tu ID de Steam para que podamos agregarte y enviarte tus sets.</p>') +
