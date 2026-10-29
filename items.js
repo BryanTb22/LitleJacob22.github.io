@@ -175,15 +175,50 @@
     return { id: d.name.split("/").pop(), nombre: sv("nombre"), img: sv("img"), precio: nv("precio"), stock: f.stock ? nv("stock") : 1,
       tipo: sv("tipo"), heroe: sv("heroe"), ranura: sv("ranura"), rareza: sv("rareza"), calidad: sv("calidad"),
       estilos: nv("estilos"), estOk: sv("estOk"), descripcion: sv("descripcion"), steamUsd: nv("steamUsd"), steamAct: (f.steamAct && f.steamAct.timestampValue) || "",
-      activo: f.activo ? f.activo.booleanValue !== false : true, creado: (f.creado && f.creado.timestampValue) || "" };
+      activo: f.activo ? f.activo.booleanValue !== false : true, creado: (f.creado && f.creado.timestampValue) || "", cooldownHasta: (f.cooldownHasta && f.cooldownHasta.timestampValue) || "" };
   }
   function itemAFields(it) {
     const s = (v) => ({ stringValue: String(v || "") });
-    return { fields: { nombre: s(it.nombre), img: s(it.img), precio: { doubleValue: Number(it.precio) }, stock: { integerValue: String(Math.max(0, Math.floor(Number(it.stock) || 0))) },
+    const f = { nombre: s(it.nombre), img: s(it.img), precio: { doubleValue: Number(it.precio) }, stock: { integerValue: String(Math.max(0, Math.floor(Number(it.stock) || 0))) },
       tipo: s(it.tipo), heroe: s(it.heroe), ranura: s(it.ranura), rareza: s(it.rareza), calidad: s(it.calidad),
       estilos: { integerValue: String(Math.max(0, Math.min(8, Math.floor(Number(it.estilos) || 0)))) }, estOk: s(it.estOk), descripcion: s(it.descripcion),
       steamUsd: { doubleValue: Number(it.steamUsd) > 0 ? Number(it.steamUsd) : 0 }, steamAct: { timestampValue: it.steamAct || new Date(0).toISOString() },
-      activo: { booleanValue: it.activo !== false }, creado: { timestampValue: it.creado || new Date().toISOString() } } };
+      activo: { booleanValue: it.activo !== false }, creado: { timestampValue: it.creado || new Date().toISOString() } };
+    // Cooldown de Steam: solo se guarda si hay fecha (sin el campo = sin cooldown).
+    if (cdMs(it) > 0) f.cooldownHasta = { timestampValue: new Date(it.cooldownHasta).toISOString() };
+    return { fields: f };
+  }
+  /* ---------- Cooldown de Steam: un item recién recibido no se puede intercambiar hasta cooldownHasta. Se vende igual y se entrega al liberarse. ---------- */
+  const cdMs = (it) => { const t = it && it.cooldownHasta ? new Date(it.cooldownHasta).getTime() : 0; return isFinite(t) ? t : 0; };
+  const enCooldown = (it) => cdMs(it) > Date.now();
+  // "5 d 14 h" / "3 h 20 min" / "4 min" que falta para que se libere.
+  function cdRestante(it) {
+    const ms = cdMs(it) - Date.now(); if (ms <= 0) return "";
+    const min = Math.ceil(ms / 60000), h = Math.floor(min / 60), d = Math.floor(h / 24);
+    if (d >= 1) return d + " d " + (h % 24) + " h";
+    if (h >= 1) return h + " h " + (min % 60) + " min";
+    return min + " min";
+  }
+  const pad2 = (n) => (n < 10 ? "0" : "") + n;
+  const cdFechaCorta = (it) => { const t = cdMs(it); if (!t) return ""; const d = new Date(t); return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1); };
+  const fechaEntrega = (iso) => { const t = iso ? new Date(iso).getTime() : 0; return isFinite(t) && t ? new Date(t).toLocaleString("es-PE", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : ""; };
+  const cdFechaLarga = (it) => fechaEntrega(it.cooldownHasta);
+  // Candado con el tiempo que falta (tarjetas, filas de ofertas, carrito).
+  const cdChipHtml = (it, largo) => enCooldown(it) ? '<span class="cdchip" title="En cooldown de Steam: se entrega al liberarse (' + esc(cdFechaLarga(it)) + ')">🔒 ' + (largo ? "En cooldown · se libera en " : "") + esc(cdRestante(it)) + "</span>" : "";
+  // <input type="datetime-local"> trabaja en hora local sin zona: ida y vuelta con ISO.
+  const isoALocal = (iso) => { const t = iso ? new Date(iso) : null; if (!t || !isFinite(t.getTime())) return ""; return t.getFullYear() + "-" + pad2(t.getMonth() + 1) + "-" + pad2(t.getDate()) + "T" + pad2(t.getHours()) + ":" + pad2(t.getMinutes()); };
+  const localAIso = (v) => { const t = v ? new Date(v) : null; return t && isFinite(t.getTime()) ? t.toISOString() : ""; };
+  const cdDefecto = () => new Date(Date.now() + 7 * 86400000).toISOString();
+  // Campo "Cooldown" de los formularios del admin (prefijo itf- o sk-).
+  function cdCampoHtml(pre, F) {
+    const on = !!F.cooldownHasta;
+    return '<div class="field cdf"><label class="itx-chk"><input type="checkbox" id="' + pre + 'cd"' + (on ? " checked" : "") + '> 🔒 Está en cooldown de Steam (se vende igual y se entrega al liberarse)</label>' +
+      (on ? '<div class="cdf-r"><label for="' + pre + 'cdh">Se libera el</label><input type="datetime-local" id="' + pre + 'cdh" value="' + esc(isoALocal(F.cooldownHasta)) + '"><span class="itx-hint">' + (enCooldown(F) ? "Faltan " + esc(cdRestante(F)) + "." : "Esa fecha ya pasó: se guardará sin cooldown.") + " Por defecto son 7 días desde ahora.</span></div>" : "") + "</div>";
+  }
+  function cdCampoEvento(el, pre, F, repintar) {
+    if (el.id === pre + "cd") { F.cooldownHasta = el.checked ? (F.cooldownHasta || cdDefecto()) : ""; repintar(); return true; }
+    if (el.id === pre + "cdh") { F.cooldownHasta = localAIso(el.value) || F.cooldownHasta; return true; }
+    return false;
   }
   function cargarItems(forzar) {
     if (items.cargando || (items.cargado && !forzar)) return;
@@ -240,12 +275,13 @@
       return true;
     });
     // Mismo item con distintas versiones (gemas, precio): una sola tarjeta con el precio más bajo, como lis-skins.
-    const gr = {}, orden = [];
+    // La tarjeta representa a la mejor versión: primero las libres con stock, luego las que están en cooldown, al final las agotadas.
+    const gr = {}, orden = [], rango = (x) => (x.stock <= 0 ? 0 : enCooldown(x) ? 1 : 2);
     l.forEach((it) => {
       const k = sinTildes(it.nombre); let g = gr[k];
       if (!g) { g = gr[k] = { rep: it, tot: 0, precios: {} }; orden.push(k); }
       g.tot += Math.max(0, it.stock); g.precios[it.precio] = 1;
-      if (g.rep !== it && ((g.rep.stock <= 0 && it.stock > 0) || ((g.rep.stock > 0) === (it.stock > 0) && it.precio < g.rep.precio))) g.rep = it;
+      if (g.rep !== it && (rango(it) > rango(g.rep) || (rango(it) === rango(g.rep) && it.precio < g.rep.precio))) g.rep = it;
     });
     l = orden.map((k) => { const g = gr[k]; return Object.assign({}, g.rep, { _tot: g.tot, _desde: Object.keys(g.precios).length > 1 }); });
     l.sort((a, b) => {
@@ -267,14 +303,15 @@
   }
   const CART_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L21 7H6"/></svg>';
   function itemCardHtml(it) {
-    const agot = it.stock <= 0, col = colorRareza(it.rareza), admin = esAdmin();
-    return '<article class="itx-card' + (agot ? " agot" : "") + (it.activo ? "" : " oculto") + '" data-itx="ver" data-id="' + esc(it.id) + '" tabindex="0" role="button" aria-label="Ver ' + esc(it.nombre) + '">' +
+    const agot = it.stock <= 0, col = colorRareza(it.rareza), admin = esAdmin(), cd = !agot && enCooldown(it);   // cd = todas sus unidades disponibles están en cooldown
+    return '<article class="itx-card' + (agot ? " agot" : "") + (cd ? " cd" : "") + (it.activo ? "" : " oculto") + '" data-itx="ver" data-id="' + esc(it.id) + '" tabindex="0" role="button" aria-label="Ver ' + esc(it.nombre) + '">' +
       '<div class="itx-thumb" style="--rar:' + col + '">' + (imgTag(it.img, it.nombre, ' loading="lazy"') || '<span class="sinfoto">Sin foto</span>') +
-      (agot ? '<span class="itx-tag agotado">Agotado</span>' : ((it._tot || it.stock) > 1 ? '<span class="itx-tag">x' + (it._tot || it.stock) + "</span>" : "")) + (it.activo ? "" : '<span class="itx-tag oc">Oculto</span>') + "</div>" +
+      (agot ? '<span class="itx-tag agotado">Agotado</span>' : ((it._tot || it.stock) > 1 ? '<span class="itx-tag">x' + (it._tot || it.stock) + "</span>" : "")) + (cd ? '<span class="itx-tag cdtag">🔒 Cooldown</span>' : "") + (it.activo ? "" : '<span class="itx-tag oc">Oculto</span>') + "</div>" +
       (admin ? '<div class="itx-admb"><button type="button" class="itx-btn ghost sm" data-itx="editar" data-id="' + esc(it.id) + '" aria-label="Editar">✎</button>' +
         (adm.itemDel === it.id ? '<button type="button" class="itx-btn sm del" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar">🗑</button>') + "</div>" : "") +
       '<div class="itx-body"><h4>' + esc(it.nombre) + "</h4>" +
       '<div class="itx-meta">' + (it.rareza ? '<span style="color:' + col + '">' + esc(it.rareza) + "</span>" : "") + (it.calidad ? "<span>" + esc(it.calidad) + "</span>" : "") + (it.heroe ? "<span>" + esc(it.heroe) + "</span>" : "") + (it.descripcion ? '<span class="gem">💎 ' + (efectoUnusual(it) ? esc(efectoUnusual(it)) : lineasDesc(it).length) + "</span>" : "") + "</div>" +
+      (cd ? '<div class="icd">' + cdChipHtml(it, true) + "</div>" : "") +
       '<div class="itx-price"><b>' + (it._desde ? '<small class="desde">desde</small>' : "") + fmtPrecio(it.precio) + '</b><span class="itx-act">' + (agot ? "" : '<button type="button" class="itx-cartbtn" data-itx="carAddCard" data-id="' + esc(it.id) + '" aria-label="Agregar al carrito" title="Agregar al carrito">' + CART_SVG + "</button>") + '<span class="itx-buy">' + (agot ? "Agotado" : "Comprar") + "</span></span></div>" + steamHtml(it) + "</div></article>";
   }
   function migaActualHtml() { const hc = heroeConocido(filtros.heroe); return filtros.tipo || hc ? migaCatalogoHtml(filtros.tipo, hc, "") : ""; }
@@ -403,7 +440,7 @@
   }
 
   /* ---------- Admin: formulario de item ---------- */
-  const nuevoForm = () => ({ id: "", nombre: "", img: "", precio: "", stock: "1", tipo: "Wearable", heroe: "", ranura: "", rareza: "", calidad: "", estilos: "0", estOk: "1", descripcion: "", activo: true, creado: "", link: "" });
+  const nuevoForm = () => ({ id: "", nombre: "", img: "", precio: "", stock: "1", tipo: "Wearable", heroe: "", ranura: "", rareza: "", calidad: "", estilos: "0", estOk: "1", descripcion: "", activo: true, creado: "", link: "", cooldownHasta: "" });
   function gemasFormHtml(F) {
     const l = gemasDe(F);
     return '<div class="field gform"><label>💎 Gemas del item (cada versión con distinta gema lleva su propio precio)</label><datalist id="itx-dl-gtipo">' + GEMA_TIPOS.map((t) => '<option value="' + esc(t) + '">').join("") + "</datalist>" +
@@ -433,7 +470,7 @@
       '<div class="cav"><button type="button" class="itx-btn fucsia sm" data-itx="version" data-id="' + esc(l[0].id) + '">➕ Agregar versión nueva (otra gema / estilos / precio)</button></div></div>';
   }
   function abrirVersion(base) {
-    adm.form = Object.assign({}, base, { id: "", desdeId: "", creado: "", precio: "", stock: "1", descripcion: "", estilos: String(base.estilos || 0), estOk: base.estOk || (base.estilos ? "1" : ""), soloCambios: true, activo: true });
+    adm.form = Object.assign({}, base, { id: "", desdeId: "", creado: "", precio: "", stock: "1", descripcion: "", estilos: String(base.estilos || 0), estOk: base.estOk || (base.estilos ? "1" : ""), soloCambios: true, activo: true, cooldownHasta: "" });
     adm.msg = ""; adm.steamInfo = ""; renderTodo(); irAlForm();
   }
   function cambiarStock(id, delta) {
@@ -462,7 +499,7 @@
       '<p class="itx-hint">Lo demás se copia del item. Solo pon lo que cambia en esta versión.</p>' +
       '<div class="field"><label for="itf-precio">Precio en soles (S/)</label><input id="itf-precio" inputmode="decimal" value="' + esc(F.precio) + '"></div>' +
       '<div class="field"><label for="itf-stock">Stock (cuántos tienes)</label><input id="itf-stock" inputmode="numeric" value="' + esc(F.stock) + '"></div>' +
-      gemasFormHtml(F) + estilosFormHtml(F) +
+      gemasFormHtml(F) + estilosFormHtml(F) + cdCampoHtml("itf-", F) +
       '<label class="itx-chk"><input type="checkbox" id="itf-activo"' + (F.activo ? " checked" : "") + '> Visible para los clientes</label>' +
       (adm.msg ? '<p class="itx-hint" style="color:#ff6b6b">' + esc(adm.msg) + '</p>' : "") +
       '<div class="cav"><button type="button" class="itx-btn gold sm" data-itx="guardar">' + (adm.guardando ? "Guardando…" : "💾 Guardar versión") + '</button><button type="button" class="itx-btn ghost sm" data-itx="completo">Cambiar más datos</button><button type="button" class="itx-btn ghost sm" data-itx="cerrarForm">Cancelar</button></div></div>';
@@ -482,7 +519,7 @@
       '<div class="field"><label for="itf-rareza">Rareza</label><select id="itf-rareza">' + opciones(LISTA_RAREZAS, F.rareza, "—") + "</select></div>" +
       '<div class="field"><label for="itf-calidad">Calidad</label><input id="itf-calidad" list="itx-dl-calidad" maxlength="30" value="' + esc(F.calidad) + '"><datalist id="itx-dl-calidad">' + distintos("calidad", ITEM_CALIDADES).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist></div>" +
       gemasFormHtml(F) +
-      estilosFormHtml(F) +
+      estilosFormHtml(F) + cdCampoHtml("itf-", F) +
       '<label class="itx-chk"><input type="checkbox" id="itf-activo"' + (F.activo ? " checked" : "") + "> Visible para los clientes</label>" +
       (adm.msg ? '<p class="itx-hint" style="color:#ff6b6b">' + esc(adm.msg) + "</p>" : "") +
       '<div class="cav"><button type="button" class="itx-btn gold sm" data-itx="guardar">' + (adm.guardando ? "Guardando…" : "💾 Guardar item") + '</button><button type="button" class="itx-btn ghost sm" data-itx="cerrarForm">Cancelar</button></div></div>';
@@ -491,6 +528,7 @@
     const F = adm.form; if (!F || !el.id || el.id.indexOf("itf-") !== 0) return false;
     const m = { "itf-link": "link", "itf-nombre": "nombre", "itf-precio": "precio", "itf-stock": "stock", "itf-tipo": "tipo", "itf-heroe": "heroe", "itf-ranura": "ranura", "itf-desc": "descripcion", "itf-rareza": "rareza", "itf-calidad": "calidad" };
     if (el.id === "itf-activo") { F.activo = el.checked; return true; }
+    if (cdCampoEvento(el, "itf-", F, renderTodo)) return true;
     if (el.id === "itf-estilos") {
       F.estilos = el.value;
       const nn = Number(el.value) || 0;
@@ -543,7 +581,8 @@
     if (!isFinite(stock) || stock < 0) stock = 1;
     const it = { id: F.id || ("it-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), nombre: F.nombre.trim(), img: F.img, precio: Math.round(precio * 100) / 100, stock,
       tipo: F.tipo, heroe: F.heroe.trim(), ranura: F.ranura.trim(), rareza: F.rareza, calidad: F.calidad.trim(),
-      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: gemasAString(gemasDe(F).filter((g) => g.v)).slice(0, 600), steamUsd: Number(F.steamUsd) || 0, steamAct: F.steamAct || "", activo: F.activo, creado: F.creado || new Date().toISOString() };
+      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: gemasAString(gemasDe(F).filter((g) => g.v)).slice(0, 600), steamUsd: Number(F.steamUsd) || 0, steamAct: F.steamAct || "", activo: F.activo, creado: F.creado || new Date().toISOString(),
+      cooldownHasta: enCooldown(F) ? new Date(cdMs(F)).toISOString() : "" };
     adm.guardando = true; adm.msg = ""; renderTodo();
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Entra con la cuenta de administrador." : "No se pudo guardar (" + r.status + ").");
@@ -579,6 +618,7 @@
   const STK_POR_PAG = 40, STK_TIMERS = {};
   function stkEstado(it) {
     if (it.stock <= 0) return { cls: "st-zero", txt: "Agotado", key: "zero" };
+    if (enCooldown(it)) return { cls: "st-cd", txt: "🔒 Cooldown " + cdRestante(it), key: "cd" };
     if (it.stock <= 2) return { cls: "st-low", txt: "Pocas", key: "low" };
     return { cls: "st-ok", txt: "En stock", key: "ok" };
   }
@@ -591,6 +631,7 @@
       if (stk.rareza && it.rareza !== stk.rareza) return false;
       if (stk.calidad && it.calidad !== stk.calidad) return false;
       if (stk.estado === "oculto") { if (it.activo) return false; }
+      else if (stk.estado === "cd") { if (!(it.stock > 0 && enCooldown(it))) return false; }
       else if (stk.estado !== "all" && stkEstado(it).key !== stk.estado) return false;
       if (q && sinTildes(it.nombre + " " + it.heroe + " " + it.tipo + " " + it.descripcion).indexOf(q) < 0) return false;
       return true;
@@ -610,14 +651,15 @@
     const valSteam = l.reduce((t, it) => t + Math.max(0, it.stock) * (it.steamUsd > 0 ? it.steamUsd * TC : 0), 0);
     const conStock = l.filter((it) => it.stock > 0).length, zero = l.filter((it) => it.stock <= 0).length, low = l.filter((it) => it.stock > 0 && it.stock <= 2).length;
     const st = (b, t, w, sub) => '<div class="stk-stat' + (w ? " warn" : "") + '"><b>' + b + "</b><span>" + t + "</span>" + (sub ? "<small>" + sub + "</small>" : "") + "</div>";
+    const cd = l.filter((it) => it.stock > 0 && enCooldown(it)).length;
     return st(conStock + "/" + l.length, "Items con stock") + st(uni, "Unidades") + st(fmtPrecio(val), "Valor del stock", false, valSteam ? "Steam ≈ " + fmtPrecio(valSteam) : "") +
-      st(low, "Pocas (1-2)", low) + st(zero, "Agotados", zero);
+      st(low, "Pocas (1-2)", low) + st(zero, "Agotados", zero) + st("🔒 " + cd, "En cooldown", false, cd ? "se entregan al liberarse" : "");
   }
   function stkFilaHtml(it) {
     const e = stkEstado(it), col = colorRareza(it.rareza);
     return '<div class="stk-row" data-id="' + esc(it.id) + '"><div class="stk-thumb" style="--rar:' + col + '">' + (imgTag(it.img, "", ' loading="lazy"') || "") + "</div>" +
       '<div class="stk-info"><div class="stk-name">' + esc(it.nombre) + (it.activo ? "" : ' <em>(oculto)</em>') + '</div><div class="stk-meta"><span style="color:' + col + '">' + esc(it.rareza || "—") + "</span>" + (it.heroe ? " • " + esc(it.heroe) : "") + " • " + (it.precio > 0 ? fmtPrecio(it.precio) : "sin precio") +
-      (it.descripcion ? " • 💎 " + lineasDesc(it).length : "") + "</div></div>" +
+      (it.descripcion ? " • 💎 " + lineasDesc(it).length : "") + (enCooldown(it) ? " • 🔒 se libera el " + esc(cdFechaLarga(it)) : "") + "</div></div>" +
       '<button type="button" class="stk-edbtn' + (stk.ed && stk.ed.id === it.id ? " on" : "") + '" data-itx="stkEd" aria-label="Editar ' + esc(it.nombre) + '" title="Editar todos los detalles">✎</button><span class="stk-status ' + e.cls + '">' + e.txt + "</span>" +
       '<div class="stk-qty"><button type="button" data-itx="stkMenos" aria-label="Menos">−</button><input type="number" min="0" step="1" value="' + it.stock + '" id="stk-in-' + esc(it.id) + '" data-stk-in="' + esc(it.id) + '" aria-label="Stock de ' + esc(it.nombre) + '"><button type="button" data-itx="stkMas" aria-label="Más">+</button></div></div>' + (stk.ed && stk.ed.id === it.id ? stkEdHtml() : "");
   }
@@ -643,6 +685,7 @@
       (G.length ? G.map((g, i) => '<div class="grow-f"><input id="sk-gt-' + i + '" list="itx-dl-gtipo2" maxlength="30" placeholder="Tipo (Unusual Effect Gem)" value="' + esc(g.t) + '"><input id="sk-gv-' + i + '" maxlength="60" placeholder="Nombre (Candy Caster)" value="' + esc(g.v) + '">' +
         '<button type="button" class="itx-btn ghost sm" data-itx="stkGemaDel" data-i="' + i + '" aria-label="Quitar gema">✕</button></div>').join("") : '<p class="itx-hint">Sin gemas.</p>') +
       '<div class="cav"><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="Unusual Effect Gem">+ Efecto Unusual</button><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="Prismatic Gem">+ Prismatic</button><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="Ethereal Gem">+ Etérea</button><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="Kinetic Gem">+ Cinética</button><button type="button" class="itx-btn ghost sm" data-itx="stkGemaMas" data-t="">+ Otra gema</button></div></div>' +
+      cdCampoHtml("sk-", F) +
       '<label class="itx-chk"><input type="checkbox" id="sk-activo"' + (F.activo ? " checked" : "") + "> Visible para los clientes</label>" +
       (stk.ed.msg ? '<p class="itx-hint" style="color:#ff6b6b">' + esc(stk.ed.msg) + "</p>" : "") +
       '<div class="cav"><button type="button" class="itx-btn gold sm" data-itx="stkEdGuardar">' + (stk.ed.guardando ? "Guardando…" : "💾 Guardar cambios") + '</button><button type="button" class="itx-btn ghost sm" data-itx="stkEdCerrar">Cancelar</button></div></div>';
@@ -665,6 +708,7 @@
   function stkEdCampo(el) {
     const ed = stk.ed, F = ed.F, m = { "sk-nombre": "nombre", "sk-precio": "precio", "sk-stock": "stock", "sk-tipo": "tipo", "sk-heroe": "heroe", "sk-ranura": "ranura", "sk-rareza": "rareza", "sk-calidad": "calidad", "sk-desc": "descripcion" };
     if (el.id === "sk-activo") { F.activo = el.checked; return; }
+    if (cdCampoEvento(el, "sk-", F, pintarStock)) return;
     const mg = /^sk-g([tv])-(\d+)$/.exec(el.id);
     if (mg) { const gi = parseInt(mg[2], 10); if (ed.G && ed.G[gi]) ed.G[gi][mg[1]] = el.value; return; }
     if (el.id === "sk-estilos") {
@@ -686,7 +730,7 @@
     if (!isFinite(precio) || precio <= 0) return fallo("Pon un precio mayor a 0.");
     if (!isFinite(stock) || stock < 0) stock = 0;
     const it = Object.assign({}, F, { id: ed.id, nombre: String(F.nombre).trim(), precio: Math.round(precio * 100) / 100, stock, heroe: String(F.heroe || "").trim(), ranura: String(F.ranura || "").trim(), calidad: String(F.calidad || "").trim(),
-      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: gemasAString((ed.G || gemasDe(F)).filter((g) => String(g.v || "").trim())).slice(0, 600), activo: F.activo !== false });
+      estilos: Number(F.estilos) || 0, estOk: Number(F.estilos) > 0 ? estilosOkLista(F).join(",") : "", descripcion: gemasAString((ed.G || gemasDe(F)).filter((g) => String(g.v || "").trim())).slice(0, 600), activo: F.activo !== false, cooldownHasta: enCooldown(F) ? new Date(cdMs(F)).toISOString() : "" });
     ed.guardando = true; ed.msg = ""; pintarStock();
     fsPedir("rayas_items/" + encodeURIComponent(it.id), { method: "PATCH", body: JSON.stringify(itemAFields(it)) }).then((r) => {
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Tu sesión no tiene permiso. Vuelve a entrar." : "No se pudo guardar (" + r.status + ").");
@@ -701,7 +745,7 @@
       '<div class="stk-ctl"><input id="stk-q" type="search" placeholder="Buscar item…" value="' + esc(stk.q) + '" autocomplete="off">' +
       sel("stk-tipo", ITEM_TIPOS, stk.tipo, "Todos los tipos") + sel("stk-heroe", distintos("heroe", HEROES_DOTA), stk.heroe, "Todos los héroes") + sel("stk-ranura", distintos("ranura", SLOTS_DOTA), stk.ranura, "Todas las ranuras") +
       sel("stk-rareza", LISTA_RAREZAS, stk.rareza, "Todas las rarezas") + sel("stk-calidad", distintos("calidad", ITEM_CALIDADES), stk.calidad, "Todas las calidades") +
-      '<select id="stk-estado">' + [["all", "Todos"], ["ok", "Con stock"], ["low", "Pocas unidades (1-2)"], ["zero", "Agotados (0)"], ["oculto", "Ocultos"]].map((o) => '<option value="' + o[0] + '"' + (stk.estado === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
+      '<select id="stk-estado">' + [["all", "Todos"], ["ok", "Con stock"], ["low", "Pocas unidades (1-2)"], ["cd", "🔒 En cooldown"], ["zero", "Agotados (0)"], ["oculto", "Ocultos"]].map((o) => '<option value="' + o[0] + '"' + (stk.estado === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
       '<select id="stk-orden">' + [["nombre", "Nombre A-Z"], ["stockMenor", "Stock: menor a mayor"], ["stockMayor", "Stock: mayor a menor"], ["valor", "Mayor valor"], ["nuevo", "Más nuevos"]].map((o) => '<option value="' + o[0] + '"' + (stk.orden === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="stkReset">Restablecer</button></div>' +
       '<div id="stkList" class="stk-list"></div>' +
@@ -748,23 +792,24 @@
     if (!items.cargado && !items.err) return miga("") + '<div class="itx-empty"><strong>Cargando item…</strong></div>';
     const it = itemPorId(id);
     if (!it || (!it.activo && !esAdmin())) return miga("") + '<div class="itx-empty"><strong>Este item no está disponible</strong><span>Puede que ya se haya vendido o que aún no esté publicado.</span><a class="itx-btn gold" href="#items" style="margin-top:12px">Ver todos los items</a></div>';
-    const col = colorRareza(it.rareza), agot = it.stock <= 0, cred = Math.round(it.precio * 100) / 100, p = perfil();
+    const col = colorRareza(it.rareza), agot = it.stock <= 0, cred = Math.round(it.precio * 100) / 100, p = perfil(), cd = !agot && enCooldown(it);
     const sol = Number(it.steamUsd) > 0 ? Number(it.steamUsd) * TC : 0;
     const dto = sol && it.precio > 0 && it.precio < sol ? Math.round((1 - it.precio / sol) * 100) : 0;
     const fila = (k, v) => v ? "<div><dt>" + k + "</dt><dd>" + v + "</dd></div>" : "";
     const attrs = fila("Héroe", esc(it.heroe)) + fila("Ranura", esc(it.ranura)) + fila("Tipo", esc(it.tipo)) +
       fila("Rareza", it.rareza ? '<i class="itx-dot" style="background:' + col + '"></i>' + esc(it.rareza) : "") + fila("Calidad", esc(it.calidad)) + fila("Efecto Unusual", esc(efectoUnusual(it))) +
-      fila("Disponibles", agot ? "Agotado" : String(it.stock));
+      fila("Disponibles", agot ? "Agotado" : String(it.stock)) + fila("Entrega", cd ? "🔒 En cooldown · el " + esc(cdFechaLarga(it)) : "");
     const btns = agot ? '<button class="itx-btn ghost" type="button" disabled>Agotado</button>'
       : '<button class="itx-btn fucsia" type="button" data-itx="carAdd" data-id="' + esc(it.id) + '">🛒 ' + (carro[it.id] ? "✔ En el carrito (" + carro[it.id] + ") · agregar otro" : "Al carrito") + '</button>' +
-        '<button class="itx-btn gold" type="button" data-itx="carAhora" data-id="' + esc(it.id) + '">⚡ Comprar ahora</button>';
+        '<button class="itx-btn gold" type="button" data-itx="carAhora" data-id="' + esc(it.id) + '">⚡ ' + (cd ? "Comprar (entrega el " + esc(cdFechaCorta(it)) + ")" : "Comprar ahora") + '</button>';
     return miga(it.tipo, it.nombre, it.heroe) + 
       '<section class="itx-pg"><h1>' + esc(it.nombre) + (it.activo ? "" : ' <small>(oculto)</small>') + "</h1>" +
       '<div class="itx-pg-grid"><div class="itx-pg-foto' + (it.img ? " zoomable" : "") + '" style="--rar:' + col + '"' + (it.img ? ' data-itx="zoomImg" role="button" tabindex="0" aria-label="Ampliar foto"' : "") + ">" + (imgTag(it.img, it.nombre) || '<span class="sinfoto">Sin foto</span>') + (it.img ? '<span class="itx-lupa" aria-hidden="true">⤢</span>' : "") +
-      '<span class="itx-pg-tag' + (agot ? " off" : "") + '">' + (agot ? "Agotado" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
+      '<span class="itx-pg-tag' + (agot ? " off" : "") + (cd ? " cd" : "") + '">' + (agot ? "Agotado" : cd ? "🔒 En cooldown" : (it.stock > 1 ? it.stock + " disponibles" : "Disponible")) + "</span></div>" +
       '<div class="itx-pg-info"><dl class="itx-pg-attrs">' + attrs + "</dl>" + estilosHtml(it) + descripcionHtml(it) +
       '<div class="itx-pg-precio"><div class="pp-top"><b>' + fmtPrecio(it.precio) + "</b>" + (dto ? '<span class="pp-dto" title="Descuento frente al precio del Mercado de Steam">-' + dto + " %</span>" : "") + "</div>" +
       steamHtml(it, true) +
+      (cd ? '<div class="cdaviso">🔒 <b>Este item está en cooldown de Steam.</b> Puedes comprarlo ahora y lo recibes el <b>' + esc(cdFechaLarga(it)) + "</b> (faltan " + esc(cdRestante(it)) + "), cuando Steam permita intercambiarlo.</div>" : "") +
       (agot ? "" : (p ? '<p class="itx-hint">Tienes <b>' + fmtPrecio(p.creditos) + "</b> de saldo.</p>" : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>')) +
       '<div class="pp-btns">' + btns + "</div></div></div></div>" + ofertasHtml(it) + "</section>" + parecidosHtml(it) +
       (agot ? "" : '<div class="itx-sticky"><div class="ips-p"><small>Precio</small><b>' + fmtPrecio(it.precio) + '</b></div><button class="itx-btn fucsia" type="button" data-itx="carAdd" data-id="' + esc(it.id) + '">🛒 ' + (carro[it.id] ? "✔ En el carrito (" + carro[it.id] + ")" : "Agregar al carrito") + "</button></div>");
@@ -805,22 +850,23 @@
     return '<div class="itx-desc"><b>💎 Gemas</b>' + l.map((g) => '<div class="grow ' + gemaClase(g.t) + '">' + (gemaIconoHtml(g.t, 30) || '<span class="gdot"></span>') + '<span class="gv">' + esc(g.v || g.t) + "</span>" + (g.t && g.v ? '<span class="gk">' + esc(g.t) + "</span>" : "") + "</div>").join("") + "</div>";
   }
   // Mismo item con distintas gemas: cada uno es su propia oferta con su precio.
-  const ofertasDe = (it) => { const k = sinTildes(it.nombre); return items.lista.filter((x) => sinTildes(x.nombre) === k && (x.activo || esAdmin())).sort((a, b) => (a.precio || 0) - (b.precio || 0)); };
+  // Primero las ofertas libres, después las que están en cooldown; dentro de cada grupo por precio.
+  const ofertasDe = (it) => { const k = sinTildes(it.nombre), cdv = (x) => (x.stock > 0 && enCooldown(x) ? 1 : 0); return items.lista.filter((x) => sinTildes(x.nombre) === k && (x.activo || esAdmin())).sort((a, b) => cdv(a) - cdv(b) || (a.precio || 0) - (b.precio || 0)); };
   const ofe = { min: "", max: "" };
   // Una fila por cada unidad en stock (como lis-skins): si hay 3, salen 3 filas separadas.
   function ofertaFilaHtml(x, curId, mejor) {
-    const cur = x.id === curId, ne = Number(x.estilos) || 0, ok = estilosOkLista(x), n = Math.max(1, Math.min(30, x.stock)), agot = x.stock <= 0;
+    const cur = x.id === curId, ne = Number(x.estilos) || 0, ok = estilosOkLista(x), n = Math.max(1, Math.min(30, x.stock)), agot = x.stock <= 0, cd = !agot && enCooldown(x);
     const est = ne ? [1, 2, 3, 4, 5, 6, 7, 8].slice(0, ne).map((k) => '<span class="est' + (ok.indexOf(k) >= 0 ? "" : " lock") + '">' + k + "</span>").join("") : "";
-    const gem = gemChipsHtml(x); let out = "";
+    const gem = gemChipsHtml(x) + (cd ? '<span class="ofr-cd">' + cdChipHtml(x, true) + "</span>" : ""); let out = "";
     const edit = esAdmin() ? '<button type="button" class="itx-btn ghost sm ofr-ed" data-itx="editar" data-id="' + esc(x.id) + '"' + (x.stock > 1 ? ' data-u="1"' : '') + ' title="Editar esta unidad (gemas, estilos y precio)" aria-label="Editar">✎</button><button type="button" class="itx-btn ghost sm" data-itx="mas1" data-id="' + esc(x.id) + '" title="Sumar una unidad">➕</button>' + (adm.itemDel === x.id ? '<button type="button" class="itx-btn fucsia sm" data-itx="quitarSi" data-id="' + esc(x.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="quitar1" data-id="' + esc(x.id) + '" title="Quitar una unidad" aria-label="Quitar">🗑</button>') : "";
     for (let u = 0; u < n; u++) {
       const enCarro = !agot && u < (Number(carro[x.id]) || 0);
       const best = mejor && u === 0;
-      out += '<div class="ofr-r' + (cur ? " cur" : "") + (agot ? " agot" : "") + (enCarro ? " enc" : "") + (best ? " best" : "") + '" data-itx="ver" data-id="' + esc(x.id) + '" role="button" tabindex="0"><span class="ofr-g">' + gem + "</span>" +
+      out += '<div class="ofr-r' + (cur ? " cur" : "") + (agot ? " agot" : "") + (cd ? " cd" : "") + (enCarro ? " enc" : "") + (best ? " best" : "") + '" data-itx="ver" data-id="' + esc(x.id) + '" role="button" tabindex="0"><span class="ofr-g">' + gem + "</span>" +
         '<span class="ofr-e">' + est + '</span><span class="ofr-p"><b>' + fmtPrecio(x.precio) + "</b>" + (best ? '<em class="ofr-best">Mejor precio</em>' : "") + "</span>" +
         '<span class="ofr-b">' + edit + (agot ? '<span class="ofr-ag">Agotado</span>' : (enCarro
           ? '<button type="button" class="itx-btn ghost sm ofr-in" data-itx="carMenos" data-id="' + esc(x.id) + '" title="Quitar del carrito">✔ En el carrito</button>'
-          : '<button type="button" class="itx-btn gold sm" data-itx="carAhora" data-id="' + esc(x.id) + '">⚡ Comprar ahora</button>' +
+          : '<button type="button" class="itx-btn gold sm" data-itx="carAhora" data-id="' + esc(x.id) + '"' + (cd ? ' title="Se entrega el ' + esc(cdFechaLarga(x)) + '"' : "") + ">⚡ " + (cd ? "Comprar (entrega el " + esc(cdFechaCorta(x)) + ")" : "Comprar ahora") + "</button>" +
             '<button type="button" class="itx-btn ghost sm ofr-cart" data-itx="carAdd" data-id="' + esc(x.id) + '" aria-label="Agregar al carrito" title="Agregar al carrito">🛒</button>')) + "</span></div>";
     }
     return out;
@@ -829,7 +875,7 @@
     const mn = parseFloat(String(ofe.min).replace(",", ".")), mx = parseFloat(String(ofe.max).replace(",", "."));
     const l = ofertasDe(it).filter((x) => (!isFinite(mn) || x.precio >= mn) && (!isFinite(mx) || x.precio <= mx));
     return '<div class="ofr-h"><span>Gemas / Runas</span><span>Estilos desbloqueados</span><span>Precio</span><span>Acción</span></div>' +
-      (l.length ? (() => { let mj = null; l.forEach((x) => { if (x.stock > 0 && (mj === null || x.precio < mj.precio)) mj = x; }); return l.map((x) => ofertaFilaHtml(x, it.id, x === mj && l.length > 1)).join(""); })() : '<div class="ofr-vacio">Ninguna oferta en ese rango de precio.</div>');
+      (l.length ? (() => { let mj = null; l.forEach((x) => { if (x.stock > 0 && (mj === null || (!enCooldown(x) && enCooldown(mj)) || (enCooldown(x) === enCooldown(mj) && x.precio < mj.precio))) mj = x; }); return l.map((x) => ofertaFilaHtml(x, it.id, x === mj && l.length > 1)).join(""); })() : '<div class="ofr-vacio">Ninguna oferta en ese rango de precio.</div>');
   }
   function ofertasHtml(it) {
     const n = ofertasDe(it).reduce((a, x) => a + Math.max(1, Math.min(30, x.stock)), 0);
@@ -873,7 +919,7 @@
     if (!l.length) return { h: "<h3>Tu carrito 🛒</h3><p class='itx-hint'>Está vacío. Elige items del catálogo y pulsa <b>Al carrito</b>.</p>", btns: cerrar };
     const falta = p ? Math.max(0, Math.round((T.cred - p.creditos) * 100) / 100) : 0, nUni = l.reduce((a, x) => a + x.qty, 0);
     const h = pasosHtml(1) + "<h3>Tu carrito 🛒</h3>" + "<div class=\"carl\">" + l.map((x) =>
-      '<div class="carr"><div class="carr-t">' + (x.it.img ? imgTag(x.it.img, "", ' width="48" height="48"') : '<span class="sinfoto">—</span>') + "<span><b>" + esc(x.it.nombre) + "</b><small>" + fmtPrecio(x.it.precio) + " c/u</small></span></div>" +
+      '<div class="carr' + (enCooldown(x.it) ? " cd" : "") + '"><div class="carr-t">' + (x.it.img ? imgTag(x.it.img, "", ' width="48" height="48"') : '<span class="sinfoto">—</span>') + "<span><b>" + esc(x.it.nombre) + "</b><small>" + fmtPrecio(x.it.precio) + " c/u</small>" + (enCooldown(x.it) ? '<small class="carr-cd">🔒 Cooldown · lo recibes el ' + esc(cdFechaCorta(x.it)) + "</small>" : "") + "</span></div>" +
       '<div class="carr-q"><button type="button" class="itx-btn ghost sm" data-itx="carMenos" data-id="' + esc(x.it.id) + '" aria-label="Menos">−</button><span>' + x.qty + "</span>" +
       '<button type="button" class="itx-btn ghost sm" data-itx="carMas" data-id="' + esc(x.it.id) + '" aria-label="Más"' + (x.qty >= x.it.stock ? " disabled" : "") + '>+</button>' +
       '<button type="button" class="itx-btn ghost sm" data-itx="carQuitar" data-id="' + esc(x.it.id) + '" aria-label="Quitar">🗑</button></div></div>').join("") + "</div>" +
@@ -891,9 +937,14 @@
     return "¡Hola! 👋🔥 Quiero comprar estos items de *" + TIENDA + "* 🛒\n\n" + carroLineas().map((x) => "🎮 " + x.qty + "x *" + x.it.nombre + "* — " + fmtPrecio(x.it.precio * x.qty)).join("\n") +
       "\n\n💰 Total: " + fmtPrecio(T.sol) + (p ? "\n\n👤 " + p.nombre + " (📧 " + p.email + ")" : "") + "\n\n¿Siguen disponibles? 🙏✨";
   }
-  function pagarCarro() {
+  // Items en cooldown: la fecha de entrega del pedido es la más lejana de todos.
+  const cdEntregaDe = (lineas) => { let t = 0; lineas.forEach((x) => { const it = x.it || x; if (enCooldown(it) && cdMs(it) > t) t = cdMs(it); }); return t ? new Date(t).toISOString() : ""; };
+  // Antes de pagar algo en cooldown el cliente tiene que aceptar que lo recibe recién al liberarse.
+  const cdAvisoModal = (lineas, accion, id) => ({ tipo: "cdAviso", accion, id, hasta: cdEntregaDe(lineas), items: lineas.filter((x) => enCooldown(x.it || x)).map((x) => { const it = x.it || x; return { nombre: it.nombre, fecha: cdFechaLarga(it), resta: cdRestante(it) }; }) });
+  function pagarCarro(aceptado) {
     const l = carroLineas(); if (!l.length) return;
     if (!perfil()) { modal = null; renderTodo(); if (cuenta()) cuenta().abrir("login", "Entra a tu cuenta para pagar con tu saldo."); return; }
+    if (!aceptado && cdEntregaDe(l)) { modal = cdAvisoModal(l, "carro"); renderTodo(); return; }
     const payload = l.map((x) => ({ id: x.it.id, qty: x.qty })), n = l.reduce((a, x) => a + x.qty, 0);
     modal = { tipo: "cargando" }; renderTodo();
     token().then((tk) => fetch(ITEMS_URL, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ items: payload }) }))
@@ -901,7 +952,7 @@
       .then((x) => {
         if (!x.ok) { modal = { tipo: "error", msg: (x.j && x.j.error) || "No se pudo completar la compra." }; renderTodo(); cargarItems(true); return; }
         carro = {}; carroGuardar();
-        modal = { tipo: "ok", code: x.j.code, nombre: n + (n === 1 ? " item" : " items"), saldo: x.j.saldo }; renderTodo();
+        modal = { tipo: "ok", code: x.j.code, nombre: n + (n === 1 ? " item" : " items"), saldo: x.j.saldo, entrega: x.j.entregaDesde || "" }; renderTodo();
         if (cuenta() && cuenta().recargar) cuenta().recargar();
         cargarItems(true);
       }).catch((e) => { modal = { tipo: "error", msg: (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : "No se pudo completar la compra. No se descontó saldo." }; renderTodo(); });
@@ -928,8 +979,13 @@
     else if (modal.tipo === "cargando") { h = pasosHtml(2) + "<h3>Procesando…</h3>" + "<p class='itx-hint'>Un momento por favor.</p>"; }
     else if (modal.tipo === "error") { h = "<h3>No se pudo completar</h3><p class='itx-hint'>" + esc(modal.msg) + "</p>"; btns = cerrar; }
     else if (modal.tipo === "ok") {
-      h = pasosHtml(3) + "<h3>¡Compra lista! 🎉</h3>" + "<p class='itx-hint'>Compraste <b>" + esc(modal.nombre) + "</b>. Pedido <b>" + esc(modal.code) + "</b>. Te quedan <b>" + fmtPrecio(modal.saldo) + "</b>. Te escribiremos para entregártelo por Steam; asegúrate de tener tu link de intercambio en tu cuenta.</p>";
+      h = pasosHtml(3) + "<h3>¡Compra lista! 🎉</h3>" + "<p class='itx-hint'>Compraste <b>" + esc(modal.nombre) + "</b>. Pedido <b>" + esc(modal.code) + "</b>. Te quedan <b>" + fmtPrecio(modal.saldo) + "</b>. " +
+        (modal.entrega ? "Tu item está en <b>cooldown de Steam</b>: lo recibes el <b>" + esc(fechaEntrega(modal.entrega)) + "</b>. Ese día te avisaremos por correo y te escribiremos para entregártelo por Steam." : "Te escribiremos para entregártelo por Steam.") + " Asegúrate de tener tu link de intercambio en tu cuenta.</p>";
       btns = cerrar;
+    } else if (modal.tipo === "cdAviso") {
+      h = "<h3>🔒 Item en cooldown</h3><p class='itx-hint'>" + (modal.items.length === 1 ? "Este item está" : "Estos items están") + " en <b>cooldown de Steam</b>. Puedes pagar ahora, pero lo recibirás el <b>" + esc(fechaEntrega(modal.hasta)) + "</b>, cuando Steam permita intercambiarlo. Ese día te avisaremos por correo.</p>" +
+        '<div class="cdlista">' + modal.items.map((x) => '<div class="cdlin">🔒 <b>' + esc(x.nombre) + "</b><small>se libera el " + esc(x.fecha) + " · faltan " + esc(x.resta) + "</small></div>").join("") + "</div>";
+      btns = '<button class="itx-btn gold" type="button" data-itx="cdAceptar">✔ Entiendo, pagar igual</button><button class="itx-btn ghost" type="button" data-itx="' + (modal.accion === "carro" ? "verCarrito" : "cerrarModal") + '">Volver</button>';
     }
     return '<div class="itx-scrim" data-itx="cerrarModal"></div><div class="itx-dialog" role="dialog" aria-modal="true">' + h + '<div class="itx-dbtns">' + btns + "</div></div>";
   }
@@ -938,15 +994,16 @@
     return "¡Hola! 👋🔥 Quiero comprar este item de *" + TIENDA + "* 🛒\n\n🎮 *" + it.nombre + "*" + (it.calidad ? " (" + it.calidad + ")" : "") + "\n💰 Precio: " + fmtPrecio(it.precio) +
       (p ? "\n\n👤 " + p.nombre + " (📧 " + p.email + ")" : "") + "\n\n¿Sigue disponible? 🙏✨";
   }
-  function comprarConCreditos(id) {
+  function comprarConCreditos(id, aceptado) {
     const it = itemPorId(id); if (!it) return;
     if (!perfil()) { modal = null; renderTodo(); if (cuenta()) cuenta().abrir("login", "Entra a tu cuenta para pagar con tu saldo."); return; }
+    if (!aceptado && enCooldown(it)) { modal = cdAvisoModal([it], "item", id); renderTodo(); return; }
     modal = { tipo: "cargando" }; renderTodo();
     token().then((tk) => fetch(ITEMS_URL, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ id }) }))
       .then((r) => r.json().catch(() => ({})).then((j) => ({ ok: r.ok, j })))
       .then((x) => {
         if (!x.ok) { modal = { tipo: "error", msg: (x.j && x.j.error) || "No se pudo completar la compra." }; renderTodo(); cargarItems(true); return; }
-        modal = { tipo: "ok", code: x.j.code, nombre: it.nombre, saldo: x.j.saldo }; renderTodo();
+        modal = { tipo: "ok", code: x.j.code, nombre: it.nombre, saldo: x.j.saldo, entrega: x.j.entregaDesde || "" }; renderTodo();
         if (cuenta() && cuenta().recargar) cuenta().recargar();
         cargarItems(true);
       }).catch((e) => { modal = { tipo: "error", msg: (e && e.message === "NO_SESSION") ? "Tu sesión venció. Vuelve a entrar." : "No se pudo completar la compra. No se descontó saldo." }; renderTodo(); });
@@ -1380,6 +1437,8 @@
       case "carQuitar": delete carro[t.getAttribute("data-id")]; carroGuardar(); renderTodo(); break;
       case "carVaciar": carro = {}; carroGuardar(); renderTodo(); break;
       case "carCred": pagarCarro(); break;
+      case "cdAceptar": if (modal && modal.tipo === "cdAviso") { if (modal.accion === "item") comprarConCreditos(modal.id, true); else pagarCarro(true); } break;
+      case "verCarrito": modal = { tipo: "carrito" }; renderTodo(); break;
       case "carWsp": if (carroLineas().length) window.open(waLink(mensajeCarro()), "_blank", "noopener"); break;
       case "cred": comprarConCreditos(t.getAttribute("data-id")); break;
       case "wsp": { const it = itemPorId(t.getAttribute("data-id")); if (it) window.open(waLink(mensajeItem(it)), "_blank", "noopener"); break; }
@@ -1391,7 +1450,7 @@
       case "steam": rellenarDesdeSteam(); break;
       case "gemaMas": if (adm.form) { const gl = gemasDe(adm.form); gl.push({ t: t.getAttribute("data-t") || "", v: "" }); adm.form.descripcion = gemasAString(gl); renderTodo(); } break;
       case "gemaDel": if (adm.form) { const gl = gemasDe(adm.form); gl.splice(parseInt(t.getAttribute("data-i"), 10), 1); adm.form.descripcion = gemasAString(gl); renderTodo(); } break;
-      case "variante": if (adm.form) { adm.form = Object.assign({}, adm.form, { id: "", precio: "", stock: "1", descripcion: "", creado: "" }); adm.msg = "Versión nueva: pon su gema y su precio."; renderTodo(); irAlForm(); } break;
+      case "variante": if (adm.form) { adm.form = Object.assign({}, adm.form, { id: "", precio: "", stock: "1", descripcion: "", creado: "", cooldownHasta: "" }); adm.msg = "Versión nueva: pon su gema y su precio."; renderTodo(); irAlForm(); } break;
       case "quitarFoto": if (adm.form) { adm.form.img = ""; renderTodo(); } break;
       case "mas1": cambiarStock(t.getAttribute("data-id"), 1); break;
       case "version": { const ib = itemPorId(t.getAttribute("data-id")); if (ib) abrirVersion(ib); break; }

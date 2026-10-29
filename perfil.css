@@ -142,3 +142,4 @@ body.pf-body-pag * { box-sizing: border-box; }
   .pf-dr > span[data-l]::before { content: attr(data-l) ": "; color: var(--pf-dim); font-size: 12px; }
   .pf-dr > .r { justify-self: start; text-align: left; }
 }
+.pf-dot.est-cooldown { background: #e0a23a; }

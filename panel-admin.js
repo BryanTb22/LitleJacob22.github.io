@@ -12,7 +12,15 @@
   var SES_KEY = "lj_rifas_ses";
   var ADMIN_UID = "eLEZkdXiG5b0PpxHQCCei8D0Qxy1";
   var URL_PROBAR = "https://us-central1-" + FB.projectId + ".cloudfunctions.net/probarCorreos";
-  var PED_ESTADOS = [["pagado", "💰 Por entregar"], ["entregado", "✅ Entregado"], ["cancelado", "✖ Cancelado"]];
+  var PED_ESTADOS = [["cooldown", "🔒 En cooldown"], ["pagado", "💰 Por entregar"], ["entregado", "✅ Entregado"], ["cancelado", "✖ Cancelado"]];
+  // Pedidos con items en cooldown de Steam: se entregan recién en entregaDesde (los libera la función liberarCooldown cada hora).
+  function fechaEntrega(iso) { var t = iso ? new Date(iso).getTime() : 0; return isFinite(t) && t ? new Date(t).toLocaleString("es-PE", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : ""; }
+  function fechaCorta(iso) { var t = iso ? new Date(iso) : null; if (!t || !isFinite(t.getTime())) return ""; var p = function (n) { return (n < 10 ? "0" : "") + n; }; return p(t.getDate()) + "/" + p(t.getMonth() + 1); }
+  function cdRestante(iso) {
+    var ms = (iso ? new Date(iso).getTime() : 0) - Date.now(); if (!(ms > 0)) return "";
+    var min = Math.ceil(ms / 60000), h = Math.floor(min / 60), d = Math.floor(h / 24);
+    return d >= 1 ? d + " d " + (h % 24) + " h" : h >= 1 ? h + " h " + (min % 60) + " min" : min + " min";
+  }
   var TABS = { config: "⚙ Configuración", usuarios: "Usuarios y saldo", pagina: "Textos y contactos", items: "Items", pedidos: "🛒 Pedidos", compras: "Compras" };
 
   var st = {
@@ -353,7 +361,9 @@
     });
     return { id: d.name.split("/").pop(), code: sv("code") || d.name.split("/").pop(), cliente: sv("customerName"), steam: sv("steamId"), email: sv("email"), tradelink: sv("tradelink"),
       whatsapp: sv("phone"), uid: sv("uid"), correoAdmin: !!(f.correoAdmin && f.correoAdmin.booleanValue), correoCliente: !!(f.correoCliente && f.correoCliente.booleanValue), correoError: sv("correoError"),
-      estado: sv("status") || "pagado", tienda: sv("tienda"), total: nv("total"), creditos: nv("creditos"), items: its, fecha: f.createdAt && f.createdAt.timestampValue ? new Date(f.createdAt.timestampValue) : null };
+      estado: sv("status") || "pagado", tienda: sv("tienda"), total: nv("total"), creditos: nv("creditos"), items: its, fecha: f.createdAt && f.createdAt.timestampValue ? new Date(f.createdAt.timestampValue) : null,
+      entregaDesde: f.entregaDesde && f.entregaDesde.timestampValue || "", liberadoEn: f.liberadoEn && f.liberadoEn.timestampValue || "",
+      correoLiberadoAdmin: !!(f.correoLiberadoAdmin && f.correoLiberadoAdmin.booleanValue), correoLiberadoCliente: !!(f.correoLiberadoCliente && f.correoLiberadoCliente.booleanValue) };
   }
   function cargarPedidos() {
     if (st.cargandoP) return; st.cargandoP = true; st.pedMsg = "";
@@ -382,7 +392,7 @@
     if (st.pedidos === null) { cargarPedidos(); return '<p class="pa-hint">Cargando pedidos…</p>'; }
     var fl = st.pedFiltro || "pagado", todos = st.pedidos;
     var cuenta = function (k) { return todos.filter(function (p) { return k === "todos" || p.estado === k; }).length; };
-    var chips = [["pagado", "💰 Por entregar"], ["entregado", "✅ Entregados"], ["cancelado", "✖ Cancelados"], ["todos", "Todos"]].map(function (c) {
+    var chips = [["pagado", "💰 Por entregar"], ["cooldown", "🔒 En cooldown"], ["entregado", "✅ Entregados"], ["cancelado", "✖ Cancelados"], ["todos", "Todos"]].map(function (c) {
       return '<button type="button" role="tab" data-pa="pedFiltro" data-f="' + c[0] + '" aria-selected="' + (fl === c[0]) + '">' + c[1] + ' (' + cuenta(c[0]) + ')</button>'; }).join("");
     var lista = todos.filter(function (p) { return fl === "todos" || p.estado === fl; });
     return '<div class="pa-sub chips" role="tablist">' + chips + '</div><div class="pa-grp"><h3>Pedidos de items (' + lista.length + ')</h3>' +
@@ -390,17 +400,18 @@
       (st.pedMsg ? '<p class="pa-hint err">' + esc(st.pedMsg) + '</p>' : '') +
       '<div class="pa-ulist">' + (lista.length ? lista.map(function (p) {
         var ab = st.pedAbierto === p.id, n = p.items.reduce(function (a, i) { return a + i.qty; }, 0);
-        var cab = '<button type="button" class="pa-urow-h" data-pa="pedAbrir" data-id="' + esc(p.id) + '" aria-expanded="' + ab + '"><b>' + esc(p.cliente || "Sin nombre") + ' · ' + n + (n === 1 ? ' item' : ' items') + '</b><span class="pa-usal">' + fmtPrecio(p.total) + '</span><i>' + (ab ? "▴" : "▾") + '</i></button>';
+        var cab = '<button type="button" class="pa-urow-h" data-pa="pedAbrir" data-id="' + esc(p.id) + '" aria-expanded="' + ab + '"><b>' + esc(p.cliente || "Sin nombre") + ' · ' + n + (n === 1 ? ' item' : ' items') + (p.estado === "cooldown" ? ' <small class="pedcd">🔒 entregar el ' + esc(fechaCorta(p.entregaDesde)) + '</small>' : '') + '</b><span class="pa-usal">' + fmtPrecio(p.total) + '</span><i>' + (ab ? "▴" : "▾") + '</i></button>';
         if (!ab) return '<div class="pa-urow">' + cab + '</div>';
         return '<div class="pa-urow open">' + cab + '<div class="pa-ut"><span>Pedido <b>' + esc(p.code) + '</b> · ' + (p.fecha ? esc(p.fecha.toLocaleString("es-PE")) : "") + '</span>' +
           p.items.map(function (i) { return '<span>' + i.qty + ' × ' + esc(i.nombre) + ' — ' + fmtPrecio(i.precio * i.qty) + '</span>'; }).join("") +
           '<span>ID de Steam: ' + esc(p.steam || "—") + '</span><span>WhatsApp: ' + esc(p.whatsapp || "—") + '</span><span>' + esc(p.email) + '</span>' +
           (tradeValido(p.tradelink) ? '<span><a href="' + esc(p.tradelink) + '" target="_blank" rel="noopener">Abrir trade link ↗</a></span>' : '<span class="pa-warn">Sin trade link</span>') +
           '<span>Pagado con saldo: ' + fmtPrecio(p.creditos) + '</span>' +
-          '<span>✉ Correo a ti: ' + (p.correoAdmin ? '✔ enviado' : '✖ no enviado') + ' · Correo al cliente: ' + (p.correoCliente ? '✔ enviado' : '✖ no enviado') + '</span>' +
+          (p.entregaDesde ? '<span class="pedcd-l">🔒 ' + (p.estado === "cooldown" ? 'En cooldown de Steam: <b>no lo entregues todavía</b>. Se libera el <b>' + esc(fechaEntrega(p.entregaDesde)) + '</b>' + (cdRestante(p.entregaDesde) ? ' (faltan ' + esc(cdRestante(p.entregaDesde)) + ')' : ' (ya pasó: en la próxima hora pasa solo a Por entregar)') : 'Estuvo en cooldown hasta el ' + esc(fechaEntrega(p.entregaDesde)) + (p.liberadoEn ? ' · liberado y avisado por correo' : '')) + '</span>' : '') +
+          '<span>✉ Correo a ti: ' + (p.correoAdmin ? '✔ enviado' : '✖ no enviado') + ' · Correo al cliente: ' + (p.correoCliente ? '✔ enviado' : '✖ no enviado') + (p.liberadoEn ? ' · Aviso de liberación: ' + (p.correoLiberadoAdmin ? '✔ a ti' : '✖ a ti') + ' / ' + (p.correoLiberadoCliente ? '✔ al cliente' : '✖ al cliente') : '') + '</span>' +
           (p.correoError ? '<span class="pa-warn">Motivo: ' + esc(p.correoError) + '</span>' : '') + '</div>' + historialHtml(p) +
           '<div class="pa-field"><label for="pa-pe-' + esc(p.id) + '">Estado</label><select id="pa-pe-' + esc(p.id) + '" class="pa-pedEstado" data-id="' + esc(p.id) + '">' + PED_ESTADOS.map(function (e) { return '<option value="' + e[0] + '"' + (p.estado === e[0] ? ' selected' : '') + '>' + e[1] + '</option>'; }).join("") + '</select></div>' +
-          (p.estado === "cancelado" ? '<p class="pa-hint">Cancelar no devuelve el saldo solo: súmalo en Usuarios y saldo.</p>' : '') + '</div>';
+          (p.estado === "cancelado" ? '<p class="pa-hint">Cancelar no devuelve el saldo solo: súmalo en Usuarios y saldo.</p>' : '') + (p.estado === "cooldown" ? '<p class="pa-hint">Cuando el item se libere, el pedido pasa solo a <b>Por entregar</b> y les llega un correo a ti y al cliente.</p>' : '') + '</div>';
       }).join("") : '<p class="pa-hint">No hay pedidos aquí. Cuando alguien compre un item aparecerá y te llegará un correo.</p>') + '</div>' +
       '<button class="pa-btn ghost ancho" type="button" data-pa="pedRecargar">Actualizar lista</button></div>';
   }
