@@ -50,3 +50,6 @@
 #rifas .cost b { font-size: 44px; }
 #rifas .sec-title > p { display: inline-flex; align-items: center; gap: 10px; width: auto; max-width: 92%; padding: 10px 22px; border-radius: 999px; clip-path: none; background: rgba(255,255,255,.05); border: 1px solid rgba(196,200,206,.28); box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08); backdrop-filter: blur(10px); color: #e6e8ec; font-family: var(--body); font-weight: 700; font-size: 13.5px; letter-spacing: .1em; text-transform: uppercase; text-shadow: none; line-height: 1.3; }
 #rifas .sec-title > p::before { content: "S/"; flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 11px; letter-spacing: 0; background: linear-gradient(180deg, #f4f5f7, #9aa0a8); color: #0b0b0d; background-size: auto; filter: none; }
+
+/* Tarjetas de rifa iguales: la descripción y la barra guardan su lugar aunque estén vacías */
+.card .desc.vacia, .cbar.nolim { visibility: hidden; }
