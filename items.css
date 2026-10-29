@@ -344,3 +344,12 @@ body.itx-pop-open{overflow:hidden}
 .improw-s { white-space: nowrap; font-size: 13px; }
 .improw-s small { color: var(--itx-danger); }
 @media (max-width: 820px) { .imp-row .itx-btn { width: 100%; } }
+
+/* Items que ya existen / acciones de admin en la tabla de ofertas */
+.itx-dup { grid-column: 1 / -1; border: 1px solid var(--itx-gold-l, #c4c8ce); background: rgba(196, 200, 206, .06); padding: 10px; border-radius: 10px; margin: 8px 0; }
+.itx-dup h3 { font-size: 15px; margin: 0 0 6px; }
+.itx-admrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--itx-line); }
+.itx-admrow small { display: block; opacity: .75; }
+.ofr-adm { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 10px; }
+.ofr-b { flex-wrap: wrap; justify-content: flex-end; }
+.ofr-b .itx-btn { flex: none; }
