@@ -317,7 +317,7 @@
     else if (!leerSesion()) st.modo = st.modo === "registro" ? "registro" : "login";
     else if (!st.perfil && !st.cargando) { st.modo = "perfil"; cargarPerfil(); }
     else st.modo = st.perfil ? "perfil" : st.modo;
-    if (esAdmin()) { st.modo = "admin"; entrarAdmin(); }
+    if (esAdmin()) { st.modo = "admin"; entrarAdmin(); if (window.ljPanel) { st.abierto = false; window.ljPanel.abrir(); return; } }   // el admin usa el panel lateral (panel-admin.js), igual que Rayas
     if (st.modo === "perfil" && irPerfil(tab)) { st.abierto = false; return; }
     raiz.hidden = false; document.documentElement.classList.add("ljc-lock");
     pintar();
@@ -341,7 +341,8 @@
   function pintar() {
     if (!raiz || raiz.hidden && !st.abierto) return;
     var s = leerSesion(), p = st.perfil, titulo = "", cuerpo = "";
-    if (st.modo === "perfil" && s && !esAdmin(s) && window.ljPerfil && st.perfil) { cerrar(); return; }   // recién entró: se cierra y sigue en la tienda (el perfil es la página perfil.html)
+    if (st.modo === "perfil" && s && !esAdmin(s) && window.ljPerfil && st.perfil) { cerrar(); return; }
+    if (st.modo === "admin" && s && esAdmin(s) && window.ljPanel) { cerrar(); window.ljPanel.abrir(); return; }   // recién entró: se cierra y sigue en la tienda (el perfil es la página perfil.html)
     if (st.modo === "registro") {
       titulo = "Crear mi cuenta";
       cuerpo = '<form class="ljc-body" id="ljcRegistro" novalidate>' + gBtn() +
@@ -491,7 +492,7 @@
     sesion: leerSesion,
     perfil: function () { return st.perfil; },
     token: token,
-    config: function () { st.cfg = null; abrir("admin"); },
+    config: function () { if (window.ljPanel && window.ljPanel.abrir("config")) return; st.cfg = null; abrir("admin"); },
     abrir: function (modo, msg) { if (msg) { st.msg = msg; st.tipo = ""; } abrir(modo); },
     recargar: cargarPerfil,
     salir: function () { try { if (window.ljAdminSalir) window.ljAdminSalir(); } catch (er) { /* nada */ } guardarSesion(null); st.perfil = null; st.modo = "login"; pintarBoton(); pintar(); }

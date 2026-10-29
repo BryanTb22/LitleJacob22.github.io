@@ -2908,14 +2908,15 @@ html.ljc-lock { overflow: hidden; }
     </script>
     <script src="steam.js?v=3" defer=""></script>
     <script src="perfil.js?v=2" defer=""></script>
-    <script src="cuenta.js?v=16" defer=""></script>
+    <script src="panel-admin.js?v=1" defer=""></script>
+    <script src="cuenta.js?v=17" defer=""></script>
     <script src="recarga.js?v=7" defer=""></script>
     <link rel="stylesheet" href="items.css?v=23">
 <link rel="stylesheet" href="mejoras.css?v=5">
 <link rel="stylesheet" href="detalles.css?v=3">
 <link rel="stylesheet" href="redondeado.css?v=1">
 <link rel="stylesheet" href="steam.css?v=1">
-<link rel="stylesheet" href="espejo.css?v=4">
+<link rel="stylesheet" href="espejo.css?v=6">
 <link rel="stylesheet" href="ancho.css?v=1">
     <script>
     /* Interruptor del AFINADO de Comprar/Vender items. Encendido por defecto.
@@ -2933,7 +2934,7 @@ html.ljc-lock { overflow: hidden; }
     </script>
     <script src="mejoras.js?v=2"></script>
     <script src="detalles.js?v=2" defer></script>
-<script src="items.js?v=37" defer=""></script>
+<script src="items.js?v=38" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
     <script>
@@ -4061,6 +4062,8 @@ html.ljc-lock { overflow: hidden; }
                 : route === "compro" ? "Esta sección envía a tu WhatsApp a quienes quieren venderte su inventario o cuenta."
                 : "Toca cualquier set para cambiar su foto, nombre, precio, cofre o stock. Usa 📦 Stock para ver todo tu inventario.";
             if (scroll) window.scrollTo(0, 0);
+            document.body.setAttribute("data-vista", route);   // la barra de admin de abajo solo se ve en Sets Caché; el panel lateral sabe en qué sección está
+            try { window.dispatchEvent(new Event("lj-ruta")); } catch (e) { /* nada */ }
         }
         function goToCofre(cofreId) {
             currentCofre = cofreId || "all";

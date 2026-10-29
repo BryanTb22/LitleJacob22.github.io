@@ -171,3 +171,132 @@ html.lj-rifas .footer .logo { font: 700 24px "Oswald", Impact, sans-serif !impor
 html.lj-rifas .footer .logo i { color: #e0202a; }
 html body .ljc-btn.steam { clip-path: none !important; border-radius: 999px !important; }
 html.lj-rifas .hero .badges .badge, html body #view-sets .m-badge { border-radius: 999px !important; padding-inline: 14px !important; background: rgba(20, 20, 24, .78) !important; }
+
+/* ===================== PANEL ADMIN lateral (panel-admin.js), igual que Rayas con el tema de LitleJacob ===================== */
+body.is-admin:not([data-vista="sets-cache"]) #adminBar { display: none !important; }
+#ljPanelAdmin { position: fixed; inset: 0; z-index: 130; font-family: Inter, system-ui, sans-serif; color: #e6e8eb; }
+#ljPanelAdmin[hidden] { display: none; }
+#ljPanelAdmin .pa-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .72); backdrop-filter: blur(4px); opacity: 0; transition: opacity .2s; }
+#ljPanelAdmin.open .pa-scrim { opacity: 1; }
+#ljPanelAdmin .pa-drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(100%, 560px); display: flex; flex-direction: column; background: linear-gradient(180deg, #17161a, #0c0b0e); border-left: 1px solid #3d3f45; box-shadow: -20px 0 60px rgba(0, 0, 0, .6); transform: translateX(30px); opacity: 0; transition: transform .2s, opacity .2s; }
+#ljPanelAdmin.open .pa-drawer { transform: none; opacity: 1; }
+#ljPanelAdmin .pa-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid #2f3136; }
+#ljPanelAdmin .pa-head h2 { margin: 0; font: 700 26px/1.15 "Oswald", Impact, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #fff; }
+#ljPanelAdmin .pa-head-b { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
+#ljPanelAdmin .pa-body { flex: 1; overflow-y: auto; padding: 18px 20px 24px; display: grid; gap: 14px; align-content: start; grid-auto-rows: max-content; }
+#ljPanelAdmin .pa-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+#ljPanelAdmin .pa-tabs button { padding: 10px 16px; border-radius: 999px; border: 1px solid #3d3f45; background: rgba(255, 255, 255, .03); color: #c4c8ce; font: 700 12.5px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+#ljPanelAdmin .pa-tabs button:hover { color: #fff; border-color: #8b9097; }
+#ljPanelAdmin .pa-tabs button[aria-selected="true"] { color: #fff; border-color: transparent; background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16); box-shadow: 0 4px 16px rgba(200, 22, 31, .35); }
+#ljPanelAdmin .pa-sub { display: flex; gap: 6px; padding: 4px; border-radius: 14px; background: #0b0b0d; border: 1px solid #2f3136; }
+#ljPanelAdmin .pa-sub button { flex: 1; padding: 11px 10px; border: 0; border-radius: 10px; background: transparent; color: #8b9097; font: 800 12.5px Inter, system-ui, sans-serif; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+#ljPanelAdmin .pa-sub button[aria-selected="true"] { background: linear-gradient(180deg, #f4f5f7, #c4c8ce 55%, #8b9097); color: #0b0b0d; }
+#ljPanelAdmin .pa-sub.chips { flex-wrap: wrap; }
+#ljPanelAdmin .pa-sub.chips button { flex: 1 1 auto; font-size: 11.5px; }
+#ljPanelAdmin .pa-grp { display: grid; gap: 12px; padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .08); }
+#ljPanelAdmin .pa-grp h3 { margin: 0; font: 600 22px/1.15 "Oswald", Impact, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #ff5a63; }
+#ljPanelAdmin .pa-hint { margin: 0; font-size: 13px; line-height: 1.5; color: #8b9097; }
+#ljPanelAdmin .pa-hint b { color: #c4c8ce; } #ljPanelAdmin .pa-hint a { color: #ff6b73; }
+#ljPanelAdmin .pa-hint.err, #ljPanelAdmin .pa-warn { color: #ff6b73; } #ljPanelAdmin .pa-hint.ok { color: #6fd08c; }
+#ljPanelAdmin .pa-field { display: grid; gap: 6px; }
+#ljPanelAdmin .pa-field label { font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8b9097; }
+#ljPanelAdmin input:not([type="checkbox"]), #ljPanelAdmin select, #ljPanelAdmin textarea { width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .14); background: #0b0b0d; color: #fff; font: inherit; font-size: 14.5px; }
+#ljPanelAdmin input:focus, #ljPanelAdmin select:focus, #ljPanelAdmin textarea:focus { outline: none; border-color: #c4c8ce; }
+#ljPanelAdmin .pa-chk { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+#ljPanelAdmin .pa-chk input { width: 18px; height: 18px; accent-color: #c8161f; }
+#ljPanelAdmin .pa-acc { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#ljPanelAdmin .pa-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 20px; border: 0; border-radius: 999px; cursor: pointer; text-decoration: none; font: 800 12.5px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+#ljPanelAdmin .pa-btn:hover { filter: brightness(1.12); }
+#ljPanelAdmin .pa-btn[disabled] { opacity: .45; cursor: not-allowed; filter: none; }
+#ljPanelAdmin .pa-btn.rojo { color: #fff; background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16); box-shadow: 0 4px 16px rgba(200, 22, 31, .3); }
+#ljPanelAdmin .pa-btn.ghost { color: #eef0f3; background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px #3d3f45; }
+#ljPanelAdmin .pa-btn.peligro { color: #ff6b73; }
+#ljPanelAdmin .pa-btn.sm { padding: 8px 14px; font-size: 11.5px; }
+#ljPanelAdmin .pa-btn.ancho { width: 100%; }
+#ljPanelAdmin .pa-ico { display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 10px; border-radius: 999px; border: 1px solid #3d3f45; background: rgba(255, 255, 255, .04); color: #eef0f3; font-weight: 800; cursor: pointer; }
+#ljPanelAdmin .pa-ico:hover { border-color: #c4c8ce; }
+#ljPanelAdmin .pa-ico.txt { font-size: 12.5px; }
+/* interruptores */
+#ljPanelAdmin .pa-cfg { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 16px; border-radius: 16px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .1); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+#ljPanelAdmin .pa-cfg.on { border-color: rgba(224, 32, 42, .6); background: rgba(224, 32, 42, .08); }
+#ljPanelAdmin .pa-cfg[disabled] { opacity: .6; cursor: wait; }
+#ljPanelAdmin .pa-cfg-tx { display: grid; gap: 3px; min-width: 0; }
+#ljPanelAdmin .pa-cfg-tx b { font-size: 15px; color: #fff; } #ljPanelAdmin .pa-cfg-tx small { font-size: 12.5px; color: #8b9097; }
+#ljPanelAdmin .pa-cfg-tx em { font-style: normal; font-size: 11.5px; font-weight: 800; letter-spacing: .04em; color: #8b9097; }
+#ljPanelAdmin .pa-cfg.on .pa-cfg-tx em { color: #ff5a62; }
+#ljPanelAdmin .pa-sw { flex: none; width: 52px; height: 30px; border-radius: 999px; background: rgba(255, 255, 255, .14); position: relative; transition: background .2s; }
+#ljPanelAdmin .pa-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); transition: transform .2s; }
+#ljPanelAdmin .pa-cfg.on .pa-sw { background: linear-gradient(90deg, #a3121a, #e0202a); }
+#ljPanelAdmin .pa-cfg.on .pa-sw::after { transform: translateX(22px); }
+/* listas (usuarios, pedidos, items) */
+#ljPanelAdmin .pa-ulist { display: grid; gap: 6px; }
+#ljPanelAdmin .pa-urow { border-radius: 14px; border: 1px solid #2f3136; background: #0e0d10; overflow: hidden; }
+#ljPanelAdmin .pa-urow.open { display: grid; gap: 10px; padding-bottom: 12px; border-color: #3d3f45; }
+#ljPanelAdmin .pa-urow.open > :not(.pa-urow-h) { margin: 0 14px; }
+#ljPanelAdmin .pa-urow-h { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+#ljPanelAdmin .pa-urow-h:hover { background: rgba(255, 255, 255, .04); }
+#ljPanelAdmin .pa-urow-h b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; color: #fff; }
+#ljPanelAdmin .pa-urow-h i { flex: none; font-style: normal; color: #8b9097; }
+#ljPanelAdmin .pa-usal { flex: none; padding: 3px 10px; border-radius: 999px; background: rgba(200, 22, 31, .14); border: 1px solid rgba(200, 22, 31, .45); color: #ff8a90; font-weight: 800; font-size: 13px; }
+#ljPanelAdmin .pa-ut { display: grid; gap: 3px; font-size: 13px; color: #8b9097; overflow-wrap: anywhere; }
+#ljPanelAdmin .pa-ut b { color: #fff; } #ljPanelAdmin .pa-ut a, #ljPanelAdmin .pa-frow a { color: #ff6b73; }
+#ljPanelAdmin .pa-ucred { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+#ljPanelAdmin .pa-credset { width: 110px !important; text-align: center; }
+#ljPanelAdmin .pa-usave { font-size: 12.5px; color: #6fd08c; }
+#ljPanelAdmin .pa-mas { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 12px; border: 1px dashed #3d3f45; background: none; color: #c4c8ce; font: 700 13px Inter, system-ui, sans-serif; cursor: pointer; }
+#ljPanelAdmin .pa-mas i { font-style: normal; }
+#ljPanelAdmin .pa-av { flex: none; width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+#ljPanelAdmin .pa-av.ini { display: inline-grid; place-items: center; background: hsl(var(--h) 45% 32%); color: #fff; font-weight: 800; font-size: 13px; }
+#ljPanelAdmin .pa-av.grande { width: 52px; height: 52px; font-size: 20px; }
+#ljPanelAdmin .pa-ficha { display: grid; gap: 8px; padding: 14px; border-radius: 14px; border: 1px solid rgba(200, 22, 31, .5); background: rgba(200, 22, 31, .05); }
+#ljPanelAdmin .pa-ficha h4 { margin: 0; color: #ff5a63; }
+#ljPanelAdmin .pa-fhead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+#ljPanelAdmin .pa-fnom { display: grid; gap: 2px; flex: 1; min-width: 0; } #ljPanelAdmin .pa-fnom b { font-size: 17px; color: #fff; } #ljPanelAdmin .pa-fnom small { color: #8b9097; }
+#ljPanelAdmin .pa-fnom a { color: #ff6b73; font-size: 13px; }
+#ljPanelAdmin .pa-fcred { font-weight: 800; color: #fff; }
+#ljPanelAdmin .pa-frow { display: grid; grid-template-columns: 92px 1fr; gap: 8px; font-size: 14px; overflow-wrap: anywhere; }
+#ljPanelAdmin .pa-frow > span { color: #8b9097; text-transform: uppercase; font-size: 11px; letter-spacing: .08em; padding-top: 2px; }
+#ljPanelAdmin .pa-frifas { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+#ljPanelAdmin .pa-hist { display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: #0b0b0d; border: 1px solid #2f3136; font-size: 13px; }
+#ljPanelAdmin .pa-hist small { color: #8b9097; }
+#ljPanelAdmin .pa-histr { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, .03); color: #c4c8ce; }
+#ljPanelAdmin .pa-histr.cur { border: 1px solid rgba(200, 22, 31, .6); }
+#ljPanelAdmin .pa-it { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #2a2b30; }
+#ljPanelAdmin .pa-it:last-child { border-bottom: 0; }
+#ljPanelAdmin .pa-it-img { width: 60px; aspect-ratio: 3 / 2; flex: none; border-radius: 8px; overflow: hidden; background: #0b0b0d; }
+#ljPanelAdmin .pa-it-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#ljPanelAdmin .pa-it-tx { flex: 1; min-width: 0; display: grid; gap: 2px; }
+#ljPanelAdmin .pa-it-tx b { font-size: 14.5px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ljPanelAdmin .pa-it-tx small { color: #8b9097; font-size: 12.5px; }
+#ljPanelAdmin .pa-compras { margin: 0 !important; border: 0 !important; background: none !important; padding: 0 !important; }
+#ljPanelAdmin .pa-compras > summary { list-style: none; font: 600 22px "Oswald", Impact, sans-serif !important; letter-spacing: .04em; text-transform: uppercase; color: #ff5a63; margin-bottom: 8px; pointer-events: none; }
+#ljPanelAdmin .pa-compras > summary b { font-weight: 600; }
+#ljPanelAdmin .pa-compras .field { display: grid; gap: 6px; margin-bottom: 10px; }
+#ljPanelAdmin .pa-compras .field label { font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8b9097; }
+#ljPanelAdmin .pa-compras .itx-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #2a2b30; }
+#ljPanelAdmin .pa-foot { padding: 14px 20px 18px; border-top: 1px solid #2f3136; display: grid; gap: 10px; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .5)); }
+#ljPanelAdmin .pa-pub { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600; color: #8b9097; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); }
+#ljPanelAdmin .pa-pub::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+#ljPanelAdmin .pa-pub.pend { color: #ffc93c; border-color: rgba(255, 201, 60, .45); }
+@media (max-width: 560px) { #ljPanelAdmin .pa-head h2 { font-size: 21px; } #ljPanelAdmin .pa-body { padding: 14px; } #ljPanelAdmin .pa-frow { grid-template-columns: 1fr; gap: 2px; } }
+
+/* ===================== Panel admin de Rifas: mismo estilo que Rayas ===================== */
+html.lj-rifas .drawer { background: linear-gradient(180deg, #17161a, #0c0b0e) !important; border-left: 1px solid #3d3f45 !important; }
+html.lj-rifas .drawer-head h2 { font: 700 26px/1.15 "Oswald", Impact, sans-serif !important; letter-spacing: .04em; text-transform: uppercase; color: #fff !important; }
+html.lj-rifas .drawer .tabs { gap: 8px; }
+html.lj-rifas .drawer .tab { border-radius: 999px !important; clip-path: none !important; padding: 10px 16px; border: 1px solid #3d3f45 !important; background: rgba(255, 255, 255, .03) !important; color: #c4c8ce !important; font: 700 12.5px Inter, system-ui, sans-serif !important; letter-spacing: .08em; }
+html.lj-rifas .drawer .tab[aria-selected="true"] { color: #fff !important; border-color: transparent !important; background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16) !important; box-shadow: 0 4px 16px rgba(200, 22, 31, .35); }
+html.lj-rifas .drawer .grp { padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .08); }
+html.lj-rifas .drawer .grp.cfg { padding: 16px; }
+html.lj-rifas .drawer .grp h3 { font: 600 22px/1.15 "Oswald", Impact, sans-serif !important; letter-spacing: .04em; color: #ff5a63 !important; }
+html.lj-rifas .drawer .field input, html.lj-rifas .drawer .field select, html.lj-rifas .drawer .field textarea { border-radius: 12px !important; background: #0b0b0d !important; border-color: rgba(255, 255, 255, .14) !important; }
+html.lj-rifas .drawer .urow { border-radius: 14px !important; border-color: #2f3136 !important; background: #0e0d10 !important; }
+html.lj-rifas .drawer .urow-h .usal { border-radius: 999px; background: rgba(200, 22, 31, .14); border: 1px solid rgba(200, 22, 31, .45); color: #ff8a90; padding: 3px 10px; }
+html.lj-rifas .drawer .subtabs { border-radius: 14px !important; background: #0b0b0d !important; border: 1px solid #2f3136 !important; }
+html.lj-rifas .drawer .subtab { border-radius: 10px !important; clip-path: none !important; }
+html.lj-rifas .drawer .iconbtn { border-radius: 999px !important; clip-path: none !important; }
+html.lj-rifas .drawer .ficha { border-radius: 14px; border-color: rgba(200, 22, 31, .5) !important; background: rgba(200, 22, 31, .05) !important; }
+html.lj-rifas .drawer-foot .btn { border-radius: 999px !important; }
+html.lj-rifas .drawer .usal { border-radius: 999px !important; background: rgba(200, 22, 31, .14) !important; border: 1px solid rgba(200, 22, 31, .45) !important; color: #ff8a90 !important; padding: 3px 10px !important; font-weight: 800; }
+html.lj-rifas .drawer-foot .msg { display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 7px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); }
+html.lj-rifas .drawer-foot .msg::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
