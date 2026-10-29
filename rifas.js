@@ -1061,6 +1061,9 @@
 
       '<footer class="footer gutter"><div class="wrap">' +
       '<span class="logo"><img class="logo-img" src="favicon.png" alt="" width="36" height="36" loading="lazy">Litlejacob <i>Store</i></span>' +
+      '<nav class="fnav" aria-label="Enlaces rápidos"><a href="index.html#inicio">Inicio</a><a href="index.html#sets-cache">Sets Caché</a><a href="index.html#compro">Compro</a>' +
+        (admin.puede || rifasOn() ? '<a href="#rifas">Rifas</a><a href="#como">Cómo participar</a><a href="#ganadores">Ganadores</a><a href="#reglas">Reglas</a>' : '') +
+        (admin.puede || (estado.secciones && estado.secciones.items) ? '<a href="index.html#items">Comprar items</a><a href="index.html#vender">Vender items</a>' : '') + '</nav>' +
       (V ? '<button type="button" class="btn btn-ghost btn-sm" data-a="editContactos">✎ Editar contactos de WhatsApp</button>'
          : (contactos().length ? '<span>WhatsApp: ' + contactos().map(function (c) { return esc(c.nombre) + ' <span class="wa">' + esc(waBonito(c.numero)) + '</span>'; }).join(' · ') + '</span>' : '')) +
       tx("span", "pie") +

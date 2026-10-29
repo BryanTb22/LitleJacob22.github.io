@@ -16,7 +16,8 @@
     d.innerHTML = [["steam", "Entrega por Steam", "Directo a tu inventario, con atención inmediata."], ["pago", "Pago con Yape / tarjeta", "También por transferencia y WhatsApp."], ["azar", "Ganador al azar", "Rifas transparentes con ruleta."]].map(function (x) {
       return '<div class="lj-trust-i"><span class="lj-trust-ico">' + ICO[x[0]] + '</span><span><b>' + x[1] + '</b><small>' + x[2] + '</small></span></div>';
     }).join("");
-    hero.insertAdjacentElement("afterend", d);
+    var dentro = hero.querySelector(".lj-h2-in");   // portada nueva: la franja va dentro, bajo los botones (como en Rayas)
+    if (dentro) dentro.appendChild(d); else hero.insertAdjacentElement("afterend", d);
   }
   var IMG = {};
   function foto(src, alt) {
