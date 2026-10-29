@@ -805,7 +805,9 @@
   function carroTotales() {
     let sol = 0, cred = 0;
     carroLineas().forEach((l) => { sol += l.it.precio * l.qty; cred += Math.ceil(l.it.precio - 1e-9) * l.qty; });
-    return { sol: Math.round(sol * 100) / 100, cred };
+    sol = Math.round(sol * 100) / 100;
+    // El saldo se cobra en soles enteros: se redondea hacia arriba el TOTAL del carrito (no cada item).
+    return { sol, cred: sol > 0 ? Math.max(1, Math.ceil(sol - 1e-9)) : 0 };
   }
   function carroAgregar(id) {
     const it = itemPorId(id); if (!it || it.stock <= 0) return false;
@@ -828,7 +830,7 @@
       '<div class="cresumen"><div><span>Productos (' + nUni + ')</span><b>' + fmtPrecio(T.sol) + "</b></div>" +
       (p ? "<div><span>Tu saldo</span><b>S/ " + p.creditos + "</b></div>" + (falta ? '<div class="falta"><span>Te faltan</span><b>S/ ' + falta + "</b></div>" : "<div><span>Saldo después</span><b>S/ " + (p.creditos - T.cred) + "</b></div>") : "") +
       '<div class="total"><span>Total a pagar</span><b>' + fmtPrecio(T.sol) + "</b></div></div>" +
-      (T.cred - T.sol > 0.005 ? '<p class="itx-hint">El saldo se usa en soles enteros: el precio de cada item se redondea hacia arriba. Con saldo se descuentan <b>S/ ' + T.cred + '</b> (precio real ' + fmtPrecio(T.sol) + ').</p>' : "") +
+      (T.cred - T.sol > 0.005 ? '<p class="itx-hint">El saldo se usa en soles enteros: el total se redondea hacia arriba. Con saldo se descuentan <b>S/ ' + T.cred + '</b> (precio real ' + fmtPrecio(T.sol) + ').</p>' : "") +
       (p ? (falta ? '<p class="itx-hint warn">Tu saldo no alcanza. Recarga o pide por WhatsApp.</p>' : "") : '<p class="itx-hint">Para pagar con tu saldo entra a tu cuenta.</p>');
     const btns = '<button class="itx-btn fucsia" type="button" data-itx="carCred">💎 Pagar con tu saldo (S/ ' + T.cred + ')</button>' +
       '<button class="itx-btn gold" type="button" data-itx="carWsp">💬 Pedir por WhatsApp</button>' +
