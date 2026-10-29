@@ -212,7 +212,14 @@
       } else if (vs.tipo === "vinculado") {
         st.msg = vs.msg; st.tipo = "ok"; st.modo = "perfil"; abrir("perfil", "seg"); cargarPerfil().then(function () { st.msg = vs.msg; st.tipo = "ok"; pintar(); });
       } else { st.msg = vs.msg; st.tipo = "err"; st.modo = "login"; abrir("login"); }
-    } else if (leerSesion()) cargarPerfil();
+    } else if (leerSesion()) {
+      var conRecarga = /^#recargar$/.test(location.hash);   // viene de "Recargar" en perfil.html
+      cargarPerfil().then(function () {
+        if (!conRecarga || !st.perfil || !window.ljRecarga) return;
+        try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* nada */ }
+        window.ljRecarga.abrir();
+      });
+    }
     // Permite abrir la cuenta con #cuenta en la dirección
     if (/^#cuenta$/.test(location.hash)) abrir();
   }
@@ -221,8 +228,14 @@
     var s = leerSesion(), p = st.perfil;
     if (recBtn) recBtn.hidden = esAdmin(s);
     document.querySelectorAll("[data-recargar]").forEach(function (a) { a.hidden = esAdmin(s); });   // el administrador no recarga
-    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>S/ ' + fmtS(p.creditos) + '</small>' : "Mi cuenta") : "Entrar / Registrarme";
+    // Mismo botón que Rayas Store: "◆ S/ saldo · nombre ▾" (abre el menú de usuario en cualquier sección).
+    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? (p ? '<b>◆ S/ ' + fmtS(p.creditos) + '</b><span class="nm"> · ' + esc(p.nombre || "Mi cuenta") + '</span><span class="fl" aria-hidden="true"> ▾</span>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
+    boton.setAttribute("aria-haspopup", s && !esAdmin(s) && p ? "menu" : "false");
+    var mr = document.getElementById("ljMisRifasBtn");   // "Mis rifas" junto al usuario, como en Rayas
+    if (s && !esAdmin(s) && p) {
+      if (!mr && caja && caja.parentNode) { mr = document.createElement("a"); mr.id = "ljMisRifasBtn"; mr.className = "ljc-misrifas"; mr.href = "rifas.html#misrifas"; mr.innerHTML = "🎟️ Mis rifas"; caja.parentNode.insertBefore(mr, caja); }
+    } else if (mr) mr.remove();
     pintarMenu();
     if (!recBtn && boton.parentNode && !document.querySelector("[data-recargar]")) {   // si el menú ya trae Recargar, no se duplica
       recBtn = document.createElement("button");
@@ -328,7 +341,7 @@
   function pintar() {
     if (!raiz || raiz.hidden && !st.abierto) return;
     var s = leerSesion(), p = st.perfil, titulo = "", cuerpo = "";
-    if (st.modo === "perfil" && s && !esAdmin(s) && window.ljPerfil) { cerrar(); irPerfil(); return; }   // p. ej. justo después de entrar
+    if (st.modo === "perfil" && s && !esAdmin(s) && window.ljPerfil && st.perfil) { cerrar(); return; }   // recién entró: se cierra y sigue en la tienda (el perfil es la página perfil.html)
     if (st.modo === "registro") {
       titulo = "Crear mi cuenta";
       cuerpo = '<form class="ljc-body" id="ljcRegistro" novalidate>' + gBtn() +

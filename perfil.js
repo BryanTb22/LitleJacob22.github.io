@@ -1,7 +1,8 @@
 /* =====================================================================
    PERFIL DEL CLIENTE (tienda + rifas): Información personal · Transacciones · Seguridad
-   Un solo módulo para las dos páginas. Usa la misma cuenta (Firebase Auth + rayas_users)
-   y la sesión compartida "lj_rifas_ses". API: window.ljPerfil.abrir(tab, mensaje)
+   Vive en su propia página: perfil.html (#transacciones, #seguridad). En la tienda y en Rifas,
+   window.ljPerfil.abrir(tab) solo lleva a esa página. Misma cuenta (Firebase Auth + rayas_users),
+   sesión compartida "lj_rifas_ses".
    ===================================================================== */
 (function () {
   "use strict";
@@ -62,7 +63,7 @@
   }
   function leerPerfil(d) {
     var f = (d && d.fields) || {}, sv = function (k) { return (f[k] && f[k].stringValue) || ""; };
-    return { nombre: sv("nombre"), steamId: sv("steamId"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"), steam: sv("steam"),
+    return { nombre: sv("nombre"), steamId: sv("steamId"), steamAvatar: sv("steamAvatar"), whatsapp: sv("whatsapp"), email: sv("email"), tradelink: sv("tradelink"), steam: sv("steam"),
       creditos: f.creditos ? Number(f.creditos.integerValue || f.creditos.doubleValue || 0) : 0 };
   }
   function cargarTodo() {
@@ -147,10 +148,10 @@
   }
   function transHtml() {
     var f = filas(), cargandoAun = st.compras === null && st.partes === null;
-    var cab = '<div class="pf-tools"><h3 class="pf-h">Transacciones</h3><div class="pf-filtros">' +
-      '<select id="pf-tipo" aria-label="Tipo de transacción"><option value="">Tipo de transacción</option><option value="compra"' + (st.tTipo === "compra" ? " selected" : "") + '>Compras de items</option><option value="rifa"' + (st.tTipo === "rifa" ? " selected" : "") + '>Rifas</option></select>' +
-      '<input id="pf-buscar" type="search" placeholder="ID de transacción / Nombre del item" autocomplete="off" value="' + esc(st.tBuscar) + '"></div></div>';
-    if (!f.length) return cab + '<div class="pf-vacio">' + (cargandoAun ? "Cargando tus transacciones…" : "Todavía no tienes transacciones. Tus compras de items y tus tickets de rifas aparecerán aquí.") + '</div>';
+    var cab = '<div class="pf-tools"><div class="pf-sec-h"><h2>Transacciones</h2><p>Tus compras de items y tickets de rifas. Toca una fila para ver el detalle.</p></div><div class="pf-filtros">' +
+      '<select id="pf-tipo" aria-label="Tipo de transacción"><option value="">Todas</option><option value="compra"' + (st.tTipo === "compra" ? " selected" : "") + '>Compras de items</option><option value="rifa"' + (st.tTipo === "rifa" ? " selected" : "") + '>Rifas</option></select>' +
+      '<input id="pf-buscar" type="search" placeholder="Buscar por ID o nombre del item" autocomplete="off" value="' + esc(st.tBuscar) + '"></div></div>';
+    if (!f.length) return cab + '<div class="pf-vacio-t">' + (cargandoAun ? "Cargando tus transacciones…" : "Todavía no tienes transacciones. Tus compras de items y tus tickets de rifas aparecerán aquí.") + '</div>';
     return cab + '<div class="pf-tabla"><div class="pf-th"><span>Tipo / Fecha</span><span>ID</span><span>Estado</span><span>Sistema de pago</span><span>Importe</span><span class="r">Saldo</span></div>' +
       f.map(function (r) {
         var ab = !!st.abiertos[r.key], q = sinTildes(r.code + " " + r.titulo + " " + r.det.map(function (d) { return d.nombre; }).join(" "));
@@ -181,46 +182,61 @@
     return '<div class="ljc-field' + (extra ? " " + extra : "") + '"><label for="' + id + '">' + label + '</label><input id="' + id + '" ' + attrs + (valor != null ? ' value="' + esc(valor) + '"' : "") + '>' + (ayuda ? '<p class="ljc-hint">' + ayuda + '</p>' : "") + '</div>';
   }
   function infoHtml(p) {
-    return '<form class="pf-form" id="pfInfo" novalidate><h3 class="pf-h">Información personal</h3><div class="pf-grid">' +
+    return '<form class="pf-form" id="pfInfo" novalidate><div class="pf-sec-h"><h2>Información personal</h2><p>Estos datos los usamos para enviarte tus items por Steam.</p></div><div class="pf-grid">' +
       campo("pf-nombre", "Nombre de usuario", 'maxlength="40" required autocomplete="nickname"', "", p.nombre) +
       campo("pf-email", "Correo", "disabled", "", p.email || (leerSesion() || {}).email) +
       campo("pf-wa", "WhatsApp", 'inputmode="tel" maxlength="30" required', "", p.whatsapp) +
       campo("pf-steam", "ID de Steam (código de amigo)", 'inputmode="numeric" maxlength="80" required placeholder="Ej. 123456789"', 'En Steam: <b>Amigos → Añadir un amigo</b> → "Tu código de amigo". También puedes pegar el link de tu perfil.', p.steam) +
-      campo("pf-trade", "Link de intercambio de Steam (trade link)", 'inputmode="url" required placeholder="https://steamcommunity.com/tradeoffer/new/?partner=…&token=…"', '<a href="https://steamcommunity.com/my/tradeoffers/privacy#trade_offer_access_url" target="_blank" rel="noopener">¿Dónde encuentro mi trade link?</a>', p.tradelink, "pf-ancho") +
-      '</div>' + (p.steam ? "" : '<p class="ljc-hint warn">Agrega tu ID de Steam para que podamos agregarte y enviarte tus items.</p>') +
-      '<div><button class="ljc-btn silver" type="submit">Guardar cambios</button></div><p class="ljc-msg" role="status" id="pfInfoMsg"></p></form>';
+      campo("pf-trade", "Link de intercambio de Steam", 'inputmode="url" required placeholder="https://steamcommunity.com/tradeoffer/new/?partner=…&token=…"', '<a href="https://steamcommunity.com/my/tradeoffers/privacy#trade_offer_access_url" target="_blank" rel="noopener">¿Dónde encuentro mi trade link?</a>', p.tradelink, "pf-ancho") +
+      '</div>' + (p.steam ? "" : '<p class="pf-aviso">Agrega tu ID de Steam para que podamos agregarte y enviarte tus items.</p>') +
+      '<div class="pf-acciones"><button class="ljc-btn silver" type="submit">Guardar cambios</button><span class="ljc-msg" role="status" id="pfInfoMsg"></span></div></form>';
   }
   function segHtml(p) {
-    var clave = st.tienePass === false
-      ? '<div class="pf-bloque"><h3 class="pf-h">Contraseña</h3><p class="ljc-hint">Tu cuenta entra con Steam o Google y todavía no tiene contraseña. Si quieres una, te enviamos un correo para crearla.</p>' +
-        (p.email ? '<div><button class="ljc-btn silver sm" type="button" data-a="crearClave">Enviarme el correo</button></div>' : '<p class="ljc-hint">Tu cuenta no tiene un correo registrado. Escríbenos por WhatsApp.</p>') + '<p class="ljc-msg" role="status" id="pfClaveMsg"></p></div>'
-      : '<form class="pf-bloque pf-form" id="pfClave" novalidate><h3 class="pf-h">Cambiar contraseña</h3><div class="pf-grid">' +
-        campo("pf-k0", "Contraseña actual", 'type="password" autocomplete="current-password" required', "", null, "pf-ancho") +
-        campo("pf-k1", "Contraseña nueva (mínimo 6)", 'type="password" minlength="6" autocomplete="new-password" required') +
-        campo("pf-k2", "Repite la contraseña nueva", 'type="password" minlength="6" autocomplete="new-password" required') +
-        '</div><div><button class="ljc-btn silver" type="submit">Cambiar contraseña</button></div><p class="ljc-msg" role="status" id="pfClaveMsg"></p>' +
-        '<p class="ljc-hint"><a href="#" data-a="crearClave">¿Olvidaste tu contraseña actual? Te enviamos un correo.</a></p></form>';
-    return clave + (window.ljSteam ? window.ljSteam.bloqueVinculo(p.steamId, "ljc-btn steam", "ljc-hint", "pf-bloque ljc-steam") : "") +
-      '<div class="pf-bloque"><h3 class="pf-h">Sesión</h3><p class="ljc-hint">Cierra tu sesión en este dispositivo.</p><div><button class="ljc-btn ghost sm" type="button" data-a="salir">Cerrar sesión</button></div></div>';
+    var v = window.ljSteam ? window.ljSteam.vinculado(p.steamId) : p.steamId, ab = !!st.claveAbierta, clave;
+    if (st.tienePass === false) {
+      clave = '<div class="pf-fila"><div class="pf-fila-tx"><b>Contraseña</b><span>Entras con Steam o Google y aún no tienes contraseña.</span></div>' +
+        (p.email ? '<button class="ljc-btn ghost sm" type="button" data-a="crearClave">Crear contraseña</button>' : '') + '</div>';
+    } else {
+      clave = '<div class="pf-fila"><div class="pf-fila-tx"><b>Contraseña</b><span>Cámbiala cuando quieras. Te pediremos la actual.</span></div>' +
+        '<button class="ljc-btn ghost sm" type="button" data-a="claveToggle" aria-expanded="' + ab + '">' + (ab ? "Cancelar" : "Cambiar") + '</button>' +
+        (ab ? '<form class="pf-form pf-clave" id="pfClave" novalidate><div class="pf-grid">' +
+          campo("pf-k0", "Contraseña actual", 'type="password" autocomplete="current-password" required', "", null, "pf-ancho") +
+          campo("pf-k1", "Nueva (mínimo 6)", 'type="password" minlength="6" autocomplete="new-password" required') +
+          campo("pf-k2", "Repite la nueva", 'type="password" minlength="6" autocomplete="new-password" required') +
+          '</div><div class="pf-acciones"><button class="ljc-btn silver sm" type="submit">Guardar contraseña</button><a href="#" class="pf-link" data-a="crearClave">¿Olvidaste la actual?</a></div>' +
+          '<p class="ljc-msg" role="status" id="pfClaveMsg"></p></form>' : '') + '</div>';
+    }
+    return '<div class="pf-sec-h"><h2>Seguridad</h2><p>Controla cómo entras a tu cuenta.</p></div><div class="pf-lista">' + clave +
+      '<div class="pf-fila"><div class="pf-fila-tx"><b>Steam</b><span>' + (v ? '✔ Vinculado (ID ' + esc(v) + '). Puedes entrar con «Entrar con Steam».' : 'Vincúlalo para entrar con un clic, sin contraseña.') + '</span></div>' +
+        (v ? '' : '<button type="button" class="ljc-btn ghost sm" data-a="steamVincular">Vincular Steam</button>') + '</div>' +
+      '<div class="pf-fila"><div class="pf-fila-tx"><b>Sesión</b><span>Cierra tu sesión en este dispositivo.</span></div><button class="ljc-btn ghost sm" type="button" data-a="salir">Cerrar sesión</button></div></div>';
   }
-  function cuerpo() {
-    var p = st.perfil;
-    if (!p) return '<p class="ljc-hint">' + (st.cargando ? "Cargando tu cuenta…" : "No se pudo cargar tu cuenta. Revisa tu internet e inténtalo otra vez.") + '</p>';
-    var tabs = '<nav class="pf-tabs" role="tablist" aria-label="Secciones del perfil">' + TABS.map(function (t) {
-      return '<button type="button" class="pf-tab" role="tab" data-a="tab" data-t="' + t[0] + '" aria-selected="' + (st.tab === t[0]) + '"><span aria-hidden="true">' + t[1] + '</span><b>' + t[2] + '</b></button>';
-    }).join("") + '</nav>';
-    var msg = st.msg ? '<p class="ljc-msg ' + st.tipo + '" role="status">' + esc(st.msg) + '</p>' : "";
-    return tabs + msg + '<section class="pf-panel" role="tabpanel">' + (st.tab === "trans" ? transHtml() : st.tab === "seg" ? segHtml(p) : infoHtml(p)) + '</section>';
+  var RUTA = { info: "", trans: "#transacciones", seg: "#seguridad" };
+  function tabDeHash() { var h = location.hash; return h === "#transacciones" ? "trans" : h === "#seguridad" ? "seg" : "info"; }
+  function avatar(p) {
+    var a = p && p.steamAvatar && window.ljSteam && window.ljSteam.imgOk && window.ljSteam.imgOk(p.steamAvatar) ? p.steamAvatar : "";
+    return a ? '<img src="' + esc(a) + '" alt="" width="56" height="56">' : '<span>' + esc(String(p && p.nombre || "?").trim().charAt(0).toUpperCase() || "?") + '</span>';
   }
   function pintar() {
-    if (!raiz || !st.abierto) return;
-    var p = st.perfil, sc = raiz.querySelector(".pf-body"), top = sc ? sc.scrollTop : 0;
-    raiz.innerHTML = '<div class="ljc-back" data-a="cerrar"></div><aside class="ljc-panel pf-pag" role="dialog" aria-modal="true" aria-label="Perfil">' +
-      '<header class="ljc-head pf-head"><div class="pf-tit"><nav class="pf-mig" aria-label="Ruta"><a href="#" data-a="cerrar">Inicio</a><span aria-hidden="true">›</span><span>Perfil</span></nav><h2>Perfil</h2></div>' +
-      (p ? '<div class="pf-saldo"><span><small>Tu saldo</small><b>S/ ' + (Math.round(p.creditos * 100) / 100).toFixed(2).replace(/\.00$/, "") + '</b></span><button class="ljc-btn red sm" type="button" data-a="recargar">💎 Recargar</button></div>' : "") +
-      '<button class="ljc-btn ghost sm" type="button" data-a="cerrar">Cerrar</button></header><div class="pf-body">' + cuerpo() + '</div></aside>';
-    var nb = raiz.querySelector(".pf-body"); if (nb && top) nb.scrollTop = top;
+    if (!raiz) return;
+    var p = st.perfil, s = leerSesion(), cuerpo;
+    st.tab = tabDeHash();
+    if (!s) cuerpo = '<div class="pf-card pf-vacio"><b>Entra a tu cuenta para ver tu perfil.</b><div class="pf-acciones"><a class="ljc-btn silver" href="index.html#cuenta">Entrar</a><a class="ljc-btn ghost" href="index.html">Volver a la tienda</a></div></div>';
+    else if (s.uid === ADMIN_UID) cuerpo = '<div class="pf-card pf-vacio"><b>Esta es la cuenta de administrador.</b><div class="pf-acciones"><a class="ljc-btn silver" href="index.html">Ir a la tienda</a></div></div>';
+    else if (!p) cuerpo = '<div class="pf-card pf-vacio">' + (st.cargando ? "Cargando tu cuenta…" : "No se pudo cargar tu cuenta. Revisa tu internet e inténtalo otra vez.") + '</div>';
+    else {
+      cuerpo = '<div class="pf-top"><div class="pf-user"><span class="pf-av">' + avatar(p) + '</span><div><h1>' + esc(p.nombre || "Mi cuenta") + '</h1><small>' + esc(p.email || s.email || "") + '</small></div></div>' +
+        '<div class="pf-saldo"><div><small>Saldo</small><b>S/ ' + (Math.round(p.creditos * 100) / 100).toFixed(2) + '</b></div><a class="ljc-btn red sm" href="index.html#recargar">Recargar</a></div></div>' +
+        '<nav class="pf-nav" aria-label="Secciones del perfil">' + TABS.map(function (t) {
+          return '<a href="perfil.html' + RUTA[t[0]] + '"' + (st.tab === t[0] ? ' class="on" aria-current="page"' : '') + '>' + (t[0] === "info" ? 'Información<span class="pf-largo"> personal</span>' : t[2]) + '</a>';
+        }).join("") + '</nav>' +
+        (st.msg ? '<p class="pf-msg ' + (st.tipo === "err" ? "err" : "ok") + '" role="status">' + esc(st.msg) + '</p>' : '') +
+        '<div class="pf-card">' + (st.tab === "trans" ? transHtml() : st.tab === "seg" ? segHtml(p) : infoHtml(p)) + '</div>';
+    }
+    raiz.innerHTML = '<div class="pf-wrap"><nav class="pf-mig" aria-label="Ruta"><a href="index.html">Inicio</a><span aria-hidden="true">/</span><span>Mi perfil</span></nav>' + cuerpo + '</div>';
     hidratar(); if (st.tab === "trans") filtrar();
+    if (st.tab === "seg" && p) verPass();
+    pintarCab();
   }
 
   /* ---------- seguridad ---------- */
@@ -231,7 +247,7 @@
     }).then(function (r) { return r.json(); }).then(function (j) {
       var u = j && j.users && j.users[0]; if (!u) throw new Error("x");
       st.tienePass = (u.providerUserInfo || []).some(function (x) { return x.providerId === "password"; }); st.emailAuth = u.email || "";
-      if (st.abierto && st.tab === "seg") pintar();
+      if (tabDeHash() === "seg") pintar();
     }).catch(function () { st.tienePass = true; }).then(function () { st.verPass = false; });
   }
   function authPost(metodo, cuerpoJson) {
@@ -255,28 +271,18 @@
     }).catch(function (e) { st.msg = "No se pudo enviar el correo (" + (e && e.message) + ")."; st.tipo = "err"; }).then(pintar);
   }
   function salir() {
-    try { if (window.ljAdminSalir) window.ljAdminSalir(); } catch (e) { /* nada */ }
     guardarSesion(null);
-    try { localStorage.removeItem("litlejacob_customer_v1"); } catch (e2) { /* nada */ }
-    location.reload();
-  }
-  function recargar() {
-    cerrar();
-    if (window.ljRecarga) { window.ljRecarga.abrir(); return; }
-    var b = document.querySelector('[data-a="recargar"]');   // página de rifas: usa su propio botón de recarga
-    if (!b) { b = document.createElement("button"); b.setAttribute("data-a", "recargar"); b.hidden = true; document.body.appendChild(b); b.click(); b.remove(); return; }
-    b.click();
+    try { localStorage.removeItem("litlejacob_customer_v1"); } catch (e) { /* nada */ }
+    location.href = "index.html";
   }
 
   /* ---------- eventos ---------- */
   function alClic(e) {
     var a = e.target.closest("[data-a]"); if (!a) return;
     var acc = a.getAttribute("data-a");
-    if (acc === "cerrar") { e.preventDefault(); cerrar(); }
-    else if (acc === "tab") { st.tab = a.getAttribute("data-t") || "info"; st.msg = ""; st.tipo = ""; if (st.tab === "seg") verPass(); pintar(); var b = raiz.querySelector(".pf-body"); if (b) b.scrollTop = 0; }
-    else if (acc === "txAbrir") { var k = a.getAttribute("data-k"); st.abiertos[k] = !st.abiertos[k]; pintar(); }
+    if (acc === "claveToggle") { st.claveAbierta = !st.claveAbierta; pintar(); var k = raiz.querySelector("#pf-k0"); if (k) k.focus(); }
+    else if (acc === "txAbrir") { var kk = a.getAttribute("data-k"); st.abiertos[kk] = !st.abiertos[kk]; pintar(); }
     else if (acc === "crearClave") { e.preventDefault(); enviarClave(); }
-    else if (acc === "recargar") { e.preventDefault(); recargar(); }
     else if (acc === "salir") { e.preventDefault(); salir(); }
     else if (acc === "steamVincular") {
       e.preventDefault();
@@ -310,7 +316,7 @@
       if (a1 !== a2) { aviso("pfClaveMsg", "Las dos contraseñas nuevas no coinciden.", false); return; }
       if (a1 === a0) { aviso("pfClaveMsg", "La contraseña nueva debe ser distinta de la actual.", false); return; }
       aviso("pfClaveMsg", "Cambiando…");
-      cambiarClave(a0, a1).then(function () { pintar(); aviso("pfClaveMsg", "✔ Contraseña cambiada. Úsala la próxima vez que entres.", true); })
+      cambiarClave(a0, a1).then(function () { st.claveAbierta = false; st.msg = "✔ Contraseña cambiada. Úsala la próxima vez que entres."; st.tipo = "ok"; pintar(); })
         .catch(function (er) { aviso("pfClaveMsg", errAuth(er && er.message), false); });
     }
   }
@@ -318,25 +324,59 @@
     if (e.target.id === "pf-buscar") { st.tBuscar = e.target.value; filtrar(); }
     else if (e.target.id === "pf-tipo") { st.tTipo = e.target.value; filtrar(); }
   }
-  function montar() {
-    if (raiz) return;
-    raiz = document.createElement("div"); raiz.id = "ljPerfil"; raiz.className = "ljc ljpf"; raiz.hidden = true; document.body.appendChild(raiz);
-    raiz.addEventListener("click", alClic); raiz.addEventListener("submit", alEnviar); raiz.addEventListener("input", alInput); raiz.addEventListener("change", alInput);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && st.abierto) cerrar(); });
+  /* ---------- cabecera (misma que la tienda y Rifas) ---------- */
+  function pintarCab() {
+    var der = document.getElementById("ljPfRight"); if (!der) return;
+    var s = leerSesion(), p = st.perfil;
+    if (!s) { der.innerHTML = '<a class="ljc-navbtn" href="index.html#cuenta">Entrar / Registrarme</a>'; return; }
+    if (!p) { der.innerHTML = ''; return; }
+    var ab = !!st.menuAbierto, saldo = (Math.round(p.creditos * 100) / 100).toFixed(2).replace(/\.00$/, "");
+    der.innerHTML = '<a class="ljc-misrifas" href="rifas.html#misrifas">🎟️ Mis rifas</a>' +
+      '<span class="ljc-dropwrap"><button class="ljc-navbtn on" type="button" data-cab="toggle" aria-haspopup="menu" aria-expanded="' + ab + '"><b>◆ S/ ' + saldo + '</b><span class="nm"> · ' + esc(p.nombre || "Mi cuenta") + '</span><span class="fl" aria-hidden="true"> ▾</span></button>' +
+      '<div class="ljc-drop" role="menu"' + (ab ? '' : ' hidden') + '><div class="ljc-drop-head"><b>' + esc(p.nombre || "Mi cuenta") + '</b><small>' + esc(p.email || s.email || "") + '</small><span>Saldo: <b>S/ ' + saldo + '</b></span></div>' +
+      '<button type="button" role="menuitem" data-cab="recargar"><i>💎</i>Recargar saldo</button>' +
+      '<button type="button" role="menuitem" data-cab="info"><i>👤</i>Perfil</button>' +
+      '<button type="button" role="menuitem" data-cab="trans"><i>🧾</i>Transacciones</button>' +
+      '<button type="button" role="menuitem" class="out" data-cab="salir"><i>⎋</i>Cerrar sesión</button></div></span>';
   }
-  function abrir(tab, msg) {
-    montar();
+  function alClicCab(e) {
+    var b = e.target.closest && e.target.closest("[data-cab]");
+    if (!b) { if (st.menuAbierto && !(e.target.closest && e.target.closest(".ljc-dropwrap"))) { st.menuAbierto = false; pintarCab(); } return; }
+    var a = b.getAttribute("data-cab");
+    if (a === "toggle") { st.menuAbierto = !st.menuAbierto; pintarCab(); return; }
+    st.menuAbierto = false; pintarCab();
+    if (a === "recargar") location.href = "index.html#recargar";
+    else if (a === "info" || a === "trans") { var h = RUTA[a]; if (location.hash !== h && !(a === "info" && !location.hash)) location.hash = h; }
+    else if (a === "salir") salir();
+  }
+  function seccionesItems() {
+    fetch(BASE + "rayas/estado", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      var j = d && d.fields && d.fields.json && JSON.parse(d.fields.json.stringValue);
+      if (j && j.secciones && j.secciones.items) document.querySelectorAll("[data-pf-items]").forEach(function (a) { a.hidden = false; });
+    }).catch(function () { /* sin conexión */ });
+  }
+  function montar() {
+    raiz = document.getElementById("ljPerfilPagina");
+    if (!raiz) return;   // en la tienda y en Rifas este archivo solo da el enlace a la página
+    document.addEventListener("click", alClicCab);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && st.menuAbierto) { st.menuAbierto = false; pintarCab(); } });
+    seccionesItems();
+    raiz.addEventListener("click", alClic); raiz.addEventListener("submit", alEnviar); raiz.addEventListener("input", alInput); raiz.addEventListener("change", alInput);
+    window.addEventListener("hashchange", function () { st.msg = ""; st.tipo = ""; st.claveAbierta = false; pintar(); });
+    var vs = window.ljSteam && window.ljSteam.alCargar();   // ¿volvemos de vincular Steam?
+    if (vs) {
+      st.msg = vs.msg || ""; st.tipo = vs.tipo === "error" ? "err" : "ok";
+      try { history.replaceState(null, "", location.pathname + "#seguridad"); } catch (e) { /* nada */ }
+    }
+    if (leerSesion()) { st.cargando = true; cargarTodo(); }
+    pintar();
+  }
+  function abrir(tab) {
     var s = leerSesion(); if (!s || s.uid === ADMIN_UID) return false;
-    st.abierto = true; st.tab = tab || "info"; st.msg = msg || ""; st.tipo = msg ? "ok" : "";
-    st.compras = null; st.partes = null;
-    raiz.hidden = false; document.documentElement.classList.add("ljc-lock");
-    pintar(); cargarTodo(); if (st.tab === "seg") verPass();
-    requestAnimationFrame(function () { raiz.classList.add("open"); });
+    location.href = "perfil.html" + (RUTA[tab] || "");
     return true;
   }
-  function cerrar() {
-    st.abierto = false; if (!raiz) return; raiz.classList.remove("open"); document.documentElement.classList.remove("ljc-lock");
-    setTimeout(function () { if (!st.abierto) raiz.hidden = true; }, 220);
-  }
+  function cerrar() { /* la página no se cierra: es una página */ }
   window.ljPerfil = { abrir: abrir, cerrar: cerrar };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar); else montar();
 })();
