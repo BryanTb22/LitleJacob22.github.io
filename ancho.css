@@ -1,0 +1,30 @@
+/* =====================================================================
+   Ancho en pantallas grandes (tienda, Rifas y perfil): menos espacio vacío a los lados
+   y cabecera en proporción. Hasta 1279 px no cambia nada.
+   ===================================================================== */
+@media (min-width: 1280px) {
+  html:root body .max-w-7xl { max-width: min(88vw, 1680px) !important; }
+  html:root body .topbar .wrap { max-width: min(88vw, 1680px) !important; padding-left: 0 !important; padding-right: 0 !important; }   /* alineado con el contenido de abajo */
+  html:root body .wrap, html:root body #rifas .wrap, html:root body #ganadores .wrap { max-width: min(88vw, 1680px); }
+  html:root body .pf-cab { max-width: min(88vw, 1680px); }
+  html:root body .pf-wrap { max-width: min(80vw, 1320px); }
+  html:root body .lg-foot-in, html:root body .lg-foot-b { max-width: min(88vw, 1680px); }
+}
+
+@media (min-width: 1600px) {
+  html:root body .site-nav { gap: 20px 22px !important; padding-bottom: 20px !important; }
+  html:root body .site-nav .nav-brand { font-size: 30px !important; gap: 14px; }
+  html:root body .site-nav .nav-brand img { width: 54px; height: 54px; }
+  html:root body .site-nav .nav-links { gap: 10px !important; }
+  html:root body .site-nav .nav-link { font-size: 16px !important; padding: 12px 24px !important; }
+  html:root body .ljc-navbtn, html:root body .site-nav .nav-right .lock { font-size: 14.5px !important; padding: 12px 20px !important; max-width: 380px; }
+  html:root body .ljc-misrifas { font-size: 14.5px; padding: 12px 20px; }
+  html:root body .ljc-drop { min-width: 290px; }
+  html.lj-rifas .topbar .subnav a { font-size: 14px !important; }
+}
+
+@media (min-width: 2200px) {
+  html:root body .site-nav .nav-brand { font-size: 34px !important; }
+  html:root body .site-nav .nav-brand img { width: 60px; height: 60px; }
+  html:root body .site-nav .nav-link { font-size: 17.5px !important; padding: 14px 28px !important; }
+}
