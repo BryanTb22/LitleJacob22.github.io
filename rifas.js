@@ -951,8 +951,8 @@
     if (!app) return;
     // El perfil del cliente (pestañas) vive en perfil.js: si algo pidió abrir el perfil, se delega allí.
     if (cuenta.modo === "perfil" && window.ljPerfil && !admin.puede && leerSesion()) {
-      var pm = cuenta.msgTipo === "ok" && cuenta.msg ? cuenta.msg : ""; cuenta.modo = null; cuenta.msg = ""; cuenta.msgTipo = "";
-      window.ljPerfil.abrir(pm ? "seg" : "info", pm);
+      // Recién entró: se queda en Rifas. El perfil es la página perfil.html (botón "Mi cuenta").
+      cuenta.modo = null; if (cuenta.msgTipo !== "err") { cuenta.msg = ""; cuenta.msgTipo = ""; }
     }
     var visibles = estado.premios.filter(function (p) { return p.estado !== "cerrada" && (p.estado !== "oculta" || vivo()); });
     var cerradas = estado.premios.filter(function (p) { return p.estado === "cerrada"; });

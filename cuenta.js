@@ -212,7 +212,14 @@
       } else if (vs.tipo === "vinculado") {
         st.msg = vs.msg; st.tipo = "ok"; st.modo = "perfil"; abrir("perfil", "seg"); cargarPerfil().then(function () { st.msg = vs.msg; st.tipo = "ok"; pintar(); });
       } else { st.msg = vs.msg; st.tipo = "err"; st.modo = "login"; abrir("login"); }
-    } else if (leerSesion()) cargarPerfil();
+    } else if (leerSesion()) {
+      var conRecarga = /^#recargar$/.test(location.hash);   // viene de "Recargar" en perfil.html
+      cargarPerfil().then(function () {
+        if (!conRecarga || !st.perfil || !window.ljRecarga) return;
+        try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* nada */ }
+        window.ljRecarga.abrir();
+      });
+    }
     // Permite abrir la cuenta con #cuenta en la dirección
     if (/^#cuenta$/.test(location.hash)) abrir();
   }
@@ -328,7 +335,7 @@
   function pintar() {
     if (!raiz || raiz.hidden && !st.abierto) return;
     var s = leerSesion(), p = st.perfil, titulo = "", cuerpo = "";
-    if (st.modo === "perfil" && s && !esAdmin(s) && window.ljPerfil) { cerrar(); irPerfil(); return; }   // p. ej. justo después de entrar
+    if (st.modo === "perfil" && s && !esAdmin(s) && window.ljPerfil && st.perfil) { cerrar(); return; }   // recién entró: se cierra y sigue en la tienda (el perfil es la página perfil.html)
     if (st.modo === "registro") {
       titulo = "Crear mi cuenta";
       cuerpo = '<form class="ljc-body" id="ljcRegistro" novalidate>' + gBtn() +
