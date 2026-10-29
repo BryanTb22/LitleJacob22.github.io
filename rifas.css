@@ -839,3 +839,19 @@ html, body { overflow-x: clip; max-width: 100%; }
 .cfg-row.on .cfg-sw::after { transform: translateX(22px); }
 .cfg-row input:focus-visible + .cfg-sw { outline: 2px solid #e0202a; outline-offset: 2px; }
 .rifas-off .empty .in { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 48px 20px; }
+
+/* ---------- Ficha de cliente: foto de Steam / inicial, datos extra ---------- */
+.uav { flex: none; width: 28px; height: 28px; border-radius: 50%; object-fit: cover; background: #15171b; border: 1px solid rgba(255, 255, 255, .22); }
+.uav.ini { display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #fff; background: hsl(var(--h, 0) 22% 30%); }
+.uav.grande { width: 64px; height: 64px; font-size: 26px; border-width: 2px; }
+.fhead { justify-content: flex-start; flex-wrap: nowrap; }
+.fhead .fnom { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fhead .fnom b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fhead .fnom small { color: var(--muted); }
+.fhead .fnom a { font-size: 13px; white-space: nowrap; }
+.fhead .fcred { flex: none; }
+.fpriv { margin: 8px 0 0; padding: 8px 10px; font-size: 13px; background: rgba(200, 22, 31, .12); border: 1px solid rgba(200, 22, 31, .5); color: #ff6a72; }
+@media (max-width: 520px) { .fhead { flex-wrap: wrap; } .fhead .fcred { flex-basis: 100%; margin: 2px 0 0; } }
+.urow, .urow-sum { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.urow-body > *, .ficha, .fhead .fnom b { min-width: 0; max-width: 100%; }
+.ficha > * { min-width: 0; max-width: 100%; }

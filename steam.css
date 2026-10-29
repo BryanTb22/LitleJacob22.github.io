@@ -1,0 +1,9 @@
+/* Entrar con Steam — LitleJacob (plata / rojo / negro) */
+.ljc-btn.steam, .sbtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 320px; margin: 8px auto 2px; min-height: 44px; padding: 10px 18px; border: 0; border-radius: 999px; cursor: pointer;
+  background: linear-gradient(180deg, #2b2e35, #16181c 60%, #0d0e11); color: #eef0f3; box-shadow: inset 0 0 0 1px #8b9097, 0 4px 16px rgba(0,0,0,.45); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-family: inherit; transition: transform .15s, filter .15s, box-shadow .15s; }
+.ljc-btn.steam:hover, .sbtn:hover { filter: brightness(1.18); transform: translateY(-1px); box-shadow: inset 0 0 0 1px #c8161f, 0 4px 16px rgba(200,22,31,.3); }
+.ljc-btn.steam:focus-visible, .sbtn:focus-visible { outline: 2px solid #c4c8ce; outline-offset: 2px; }
+.ljc-btn.steam svg, .sbtn svg { flex: none; }
+.ljsteam-vinculo .sbtn, .ljsteam-vinculo .ljc-btn.steam { margin-left: 0; }
+.ljsteam-vinculo h3 { margin: 6px 0; }
+.ljc-steam { margin: 10px 0 14px; }
