@@ -14,7 +14,7 @@
   var CUSTOMER_KEY = "litlejacob_customer_v1";   // lo usa el formulario de pedido de la tienda
   var GOOGLE_CLIENT_ID = "547624378539-m3dct3sir3r9vbe51hm6q1ojejg1i14q.apps.googleusercontent.com";
 
-  var st = { abierto: false, modo: "login", perfil: null, cargando: false, msg: "", tipo: "", cfg: null, cfgCargando: false, cfgMsg: "", cfgGuarda: "" };
+  var st = { abierto: false, modo: "login", perfil: null, compras: null, cargando: false, msg: "", tipo: "", cfg: null, cfgCargando: false, cfgMsg: "", cfgGuarda: "" };
 
   /* ---------- Configuraciones principales (compartidas con Rayas Store: rayas/estado) ---------- */
   var CFG_DEF = [
@@ -164,7 +164,7 @@
     return fs("rayas_users/" + encodeURIComponent(s.uid)).then(function (r) {
       if (r.status === 404) { st.perfil = null; st.modo = "completar"; return; }
       if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json().then(function (d) { st.perfil = leerPerfil(d); if (st.modo !== "perfil") st.modo = "perfil"; compartirConPedido(st.perfil); });
+      return r.json().then(function (d) { st.perfil = leerPerfil(d); if (st.modo !== "perfil") st.modo = "perfil"; compartirConPedido(st.perfil); cargarMovs(); });
     }).catch(function (e) {
       if (e && e.message === "NO_SESSION") { st.perfil = null; st.modo = "login"; }
       else { st.msg = "No se pudo cargar tu cuenta. Revisa tu internet."; st.tipo = "err"; }
@@ -173,22 +173,31 @@
   function trasEntrar() { st.msg = ""; st.modo = "perfil"; return cargarPerfil(); }
 
   /* ---------- interfaz ---------- */
-  var raiz, boton, recBtn;
+  var raiz, boton, recBtn, caja, menu;
   function montar() {
     var nav = document.querySelector(".site-nav .nav-right");
     if (nav && !document.getElementById("ljCuentaBtn")) {
       boton = document.createElement("button");
       boton.id = "ljCuentaBtn"; boton.type = "button"; boton.className = "ljc-navbtn";
-      boton.addEventListener("click", function () { abrir(); });
+      // Con sesión de cliente, el botón abre un menú desplegable; si no, abre el panel de cuenta como siempre.
+      boton.addEventListener("click", function (e) {
+        var s = leerSesion();
+        if (s && !esAdmin(s) && st.perfil) { e.stopPropagation(); alternarMenu(); } else abrir();
+      });
+      caja = document.createElement("span"); caja.className = "ljc-dropwrap";
+      menu = document.createElement("div"); menu.className = "ljc-drop"; menu.setAttribute("role", "menu"); menu.hidden = true;
+      menu.addEventListener("click", alClicMenu);
+      caja.appendChild(boton); caja.appendChild(menu);
       var adm = document.getElementById("loginOpenBtn");
-      nav.insertBefore(boton, adm || null);
+      nav.insertBefore(caja, adm || null);
+      document.addEventListener("click", function (e) { if (menu && !menu.hidden && !(caja && caja.contains(e.target))) cerrarMenu(); });
     }
     raiz = document.createElement("div");
     raiz.id = "ljCuenta"; raiz.className = "ljc"; raiz.hidden = true;
     document.body.appendChild(raiz);
     raiz.addEventListener("click", alClic);
     raiz.addEventListener("submit", alEnviar);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && st.abierto) cerrar(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { cerrarMenu(); if (st.abierto) cerrar(); } });
     document.addEventListener("click", function (e) {   // botón "💎 Recargar" del menú
       var a = e.target.closest && e.target.closest("[data-recargar]"); if (!a) return;
       e.preventDefault(); if (window.ljRecarga) window.ljRecarga.abrir();
@@ -214,14 +223,75 @@
     document.querySelectorAll("[data-recargar]").forEach(function (a) { a.hidden = esAdmin(s); });   // el administrador no recarga
     boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>S/ ' + fmtS(p.creditos) + '</small>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
+    pintarMenu();
     if (!recBtn && boton.parentNode && !document.querySelector("[data-recargar]")) {   // si el menú ya trae Recargar, no se duplica
       recBtn = document.createElement("button");
       recBtn.id = "ljRecargarBtn"; recBtn.type = "button"; recBtn.className = "ljc-navbtn ljc-recbtn";
       recBtn.addEventListener("click", function () { if (window.ljRecarga) window.ljRecarga.abrir(); });
       recBtn.textContent = "💎 Recargar";
-      boton.parentNode.insertBefore(recBtn, boton);
+      (caja || boton).parentNode.insertBefore(recBtn, caja || boton);
     }
   }
+  /* ---------- menú desplegable de usuario ---------- */
+  function pintarMenu() {
+    if (!menu) return;
+    var s = leerSesion(), p = st.perfil;
+    if (!s || esAdmin(s) || !p) { menu.hidden = true; menu.innerHTML = ""; if (boton) boton.setAttribute("aria-expanded", "false"); return; }
+    var abierto = !menu.hidden;
+    menu.innerHTML = '<div class="ljc-drop-head"><b>' + esc(p.nombre || "Mi cuenta") + '</b><small>' + esc(p.email || s.email || "") + '</small><span>Saldo: <b>S/ ' + fmtS(p.creditos) + '</b></span></div>' +
+      '<button type="button" role="menuitem" data-m="recargar"><i>💎</i>Recargar saldo</button>' +
+      '<button type="button" role="menuitem" data-m="perfil"><i>👤</i>Perfil</button>' +
+      '<button type="button" role="menuitem" data-m="movs"><i>🧾</i>Transacciones</button>' +
+      '<button type="button" role="menuitem" class="out" data-m="salir"><i>⎋</i>Cerrar sesión</button>';
+    menu.hidden = !abierto;
+  }
+  function alternarMenu() { if (!menu) return; menu.hidden = !menu.hidden; boton.setAttribute("aria-expanded", String(!menu.hidden)); }
+  function cerrarMenu() { if (menu && !menu.hidden) { menu.hidden = true; if (boton) boton.setAttribute("aria-expanded", "false"); } }
+  function alClicMenu(e) {
+    var b = e.target.closest("[data-m]"); if (!b) return;
+    var m = b.getAttribute("data-m"); cerrarMenu();
+    if (m === "recargar") { if (window.ljRecarga) window.ljRecarga.abrir(); }
+    else if (m === "perfil") abrir("perfil");
+    else if (m === "movs") { abrir("perfil"); setTimeout(function () { var x = raiz && raiz.querySelector(".ljc-movs"); if (x && x.scrollIntoView) x.scrollIntoView({ block: "start", behavior: "smooth" }); }, 280); }
+    else if (m === "salir") window.ljCuenta.salir();
+  }
+
+  /* ---------- historial de compras (Mis movimientos) ---------- */
+  var EST = { pagado: "Por entregar", entregado: "Entregado", cancelado: "Cancelado" };
+  function cargarMovs() {
+    var s = leerSesion(); if (!s || esAdmin(s)) return;
+    token().then(function (tk) {
+      return fetch(BASE.replace("/documents/", "/documents:runQuery"), { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk },
+        body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "orders" }], where: { fieldFilter: { field: { fieldPath: "uid" }, op: "EQUAL", value: { stringValue: s.uid } } }, limit: 30 } }) });
+    }).then(function (r) { return r.ok ? r.json() : []; }).then(function (j) {
+      st.compras = (j || []).filter(function (x) { return x.document; }).map(function (x) {
+        var f = x.document.fields || {};
+        var its = ((f.items && f.items.arrayValue && f.items.arrayValue.values) || []).map(function (v) {
+          var g = (v.mapValue && v.mapValue.fields) || {};
+          var num = function (k) { return Number(g[k] && (g[k].integerValue || g[k].doubleValue) || 0); };
+          return { name: g.name && g.name.stringValue || "Item", qty: num("qty") || 1, price: num("price") };
+        });
+        var nUni = its.reduce(function (a, i) { return a + i.qty; }, 0);
+        return { code: f.code && f.code.stringValue || "", n: Number(f.count && f.count.integerValue || 0) || nUni, monto: Number(f.creditos && (f.creditos.integerValue || f.creditos.doubleValue) || 0),
+          t: f.createdAt && f.createdAt.timestampValue || "", items: its, estado: f.status && f.status.stringValue || "" };
+      }).filter(function (c) { return c.monto > 0; }).sort(function (a, b) { return String(b.t).localeCompare(String(a.t)); });
+      if (st.abierto && st.modo === "perfil") pintar();
+    }).catch(function () { /* sin historial de compras */ });
+  }
+  function fechaHora(t) {
+    try { return new Date(t).toLocaleString("es-PE", { timeZone: "America/Lima", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(",", " ·"); } catch (e) { return ""; }
+  }
+  function movsHtml() {
+    var l = st.compras;
+    return '<div class="ljc-movs"><h3>Mis movimientos</h3>' + (l && l.length ? '<ul>' + l.map(function (c) {
+      var fila = '<span class="mv-i">🛒</span><span class="mv-t"><b>Compra ' + esc(c.code) + ' · ' + (c.n || 1) + (c.n === 1 ? ' item' : ' items') + '</b><small>' + (c.t ? esc(fechaHora(c.t)) : "—") + '</small></span><span class="mv-m">−S/ ' + fmtS(c.monto) + '</span>';
+      if (!c.items.length) return '<li><div class="mv-row">' + fila + '</div></li>';
+      return '<li><details><summary class="mv-row">' + fila + '<span class="mv-fl" aria-hidden="true">▾</span></summary><div class="mv-items">' +
+        c.items.map(function (i) { return '<div class="mv-item"><span>' + esc(i.name) + (i.qty > 1 ? ' <em>×' + i.qty + '</em>' : '') + '</span><b>S/ ' + fmtS(i.price * i.qty) + '</b></div>'; }).join("") +
+        (c.estado ? '<div class="mv-est est-' + esc(c.estado) + '">' + esc(EST[c.estado] || c.estado) + '</div>' : '') + '</div></details></li>';
+    }).join("") + '</ul>' : '<p class="ljc-hint">' + (l ? "Todavía no tienes compras. Aquí verás los items que compres." : "Cargando…") + '</p>') + '</div>';
+  }
+
   function abrir(modo) {
     st.abierto = true;
     if (modo) st.modo = modo;
@@ -268,7 +338,7 @@
     } else if (st.modo === "perfil" && s) {
       titulo = "Mi cuenta";
       cuerpo = '<div class="ljc-body">' + (p
-        ? '<div class="ljc-saldo"><small>Tu saldo</small><b>' + fmtS(p.creditos) + '</b><a class="ljc-rec" href="#" data-a="recargar">💎 Recargar saldo</a><a href="rifas.html">Ir a las rifas →</a></div>' +
+        ? '<div class="ljc-saldo"><small>Tu saldo</small><b>' + fmtS(p.creditos) + '</b><a class="ljc-rec" href="#" data-a="recargar">💎 Recargar saldo</a><a href="rifas.html">Ir a las rifas →</a></div>' + movsHtml() +
           (window.ljSteam ? window.ljSteam.bloqueVinculo(p.steamId, "ljc-btn steam", "ljc-hint", "ljc-steam") : "") + '<form id="ljcPerfil" novalidate><h3>Mis datos</h3>' + camposCliente("ljp", p) +
           campo("ljp-email", "Correo", "disabled", "", p.email || s.email) +
           (p.steam ? "" : '<p class="ljc-hint warn">Agrega tu ID de Steam para que podamos agregarte y enviarte tus sets.</p>') +
