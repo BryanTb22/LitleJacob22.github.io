@@ -949,6 +949,11 @@
   function render() {
     var app = document.getElementById("app");
     if (!app) return;
+    // El perfil del cliente (pestañas) vive en perfil.js: si algo pidió abrir el perfil, se delega allí.
+    if (cuenta.modo === "perfil" && window.ljPerfil && !admin.puede && leerSesion()) {
+      var pm = cuenta.msgTipo === "ok" && cuenta.msg ? cuenta.msg : ""; cuenta.modo = null; cuenta.msg = ""; cuenta.msgTipo = "";
+      window.ljPerfil.abrir(pm ? "seg" : "info", pm);
+    }
     var visibles = estado.premios.filter(function (p) { return p.estado !== "cerrada" && (p.estado !== "oculta" || vivo()); });
     var cerradas = estado.premios.filter(function (p) { return p.estado === "cerrada"; });
     var linkCreditos = creditoHref();
@@ -1665,7 +1670,7 @@
       case "entrar": ev.preventDefault(); cuenta.modo = "login"; cuenta.msg = ""; cuenta.msgTipo = ""; render(); break;
       case "registro": ev.preventDefault(); cuenta.modo = "registro"; cuenta.msg = t.getAttribute("data-need") ? "Para participar primero crea una cuenta en la página." : ""; cuenta.msgTipo = t.getAttribute("data-need") ? "err" : ""; render(); break;
       case "misRifas": cuenta.modo = "rifas"; cuenta.msg = ""; render(); cargarParts(); break;
-      case "miCuenta": cuenta.modo = "perfil"; cuenta.msg = ""; render(); cargarPerfil(); break;
+      case "miCuenta": if (window.ljPerfil && window.ljPerfil.abrir("info")) break; cuenta.modo = "perfil"; cuenta.msg = ""; render(); cargarPerfil(); break;
       case "abrirU": admin.uOpen = admin.uOpen || {}; var ku = t.getAttribute("data-uid"); if (admin.uOpen[ku]) delete admin.uOpen[ku]; else admin.uOpen[ku] = true; render(); break;
       case "verFicha": var kf = t.getAttribute("data-key"); admin.fichaU = admin.fichaU === kf ? null : kf; admin.editU = null; admin.uMsg = ""; if (admin.fichaU && /^u_/.test(admin.fichaU)) cargarPedidosU(admin.fichaU.slice(2)); render(); break;
       case "editRapido": admin.fichaU = "u_" + t.getAttribute("data-uid"); admin.editU = t.getAttribute("data-uid"); admin.uMsg = ""; render(); break;
@@ -1998,6 +2003,8 @@
         cuenta.msg = e.message; render();
       });
   }
+
+  window.addEventListener("lj-perfil-cambio", function () { cargarPerfil(); });
 
   document.addEventListener("keydown", function (ev) {
     var e = ev.target.closest && ev.target.closest("[data-edit]");
