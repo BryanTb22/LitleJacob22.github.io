@@ -413,9 +413,59 @@
       (F.id ? '<button type="button" class="itx-btn ghost sm" data-itx="variante">⧉ Crear otra versión (otra gema)</button>' : "") + "</div></div>";
   }
   const gemasAString = (l) => l.map((g) => { const t = String(g.t || "").trim(), v = String(g.v || "").trim(); return t ? t + ":" + (v ? " " + v : "") : v; }).filter(Boolean).join("\n");
+  /* ---- Items que ya existen: sumar unidades o crear otra versión sin repetir todo ---- */
+  function resumenVersion(x) {
+    const g = gemasDe(x).map((q) => q.v || q.t).filter(Boolean).join(", "), ne = Number(x.estilos) || 0, ok = estilosOkLista(x);
+    return (g ? "💎 " + esc(g) : "Sin gemas") + (ne ? " · Estilos " + (ok.length ? ok.join(",") : "—") + "/" + ne : "");
+  }
+  function existentesDe(F) {
+    const n = sinTildes(String(F.nombre || "").trim());
+    if (n.length < 3 || F.id) return [];
+    return items.lista.filter((x) => sinTildes(x.nombre) === n).sort((a, b) => (a.precio || 0) - (b.precio || 0));
+  }
+  function existentesHtml(F) {
+    const l = existentesDe(F); if (!l.length) return "";
+    return '<div class="itx-dup"><h3>⚠ Este item ya existe (' + l.length + (l.length === 1 ? " versión" : " versiones") + ")</h3>" +
+      '<p class="itx-hint">No hace falta repetir todo. Suma una unidad a una versión que ya tienes, o crea una versión nueva y solo cambia lo que cambia (gema, estilos, precio).</p>' +
+      l.map((x) => '<div class="itx-admrow"><span><b>' + resumenVersion(x) + "</b><small>" + fmtPrecio(x.precio) + " · stock " + x.stock + (x.activo ? "" : " · OCULTO") + "</small></span>" +
+        '<span><button type="button" class="itx-btn gold sm" data-itx="mas1" data-id="' + esc(x.id) + '" title="Sumar una unidad a esta versión">+1 unidad</button>' +
+        '<button type="button" class="itx-btn ghost sm" data-itx="editar" data-id="' + esc(x.id) + '">✎</button></span></div>').join("") +
+      '<div class="cav"><button type="button" class="itx-btn fucsia sm" data-itx="version" data-id="' + esc(l[0].id) + '">➕ Agregar versión nueva (otra gema / estilos / precio)</button></div></div>';
+  }
+  function abrirVersion(base) {
+    adm.form = Object.assign({}, base, { id: "", desdeId: "", creado: "", precio: "", stock: "1", descripcion: "", estilos: String(base.estilos || 0), estOk: base.estOk || (base.estilos ? "1" : ""), soloCambios: true, activo: true });
+    adm.msg = ""; adm.steamInfo = ""; renderTodo(); irAlForm();
+  }
+  function cambiarStock(id, delta) {
+    const o = itemPorId(id); if (!o) return;
+    const ns = (Number(o.stock) || 0) + delta;
+    if (ns < 0) return;
+    fsPedir("rayas_items/" + encodeURIComponent(id) + "?updateMask.fieldPaths=stock", { method: "PATCH", body: JSON.stringify({ fields: { stock: { integerValue: String(ns) } } }) }).then((r) => {
+      if (!r.ok) throw new Error("No se pudo cambiar el stock (" + r.status + ").");
+      o.stock = ns; adm.msg = ""; renderTodo();
+    }).catch((e) => { adm.msg = e.message; renderTodo(); });
+  }
+  // Quita UNA unidad de la oferta; si era la última, borra la oferta.
+  function quitarUnidad(id) {
+    const o = itemPorId(id); adm.itemDel = null; if (!o) return;
+    if ((Number(o.stock) || 0) > 1) cambiarStock(id, -1); else borrarItem(id);
+  }
+  function estilosFormHtml(F) {
+    const nEst = Number(F.estilos) || 0;
+    return '<div class="field"><label for="itf-estilos">Estilos (solo si el item los tiene)</label><select id="itf-estilos">' + ["0", "2", "3", "4", "5", "6"].map((v) => '<option value="' + v + '"' + (String(F.estilos || 0) === v ? " selected" : "") + ">" + (v === "0" ? "Sin estilos" : v + " estilos") + "</option>").join("") + "</select></div>" +
+      (nEst > 0 ? '<div class="field"><label>Estilos que SÍ tiene (los demás saldrán “Bloqueado”)</label><div class="itx-estchk">' + (() => { let o = ""; const ok = estilosOkLista(F); for (let k = 1; k <= nEst; k++) o += '<label class="itx-chk"><input type="checkbox" id="itf-est-' + k + '"' + (ok.indexOf(k) >= 0 ? " checked" : "") + "> Estilo " + k + "</label>"; return o; })() + "</div></div>" : "");
+  }
   function formHtml() {
     const F = adm.form; if (!F) return "";
-    const nEst = Number(F.estilos) || 0;
+    if (F.soloCambios) return '<div class="itx-form" id="itxForm"><h3>Nueva versión de «' + esc(F.nombre) + '»</h3>' +
+      '<div class="itx-fotoprev">' + (F.img ? imgTag(F.img, "", ' width="90"') : "") + '<p class="itx-hint"><b>' + esc(F.nombre) + '</b><br>' + esc([F.tipo, F.heroe, F.ranura, F.rareza].filter(Boolean).join(" · ")) + '</p></div>' +
+      '<p class="itx-hint">Lo demás se copia del item. Solo pon lo que cambia en esta versión.</p>' +
+      '<div class="field"><label for="itf-precio">Precio en soles (S/)</label><input id="itf-precio" inputmode="decimal" value="' + esc(F.precio) + '"></div>' +
+      '<div class="field"><label for="itf-stock">Stock (cuántos tienes)</label><input id="itf-stock" inputmode="numeric" value="' + esc(F.stock) + '"></div>' +
+      gemasFormHtml(F) + estilosFormHtml(F) +
+      '<label class="itx-chk"><input type="checkbox" id="itf-activo"' + (F.activo ? " checked" : "") + '> Visible para los clientes</label>' +
+      (adm.msg ? '<p class="itx-hint" style="color:#ff6b6b">' + esc(adm.msg) + '</p>' : "") +
+      '<div class="cav"><button type="button" class="itx-btn gold sm" data-itx="guardar">' + (adm.guardando ? "Guardando…" : "💾 Guardar versión") + '</button><button type="button" class="itx-btn ghost sm" data-itx="completo">Cambiar más datos</button><button type="button" class="itx-btn ghost sm" data-itx="cerrarForm">Cancelar</button></div></div>';
     return '<div class="itx-form" id="itxForm"><h3>' + (F.desdeId ? "Editar esta unidad" : F.id ? "Editar item" : "Nuevo item") + "</h3>" +
       '<div class="field"><label for="itf-link">Link del Mercado de Steam</label><input id="itf-link" inputmode="url" placeholder="https://steamcommunity.com/market/listings/570/…" value="' + esc(F.link || "") + '"></div>' +
       '<div class="cav"><button type="button" class="itx-btn gold sm" data-itx="steam">' + (adm.steamCargando ? "Leyendo Steam…" : "⚡ Rellenar desde Steam") + "</button></div>" +
@@ -423,7 +473,7 @@
       (F.img ? '<div class="itx-fotoprev">' + imgTag(F.img, "", ' width="140"') + "</div>" : "") +
       '<div class="cav"><label class="itx-btn ghost sm" for="itf-file">' + (adm.subiendo ? "Subiendo…" : (F.img ? "Cambiar foto" : "Subir foto")) + '</label><input id="itf-file" type="file" accept="image/*" hidden>' +
       (F.img ? '<button type="button" class="itx-btn ghost sm" data-itx="quitarFoto">Quitar foto</button>' : "") + "</div>" +
-      '<div class="field"><label for="itf-nombre">Nombre</label><input id="itf-nombre" maxlength="90" value="' + esc(F.nombre) + '"></div>' +
+      '<div class="field"><label for="itf-nombre">Nombre</label><input id="itf-nombre" maxlength="90" value="' + esc(F.nombre) + '"></div>' + existentesHtml(F) +
       '<div class="field"><label for="itf-precio">Precio en soles (S/)</label><input id="itf-precio" inputmode="decimal" value="' + esc(F.precio) + '"></div>' +
       '<div class="field"><label for="itf-stock">Stock (cuántos tienes)</label><input id="itf-stock" inputmode="numeric" value="' + esc(F.stock) + '"></div>' +
       '<div class="field"><label for="itf-tipo">Tipo</label><select id="itf-tipo">' + opciones(ITEM_TIPOS, F.tipo, "—") + "</select></div>" +
@@ -432,8 +482,7 @@
       '<div class="field"><label for="itf-rareza">Rareza</label><select id="itf-rareza">' + opciones(LISTA_RAREZAS, F.rareza, "—") + "</select></div>" +
       '<div class="field"><label for="itf-calidad">Calidad</label><input id="itf-calidad" list="itx-dl-calidad" maxlength="30" value="' + esc(F.calidad) + '"><datalist id="itx-dl-calidad">' + distintos("calidad", ITEM_CALIDADES).map((v) => '<option value="' + esc(v) + '">').join("") + "</datalist></div>" +
       gemasFormHtml(F) +
-      '<div class="field"><label for="itf-estilos">Estilos (solo si el item los tiene)</label><select id="itf-estilos">' + ["0", "2", "3", "4", "5", "6"].map((v) => '<option value="' + v + '"' + (String(F.estilos || 0) === v ? " selected" : "") + ">" + (v === "0" ? "Sin estilos" : v + " estilos") + "</option>").join("") + "</select></div>" +
-      (nEst > 0 ? '<div class="field"><label>Estilos que SÍ tiene (los demás saldrán “Bloqueado”)</label><div class="itx-estchk">' + (() => { let o = ""; const ok = estilosOkLista(F); for (let k = 1; k <= nEst; k++) o += '<label class="itx-chk"><input type="checkbox" id="itf-est-' + k + '"' + (ok.indexOf(k) >= 0 ? " checked" : "") + "> Estilo " + k + "</label>"; return o; })() + "</div></div>" : "") +
+      estilosFormHtml(F) +
       '<label class="itx-chk"><input type="checkbox" id="itf-activo"' + (F.activo ? " checked" : "") + "> Visible para los clientes</label>" +
       (adm.msg ? '<p class="itx-hint" style="color:#ff6b6b">' + esc(adm.msg) + "</p>" : "") +
       '<div class="cav"><button type="button" class="itx-btn gold sm" data-itx="guardar">' + (adm.guardando ? "Guardando…" : "💾 Guardar item") + '</button><button type="button" class="itx-btn ghost sm" data-itx="cerrarForm">Cancelar</button></div></div>';
@@ -763,7 +812,7 @@
     const cur = x.id === curId, ne = Number(x.estilos) || 0, ok = estilosOkLista(x), n = Math.max(1, Math.min(30, x.stock)), agot = x.stock <= 0;
     const est = ne ? [1, 2, 3, 4, 5, 6, 7, 8].slice(0, ne).map((k) => '<span class="est' + (ok.indexOf(k) >= 0 ? "" : " lock") + '">' + k + "</span>").join("") : "";
     const gem = gemChipsHtml(x); let out = "";
-    const edit = esAdmin() ? '<button type="button" class="itx-btn ghost sm ofr-ed" data-itx="editar" data-id="' + esc(x.id) + '"' + (x.stock > 1 ? ' data-u="1"' : '') + ' title="Editar esta unidad (gemas, estilos y precio)">✎ Editar</button>' : "";
+    const edit = esAdmin() ? '<button type="button" class="itx-btn ghost sm ofr-ed" data-itx="editar" data-id="' + esc(x.id) + '"' + (x.stock > 1 ? ' data-u="1"' : '') + ' title="Editar esta unidad (gemas, estilos y precio)" aria-label="Editar">✎</button><button type="button" class="itx-btn ghost sm" data-itx="mas1" data-id="' + esc(x.id) + '" title="Sumar una unidad">➕</button>' + (adm.itemDel === x.id ? '<button type="button" class="itx-btn fucsia sm" data-itx="quitarSi" data-id="' + esc(x.id) + '">¿Quitar? Sí</button>' : '<button type="button" class="itx-btn ghost sm" data-itx="quitar1" data-id="' + esc(x.id) + '" title="Quitar una unidad" aria-label="Quitar">🗑</button>') : "";
     for (let u = 0; u < n; u++) {
       const enCarro = !agot && u < (Number(carro[x.id]) || 0);
       const best = mejor && u === 0;
@@ -786,6 +835,7 @@
     const n = ofertasDe(it).reduce((a, x) => a + Math.max(1, Math.min(30, x.stock)), 0);
     return '<div class="ofr"><div class="ofr-top"><h3>📚 ' + n + (n === 1 ? " oferta" : " ofertas") + ' de este item</h3>' +
       '<div class="ofr-f"><input id="ofe-min" inputmode="decimal" placeholder="Precio desde" value="' + esc(ofe.min) + '" aria-label="Precio desde"><input id="ofe-max" inputmode="decimal" placeholder="Precio hasta" value="' + esc(ofe.max) + '" aria-label="Precio hasta"></div></div>' +
+      (esAdmin() ? '<div class="ofr-adm"><button type="button" class="itx-btn fucsia sm" data-itx="version" data-id="' + esc(it.id) + '">➕ Agregar otra versión (otra gema / estilos / precio)</button>' + (adm.msg ? '<span class="itx-hint" style="color:#ff6b6b">' + esc(adm.msg) + "</span>" : "") + "</div>" : "") +
       '<div class="ofr-t" id="ofrTabla">' + ofertasTablaHtml(it) + "</div></div>";
   }
 
@@ -1330,6 +1380,11 @@
       case "gemaDel": if (adm.form) { const gl = gemasDe(adm.form); gl.splice(parseInt(t.getAttribute("data-i"), 10), 1); adm.form.descripcion = gemasAString(gl); renderTodo(); } break;
       case "variante": if (adm.form) { adm.form = Object.assign({}, adm.form, { id: "", precio: "", stock: "1", descripcion: "", creado: "" }); adm.msg = "Versión nueva: pon su gema y su precio."; renderTodo(); irAlForm(); } break;
       case "quitarFoto": if (adm.form) { adm.form.img = ""; renderTodo(); } break;
+      case "mas1": cambiarStock(t.getAttribute("data-id"), 1); break;
+      case "version": { const ib = itemPorId(t.getAttribute("data-id")); if (ib) abrirVersion(ib); break; }
+      case "completo": if (adm.form) { adm.form.soloCambios = false; renderTodo(); } break;
+      case "quitar1": adm.itemDel = t.getAttribute("data-id"); renderTodo(); break;
+      case "quitarSi": quitarUnidad(t.getAttribute("data-id")); break;
       case "borrar": adm.itemDel = t.getAttribute("data-id"); renderTodo(); break;
       case "borrarSi": borrarItem(t.getAttribute("data-id")); break;
       case "venVer": verInventario(); break;
@@ -1397,6 +1452,7 @@
   document.addEventListener("input", (ev) => { if (cont().some((c) => c.contains(ev.target))) campoEvento(ev.target, "input"); });
   document.addEventListener("change", (ev) => {
     const el = ev.target; if (!cont().some((c) => c.contains(el))) return;
+    if (el.id === "itf-nombre" && adm.form && !adm.form.id && !adm.form.soloCambios) { adm.form.nombre = el.value; renderTodo(); return; }
     if (el.id === "itf-file" && el.files && el.files[0]) {
       const fi = el.files[0]; el.value = "";
       editorFoto(fi).then((listo) => {
