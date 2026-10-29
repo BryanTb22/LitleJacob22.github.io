@@ -470,7 +470,7 @@
     var cerrar = '<button class="btn btn-ghost btn-sm" type="button" data-a="cerrarModal">Cerrar</button>';
     if (m.tipo === "sinSaldo") {
       var rl = creditoHref();
-      h = '<h3>Saldo insuficiente 😕</h3><p class="hint">La rifa de <b>S/ ' + esc(m.p.nombre) + '</b> cuesta <b>' + m.p.cred + '</b> y tú tienes <b>' + (c ? c.creditos : 0) + '</b>. Recarga saldo para poder participar.</p>';
+      h = '<h3>Saldo insuficiente 😕</h3><p class="hint">La rifa de <b>S/ ' + esc(m.p.nombre) + '</b> cuesta <b>' + m.p.cred + '</b> y tú tienes <b>' + fmtSol(c ? c.creditos : 0) + '</b>. Recarga saldo para poder participar.</p>';
       btns = (recargaOn() ? '<button class="btn btn-fuchsia" type="button" data-a="recargar">💳 Recargar saldo</button>' : '') +
         (rl ? '<a class="btn btn-yellow" href="' + esc(rl) + '"' + (rl === "#elegir" ? ' data-a="elegir"' : ' target="_blank" rel="noopener"') + '>💎 ' + (pagosOn() ? 'Pedir por WhatsApp' : 'Recargar saldo') + '</a>' : '') + cerrar;
     } else if (m.tipo === "recarga") {
@@ -507,7 +507,7 @@
       btns = '<button class="btn btn-ghost btn-sm" type="button" data-a="yapeBajar">⬇ Descargar QR</button><button class="btn btn-yellow" type="button" data-a="yapeAvisar">✅ Ya pagué · enviar captura por WhatsApp</button><button class="btn btn-ghost btn-sm" type="button" data-a="volverRecarga">← Cambiar monto</button>' + cerrar;
     } else if (m.tipo === "efectivoPend") {
       h = '<h3>Código de pago listo 💵</h3><p class="hint">Se abrió tu código de pago por <b>S/ ' + m.soles + '</b>. Págalo en un agente, banco, app bancaria o con QR (vale por 24 horas). Cuando Culqi lo confirme, tu saldo se suma solo; puede tardar unos minutos.</p>' +
-        '<p class="hint">Tienes <b>S/ ' + (c ? c.creditos : 0) + '</b> ahora.</p>';
+        '<p class="hint">Tienes <b>S/ ' + fmtSol(c ? c.creditos : 0) + '</b> ahora.</p>';
       btns = '<button class="btn btn-fuchsia" type="button" data-a="refrescarSaldo">🔄 Ya pagué · actualizar mi saldo</button>' + cerrar;
     } else if (m.tipo === "recargaOk") {
       h = '<h3>¡Recarga lista! 🎉</h3><p class="hint">Se sumaron <b>S/ ' + m.creditos + '</b>' + (m.promo ? ' (incluye tu regalo de primera recarga 🎁)' : '') + '. Ahora tienes <b>' + (c ? c.creditos : 0) + '</b>.</p>';
@@ -516,7 +516,7 @@
       var tot = m.qty * m.p.cred;
       h = '<h3>¿Entrar a la rifa? 🎟️</h3><p class="hint">Rifa: <b>' + esc(m.p.nombre) + '</b> · ' + 'S/ ' + m.p.cred + ' por ticket.' + (m.mio ? ' Ya tienes <b>' + m.mio + '</b> ' + (m.mio === 1 ? 'ticket' : 'tickets') + '.' : '') + '</p>' +
         '<div class="qty" role="group" aria-label="Cantidad de tickets"><button type="button" data-a="qtyMenos"' + (m.qty <= 1 ? ' disabled' : '') + ' aria-label="Menos">−</button><span><b>' + m.qty + '</b><small>' + (m.qty === 1 ? 'ticket' : 'tickets') + '</small></span><button type="button" data-a="qtyMas"' + (m.qty >= m.max ? ' disabled' : '') + ' aria-label="Más">+</button></div>' +
-        '<div class="qtot"><div><small>Total</small><b>S/ ' + tot + '</b></div><div><small>Te quedarán</small><b>S/ ' + (c.creditos - tot) + '</b></div></div>' +
+        '<div class="qtot"><div><small>Total</small><b>S/ ' + tot + '</b></div><div><small>Te quedarán</small><b>S/ ' + fmtSol(c.creditos - tot) + '</b></div></div>' +
         '<p class="hint">' + (m.max < 100 ? 'Máximo ahora: ' + m.max + '. ' : '') + 'Más tickets = más chances de ganar 🍀</p>';
       btns = '<button class="btn btn-yellow" type="button" data-a="confirmarPart">✔ Confirmar ' + m.qty + (m.qty === 1 ? ' ticket' : ' tickets') + '</button><button class="btn btn-ghost btn-sm" type="button" data-a="cerrarModal">Cancelar</button>';
     } else if (m.tipo === "cargando") {
@@ -968,7 +968,7 @@
       '<div class="nav-right">' +
       '<a class="wa-pill wa-contact" href="' + esc(waPill()) + '" target="_blank" rel="noopener noreferrer"><span class="wa-dot"></span>WhatsApp +51 952 997 030</a>' +
       (admin.puede ? '<button class="lock" type="button" data-a="admin"><span class="ljc-ico">🔧</span>Admin</button><button class="lock" type="button" data-a="salir" title="Cerrar la sesión de administrador">⎋ Cerrar sesión</button>'
-        : (cuenta.perfil ? '<button class="lock hot misrifas" type="button" data-a="misRifas">🎟️ Mis rifas</button><button class="lock me" type="button" data-a="miCuenta"><b>◆ S/ ' + cuenta.perfil.creditos + '</b><span class="nm"> · ' + esc(cuenta.perfil.nombre || "Mi cuenta") + '</span></button>'
+        : (cuenta.perfil ? '<button class="lock hot misrifas" type="button" data-a="misRifas">🎟️ Mis rifas</button><button class="lock me" type="button" data-a="miCuenta"><b>◆ S/ ' + fmtSol(cuenta.perfil.creditos) + '</b><span class="nm"> · ' + esc(cuenta.perfil.nombre || "Mi cuenta") + '</span></button>'
           : (leerSesion() ? '<button class="lock" type="button" data-a="miCuenta">Mi cuenta</button>'
             : '<button class="lock" type="button" data-a="entrar">Entrar</button><button class="lock hot" type="button" data-a="registro">Crear cuenta</button>'))) +
       '</div></nav>' +
@@ -1136,7 +1136,7 @@
       titulo = "Mi cuenta";
       var link = creditoHref();
       cuerpo = '<div class="drawer-body">' + (p
-        ? '<div class="saldo frame gold"><div class="in"><small>Tu saldo</small><b>' + p.creditos + '</b></div></div>' +
+        ? '<div class="saldo frame gold"><div class="in"><small>Tu saldo</small><b>' + fmtSol(p.creditos) + '</b></div></div>' +
           (window.ljSteam ? window.ljSteam.bloqueVinculo(p.steamId, "sbtn", "hint", "grp") : "") + '<form class="grp" id="formTrade"><h3>Mis datos</h3>' +
           '<div class="field"><label for="p-nombre">Nombre o apodo</label><input id="p-nombre" maxlength="40" required value="' + esc(p.nombre) + '"></div>' +
           '<div class="field"><label for="p-wa">WhatsApp</label><input id="p-wa" inputmode="tel" maxlength="30" required value="' + esc(p.whatsapp) + '"></div>' +
@@ -1183,9 +1183,9 @@
     var u = (admin.usuarios || []).filter(function (x) { return x.uid === uid; })[0];
     if (!u) return;
     var antes = u.creditos;
-    u.creditos = Math.max(0, Math.floor(valor)); u.guardando = true; render();
+    u.creditos = Math.max(0, Math.round(Number(valor) * 100) / 100); u.guardando = true; render();
     fsPedir("rayas_users/" + encodeURIComponent(uid) + "?updateMask.fieldPaths=creditos&currentDocument.exists=true", {
-      method: "PATCH", body: JSON.stringify({ fields: { creditos: { integerValue: String(u.creditos) } } })
+      method: "PATCH", body: JSON.stringify({ fields: { creditos: (u.creditos % 1 === 0 ? { integerValue: String(u.creditos) } : { doubleValue: u.creditos }) } })
     }).then(function (r) {
       if (!r.ok) throw new Error("Error " + r.status);
       u.guardando = false; u.ok = Date.now(); render();
@@ -1218,12 +1218,12 @@
         var id = esc(u.uid);
         var abierto = !!(admin.uOpen && admin.uOpen[u.uid]) || admin.fichaU === "u_" + u.uid || (admin.editU && admin.editU === u.uid) || admin.delU === u.uid;
         return '<div class="urow' + (abierto ? ' open' : '') + '"><button type="button" class="urow-sum" data-a="abrirU" data-uid="' + id + '" aria-expanded="' + abierto + '">' + avatarUsuario(u) +
-          '<b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="ucr">' + 'S/ ' + (Number(u.creditos) || 0) + '</span><i aria-hidden="true">▾</i></button>' +
+          '<b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="ucr">' + 'S/ ' + fmtSol(Number(u.creditos) || 0) + '</span><i aria-hidden="true">▾</i></button>' +
           '<div class="urow-body"><div class="t"><span>WhatsApp: ' + esc(u.whatsapp) + '</span><span>' + esc(u.email) + '</span>' +
           (tradeValido(u.tradelink) ? '<span><a href="' + esc(u.tradelink) + '" target="_blank" rel="noopener">Abrir trade link ↗</a></span>' : '<span style="color:var(--fuchsia)">Sin trade link</span>') + '</div>' +
           '<div class="ucred">' +
           '<button class="iconbtn" type="button" data-a="cred" data-uid="' + id + '" data-d="-1" aria-label="Quitar S/ 1">−</button>' +
-          '<input class="credset" data-uid="' + id + '" type="number" min="0" step="1" inputmode="numeric" value="' + u.creditos + '" aria-label="Saldo de ' + esc(u.nombre) + '">' +
+          '<input class="credset" data-uid="' + id + '" type="number" min="0" step="0.01" inputmode="decimal" value="' + u.creditos + '" aria-label="Saldo de ' + esc(u.nombre) + '">' +
           '<button class="iconbtn" type="button" data-a="cred" data-uid="' + id + '" data-d="1" aria-label="Sumar S/ 1">+</button>' +
           '<button class="iconbtn wide" type="button" data-a="cred" data-uid="' + id + '" data-d="5">+5</button>' +
           '<button class="iconbtn wide" type="button" data-a="cred" data-uid="' + id + '" data-d="10">+10</button>' +
@@ -1327,7 +1327,7 @@
     var h = '<div class="ficha"><div class="fhead">' + avatarUsuario(u, true) + '<div class="fnom"><b>' + esc(u.nombre || "(sin nombre)") + '</b>' +
       (u.steamPais ? '<small>📍 ' + esc(u.steamPais) + '</small>' : '') +
       (window.ljSteam && window.ljSteam.urlOk(u.steamPerfilUrl) ? '<a href="' + esc(u.steamPerfilUrl) + '" target="_blank" rel="noopener noreferrer">Ver perfil de Steam ↗</a>' : '') + '</div>' +
-      '<span class="fcred">◆ S/ ' + u.creditos + '</span></div>' +
+      '<span class="fcred">◆ S/ ' + fmtSol(u.creditos) + '</span></div>' +
       (u.steamPublico === false ? '<p class="fpriv">🔒 Perfil de Steam privado: no se puede ver su inventario ni verificar la entrega de antemano.</p>' : '') +
       '<div class="frow"><span>Pedidos</span><div>' + pedHtml + '</div></div>' +
       '<div class="frow"><span>WhatsApp</span><div>' + (soloDigitos(u.whatsapp) ? '<a href="https://wa.me/' + esc(waNum(u.whatsapp)) + '" target="_blank" rel="noopener">' + esc(u.whatsapp) + ' ↗</a>' : '—') + '</div></div>' +
@@ -1836,7 +1836,7 @@
   // Al salir de un campo de texto de la página, refresca la vista previa.
   document.addEventListener("change", function (ev) {
     if (ev.target.id === "f-hasta") { var fc = document.getElementById("f-cierre"); if (fc) { fc.disabled = ev.target.checked; if (ev.target.checked) fc.value = ""; } return; }
-    if (ev.target.classList && ev.target.classList.contains("credset")) { guardarCreditos(ev.target.getAttribute("data-uid"), num(ev.target.value, 0)); return; }
+    if (ev.target.classList && ev.target.classList.contains("credset")) { guardarCreditos(ev.target.getAttribute("data-uid"), Number(ev.target.value) || 0); return; }
     if (ev.target.classList && ev.target.classList.contains("upfile") && ev.target.files && ev.target.files[0]) {
       var pid = ev.target.getAttribute("data-id");
       admin.subiendo = pid; admin.imgErr = ""; render();
