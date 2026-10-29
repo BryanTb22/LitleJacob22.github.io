@@ -69,7 +69,7 @@
     return u ? '<img src="' + esc(u) + '" alt="' + esc(alt) + '" decoding="async"' + (extra || "") + ">" : "";
   }
   function hidratarImgs() {
-    document.querySelectorAll(".itx img[data-fs]:not([src]), #itxModal img[data-fs]:not([src])").forEach((el) => {
+    document.querySelectorAll(".itx img[data-fs]:not([src]), #itxModal img[data-fs]:not([src]), #ljPanelAdmin img[data-fs]:not([src])").forEach((el) => {
       const id = el.getAttribute("data-fs");
       if (IMG_CACHE[id]) { el.src = IMG_CACHE[id]; return; }
       if (!IMG_PEND[id]) IMG_PEND[id] = fetch(BASE + "rayas/" + id).then((r) => (r.ok ? r.json() : null)).then((d) => {
@@ -1080,6 +1080,16 @@
       "\n🔗 Mi trade link: " + String(ven.link).trim() + (p ? "\n\n👤 " + p.nombre + " (📧 " + p.email + ")" : "") + "\n\n¿Me confirmas? 🙏✨";
   }
 
+  /* ---------- Admin: lista de items para el panel lateral (pestaña Items, como Rayas) ---------- */
+  function adminListaHtml() {
+    if (!items.cargado && !items.cargando) cargarItems();
+    const l = items.lista.slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+    return '<div class="pa-grp"><h3>Items en venta (' + l.length + ')</h3><button class="pa-btn rojo ancho" type="button" data-itx="nuevo">+ Agregar item</button>' +
+      '<p class="pa-hint">Los cambios se guardan al instante (no hace falta publicar). Cuando vendas uno por WhatsApp, baja su stock aquí o en 📦 Stock.</p>' +
+      '<div class="pa-acc"><button class="pa-btn ghost" type="button" data-itx="stkAbrir">📦 Stock de items</button></div></div>' +
+      '<div class="pa-grp">' + (items.cargando && !l.length ? '<p class="pa-hint">Cargando items…</p>' : l.length ? l.map((it) => '<div class="pa-it"><span class="pa-it-img">' + (imgTag(it.img, it.nombre) || "") + '</span><span class="pa-it-tx"><b>' + esc(it.nombre) + '</b><small>' + fmtPrecio(it.precio) + ' · stock ' + it.stock + (it.activo === false ? ' · oculto' : '') + '</small></span>' +
+        (adm.itemDel === it.id ? '<button class="pa-btn rojo sm" type="button" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Borrar?</button>' : '<button class="pa-ico" type="button" data-itx="editar" data-id="' + esc(it.id) + '" aria-label="Editar ' + esc(it.nombre) + '">✎</button><button class="pa-ico" type="button" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar ' + esc(it.nombre) + '">🗑</button>') + '</div>').join("") : '<p class="pa-hint">Todavía no hay items.</p>') + '</div>';
+  }
   /* ---------- Admin: lista de precios de compra (rayas_compra) ---------- */
   function comprasAdminHtml() {
     if (!ven.pCargado && !ven.pCargando) cargarPrecios();
@@ -1138,6 +1148,7 @@
     if (id) { const n = document.getElementById(id); if (n && n !== a) { n.focus(); try { if (ini != null) n.setSelectionRange(ini, fin); } catch (e) { /* nada */ } } }
   }
   function renderTodo() {
+    try { if (window.ljPanel) window.ljPanel.refrescar(); } catch (e) { /* panel cerrado */ }
     conservarFoco(() => {
       const r1 = document.getElementById("itemsRoot"), r2 = document.getElementById("venderRoot");
       if (r1 && !r1.hidden) { r1.innerHTML = comprarHtml(); }
@@ -1317,7 +1328,7 @@
   }
 
   /* ---------- eventos ---------- */
-  const cont = () => [document.getElementById("itemsRoot"), document.getElementById("venderRoot"), document.getElementById("itxModal")].filter(Boolean);
+  const cont = () => [document.getElementById("itemsRoot"), document.getElementById("venderRoot"), document.getElementById("itxModal"), document.getElementById("ljPanelAdmin")].filter(Boolean);
   document.addEventListener("click", (ev) => {
     const t = ev.target.closest("[data-itx]"); if (!t || !cont().some((c) => c.contains(t))) return;
     const a = t.getAttribute("data-itx");
@@ -1491,6 +1502,6 @@
     }
     aplicarRutaCatalogo(); alCambiarRuta(); renderTodo();
   }
-  window.ljItems = { render: renderTodo };
+  window.ljItems = { render: renderTodo, adminLista: adminListaHtml, compras: () => comprasAdminHtml().replace('<details class="itx-form" style="margin-top:22px">', '<details class="itx-form pa-compras" open>'), hidratar: hidratarImgs };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar); else iniciar();
 })();
