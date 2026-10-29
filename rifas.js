@@ -465,6 +465,20 @@
     return '<button class="' + cls + '" type="button" data-a="recargar">' + esc(estado.textos[key]) + '</button>';
   }
 
+  // Pasos 1-2-3 arriba de cada ventana (igual que Rayas Store).
+  function pasosHtml(n) {
+    return '<ol class="pasos" aria-label="Pasos">' + ["Elegir", "Pagar", "Listo"].map(function (t, i) {
+      return '<li class="' + (i + 1 < n ? 'hecho' : (i + 1 === n ? 'on' : '')) + '"' + (i + 1 === n ? ' aria-current="step"' : '') + '><b>' + (i + 1 < n ? '✓' : (i + 1)) + '</b><span>' + t + '</span></li>';
+    }).join("") + '</ol>';
+  }
+  function pasoDe(m) {
+    var t = m.tipo;
+    if (t === "confirmar" || t === "sinSaldo") return 1;
+    if (t === "recarga") return m.sel ? 2 : 1;
+    if (t === "yape" || t === "efectivoPend" || t === "cargando") return 2;
+    if (t === "recargaOk" || t === "ok") return 3;
+    return 0;
+  }
   function modalAviso() {
     var m = modal, c = cuenta.perfil, h = "", btns = "";
     var cerrar = '<button class="btn btn-ghost btn-sm" type="button" data-a="cerrarModal">Cerrar</button>';
@@ -528,7 +542,8 @@
       h = '<h3>Ups 😕</h3><p class="hint">' + esc(m.msg || "No se pudo completar.") + '</p>';
       btns = cerrar;
     }
-    return '<div class="scrim scrim-top" data-a="' + (m.tipo === "cargando" ? "" : "cerrarModal") + '"></div><div class="elegir" role="dialog" aria-label="Participar">' + h + '<div class="mbtns">' + btns + '</div></div>';
+    var pasoN = pasoDe(m);
+    return '<div class="scrim scrim-top" data-a="' + (m.tipo === "cargando" ? "" : "cerrarModal") + '"></div><div class="elegir" role="dialog" aria-label="Participar">' + (pasoN ? pasosHtml(pasoN) : '') + h + '<div class="mbtns">' + btns + '</div></div>';
   }
   function avatar(c) {
     var im = imgTag(c.foto, c.nombre, "");
@@ -944,6 +959,21 @@
       (admin.puede || rifasOn() ? '<a class="nav-link active" href="rifas.html">Rifas' + (rifasOn() ? '' : ' 🔒') + '</a>' : '') +
       (admin.puede ? '' : '<a class="nav-link nav-link-recargar" href="#recargar" data-a="recargar" role="button">💎 Recargar</a>');
   }
+  // Menú desplegable de usuario (mismo que la tienda y que Rayas Store).
+  function menuUsuarioHtml() {
+    var p = cuenta.perfil;
+    return '<span class="ljc-dropwrap"><button class="ljc-navbtn on" type="button" data-a="udropToggle" aria-haspopup="menu" aria-expanded="false"><b>◆ S/ ' + fmtSol(p.creditos) + '</b><span class="nm"> · ' + esc(p.nombre || "Mi cuenta") + '</span><span class="fl" aria-hidden="true"> ▾</span></button>' +
+      '<div class="ljc-drop" role="menu" hidden><div class="ljc-drop-head"><b>' + esc(p.nombre || "Mi cuenta") + '</b><small>' + esc(p.email || "") + '</small><span>Saldo: <b>S/ ' + fmtSol(p.creditos) + '</b></span></div>' +
+      '<button type="button" role="menuitem" data-a="recargar"><i>💎</i>Recargar saldo</button>' +
+      '<button type="button" role="menuitem" data-a="miCuenta"><i>👤</i>Perfil</button>' +
+      '<button type="button" role="menuitem" data-a="misMovs"><i>🧾</i>Transacciones</button>' +
+      '<button type="button" role="menuitem" class="out" data-a="salir"><i>⎋</i>Cerrar sesión</button></div></span>';
+  }
+  function cerrarMenuUsuario() {
+    document.querySelectorAll(".ljc-dropwrap .ljc-drop:not([hidden])").forEach(function (d) { d.hidden = true; var b = d.parentNode.querySelector("[data-a=udropToggle]"); if (b) b.setAttribute("aria-expanded", "false"); });
+  }
+  document.addEventListener("click", function (ev) { if (!(ev.target.closest && ev.target.closest(".ljc-dropwrap"))) cerrarMenuUsuario(); });
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") cerrarMenuUsuario(); });
   function waPill() { return "https://wa.me/51952997030?text=" + encodeURIComponent("Hola LitleJacob, vi tu tienda LitleJacob Store y quiero hacer una consulta."); }
 
   function render() {
@@ -973,7 +1003,7 @@
       '<div class="nav-right">' +
       '<a class="wa-pill wa-contact" href="' + esc(waPill()) + '" target="_blank" rel="noopener noreferrer"><span class="wa-dot"></span>WhatsApp +51 952 997 030</a>' +
       (admin.puede ? '<button class="lock" type="button" data-a="admin"><span class="ljc-ico">🔧</span>Admin</button><button class="lock" type="button" data-a="salir" title="Cerrar la sesión de administrador">⎋ Cerrar sesión</button>'
-        : (cuenta.perfil ? '<button class="lock hot misrifas" type="button" data-a="misRifas">🎟️ Mis rifas</button><button class="lock me" type="button" data-a="miCuenta"><b>◆ S/ ' + fmtSol(cuenta.perfil.creditos) + '</b><span class="nm"> · ' + esc(cuenta.perfil.nombre || "Mi cuenta") + '</span></button>'
+        : (cuenta.perfil ? '<button class="ljc-misrifas" type="button" data-a="misRifas">🎟️ Mis rifas</button>' + menuUsuarioHtml()
           : (leerSesion() ? '<button class="lock" type="button" data-a="miCuenta">Mi cuenta</button>'
             : '<button class="lock" type="button" data-a="entrar">Entrar</button><button class="lock hot" type="button" data-a="registro">Crear cuenta</button>'))) +
       '</div></nav>' +
@@ -1670,6 +1700,8 @@
       case "entrar": ev.preventDefault(); cuenta.modo = "login"; cuenta.msg = ""; cuenta.msgTipo = ""; render(); break;
       case "registro": ev.preventDefault(); cuenta.modo = "registro"; cuenta.msg = t.getAttribute("data-need") ? "Para participar primero crea una cuenta en la página." : ""; cuenta.msgTipo = t.getAttribute("data-need") ? "err" : ""; render(); break;
       case "misRifas": cuenta.modo = "rifas"; cuenta.msg = ""; render(); cargarParts(); break;
+      case "udropToggle": { var dw = t.closest(".ljc-dropwrap"), dm = dw && dw.querySelector(".ljc-drop"), ab = dm && dm.hidden; cerrarMenuUsuario(); if (dm && ab) { dm.hidden = false; t.setAttribute("aria-expanded", "true"); } break; }
+      case "misMovs": cerrarMenuUsuario(); if (!(window.ljPerfil && window.ljPerfil.abrir("trans"))) location.href = "perfil.html#transacciones"; break;
       case "miCuenta": if (window.ljPerfil && window.ljPerfil.abrir("info")) break; cuenta.modo = "perfil"; cuenta.msg = ""; render(); cargarPerfil(); break;
       case "abrirU": admin.uOpen = admin.uOpen || {}; var ku = t.getAttribute("data-uid"); if (admin.uOpen[ku]) delete admin.uOpen[ku]; else admin.uOpen[ku] = true; render(); break;
       case "verFicha": var kf = t.getAttribute("data-key"); admin.fichaU = admin.fichaU === kf ? null : kf; admin.editU = null; admin.uMsg = ""; if (admin.fichaU && /^u_/.test(admin.fichaU)) cargarPedidosU(admin.fichaU.slice(2)); render(); break;
@@ -1997,7 +2029,11 @@
       if (r.status === 404) { cuenta.modo = "completar"; cuenta.msg = ""; cuenta.msgTipo = ""; render(); return null; }
       if (!r.ok) throw new Error("No se pudo cargar tu cuenta (" + r.status + ").");
       return r.json();
-    }).then(function (d) { if (!d) return; cuenta.perfil = leerPerfilDoc(d); cuenta.msg = ""; render(); cargarParts(); })
+    }).then(function (d) {
+      if (!d) return; cuenta.perfil = leerPerfilDoc(d); cuenta.msg = "";
+      if (location.hash === "#misrifas") { cuenta.modo = "rifas"; try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* nada */ } }   // viene de "Mis rifas" en la tienda o el perfil
+      render(); cargarParts();
+    })
       .catch(function (e) {
         if (e && e.message === "NO_SESSION") { guardarSesion(null); cuenta.perfil = null; cuenta.modo = null; render(); return; }
         cuenta.msg = e.message; render();

@@ -4,18 +4,12 @@
 html, body.pf-body-pag { margin: 0; background: radial-gradient(1200px 500px at 50% -120px, rgba(200, 22, 31, .16), transparent 70%), var(--pf-bg); color: var(--pf-fg); font-family: Inter, system-ui, sans-serif; }
 body.pf-body-pag * { box-sizing: border-box; }
 
-/* cabecera mínima */
-.pfh { border-bottom: 1px solid var(--pf-line); background: rgba(9, 6, 6, .85); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); }
-.pfh-in { max-width: 1040px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
-.pfh-logo { display: inline-flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-family: "Oswald", Impact, sans-serif; font-weight: 700; font-size: 20px; letter-spacing: .08em; text-transform: uppercase; }
-.pfh-logo img { border-radius: 8px; border: 1px solid #3d3f45; }
-.pfh-logo i { font-style: normal; color: #e0202a; }
-.pfh-nav { display: flex; gap: 22px; }
-.pfh-nav a { color: var(--pf-dim); text-decoration: none; font-size: 14px; font-weight: 600; padding: 6px 0; }
-.pfh-nav a:hover, .pfh-nav a.on { color: #fff; }
+/* cabecera: la misma de la tienda (cabecera.css + espejo.css) */
+.pf-cab { max-width: 1280px; margin: 0 auto; padding: 28px 32px 0; position: relative; z-index: 5; }
+.pf-cab .site-nav { margin-bottom: 0 !important; }
 
 /* contenido */
-.pf-page { padding: 28px 20px 72px; min-height: 70vh; }
+.pf-page { padding: 22px 20px 72px; min-height: 70vh; }
 .pf-wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 22px; }
 .pf-mig { display: flex; gap: 8px; font-size: 13px; color: var(--pf-dim); }
 .pf-mig a { color: var(--pf-dim); text-decoration: none; }
@@ -125,8 +119,7 @@ body.pf-body-pag * { box-sizing: border-box; }
 .pf-clave { flex: 1 1 100%; max-width: 620px; }
 
 @media (max-width: 760px) {
-  .pfh-in { padding: 10px 14px; }
-  .pfh-logo span { display: none; }
+  .pf-cab { padding: 14px 14px 0; }
   .pf-page { padding: 18px 14px 60px; }
   .pf-user h1 { font-size: 22px; }
   .pf-av { width: 48px; height: 48px; font-size: 20px; }

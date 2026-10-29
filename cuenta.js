@@ -228,8 +228,14 @@
     var s = leerSesion(), p = st.perfil;
     if (recBtn) recBtn.hidden = esAdmin(s);
     document.querySelectorAll("[data-recargar]").forEach(function (a) { a.hidden = esAdmin(s); });   // el administrador no recarga
-    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? '<span class="ljc-ico">👤</span>' + (p ? esc((p.nombre || "Mi cuenta").split(" ")[0]) + ' <small>S/ ' + fmtS(p.creditos) + '</small>' : "Mi cuenta") : "Entrar / Registrarme";
+    // Mismo botón que Rayas Store: "◆ S/ saldo · nombre ▾" (abre el menú de usuario en cualquier sección).
+    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? (p ? '<b>◆ S/ ' + fmtS(p.creditos) + '</b><span class="nm"> · ' + esc(p.nombre || "Mi cuenta") + '</span><span class="fl" aria-hidden="true"> ▾</span>' : "Mi cuenta") : "Entrar / Registrarme";
     boton.classList.toggle("on", !!s);
+    boton.setAttribute("aria-haspopup", s && !esAdmin(s) && p ? "menu" : "false");
+    var mr = document.getElementById("ljMisRifasBtn");   // "Mis rifas" junto al usuario, como en Rayas
+    if (s && !esAdmin(s) && p) {
+      if (!mr && caja && caja.parentNode) { mr = document.createElement("a"); mr.id = "ljMisRifasBtn"; mr.className = "ljc-misrifas"; mr.href = "rifas.html#misrifas"; mr.innerHTML = "🎟️ Mis rifas"; caja.parentNode.insertBefore(mr, caja); }
+    } else if (mr) mr.remove();
     pintarMenu();
     if (!recBtn && boton.parentNode && !document.querySelector("[data-recargar]")) {   // si el menú ya trae Recargar, no se duplica
       recBtn = document.createElement("button");

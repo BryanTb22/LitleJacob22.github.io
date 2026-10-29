@@ -1,0 +1,76 @@
+/* =====================================================================
+   Cabecera espejo de Rayas Store con el tema de LitleJacob (tienda, Rifas y perfil).
+   Fila 1: logo · Mis rifas · usuario (menú desplegable).  Fila 2: secciones + Recargar a la derecha.
+   Se carga al final para mandar sobre cabecera.css / redondeado.css / estilos en línea.
+   ===================================================================== */
+html body .site-nav { display: grid !important; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "brand right" "links links"; align-items: center !important; gap: 16px 18px !important; padding: 0 0 16px !important; margin-bottom: 1.4rem !important; border-bottom: 1px solid #26272b !important; }
+html body .site-nav .nav-brand { grid-area: brand; font-size: 24px !important; }
+html body .site-nav .nav-brand img { width: 44px; height: 44px; border-radius: 10px; }
+html body .site-nav .nav-right { grid-area: right; justify-self: end; display: flex !important; align-items: center; gap: 10px; flex-wrap: nowrap; margin: 0 !important; min-width: 0; }
+html body .site-nav .wa-pill { display: none !important; }
+
+/* pestañas de secciones */
+html body .site-nav .nav-links { grid-area: links; display: flex !important; flex-wrap: nowrap !important; align-items: center; gap: 8px !important; margin: 0 !important; overflow-x: auto; scrollbar-width: none; padding: 2px 0 !important; }
+html body .site-nav .nav-links::-webkit-scrollbar { display: none; }
+html body .site-nav .nav-link { flex: 0 0 auto !important; padding: 10px 18px !important; border-radius: 999px !important; font-family: "Oswald", Impact, sans-serif !important; font-size: 14px !important; font-weight: 600 !important; letter-spacing: .1em !important; color: #c4c8ce !important; background: rgba(255, 255, 255, .03) !important; border: 1px solid #3d3f45 !important; box-shadow: none !important; transform: none !important; }
+html body .site-nav .nav-link:hover { color: #fff !important; border-color: #8b9097 !important; background: rgba(255, 255, 255, .07) !important; }
+html body .site-nav .nav-link.active { color: #fff !important; border-color: transparent !important; background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16) !important; box-shadow: 0 4px 16px rgba(200, 22, 31, .35) !important; }
+html body .site-nav .nav-link.nav-link-recargar { margin-left: auto !important; color: #fff !important; border-color: transparent !important; background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16) !important; box-shadow: 0 4px 16px rgba(200, 22, 31, .35) !important; }
+html body .site-nav .nav-link.nav-link-recargar:hover { filter: brightness(1.12); }
+html body .site-nav .nav-link[hidden] { display: none !important; }
+
+/* botón de usuario y "Mis rifas" (mismos en las tres páginas) */
+html body .ljc-navbtn, html body .site-nav .nav-right .lock { display: inline-flex !important; align-items: center; gap: 4px; max-width: 320px; padding: 10px 16px !important; border-radius: 999px !important; border: 1px solid #3d3f45 !important; background: rgba(20, 20, 24, .9) !important; color: #eef0f3 !important; font: 700 13px Inter, system-ui, sans-serif !important; letter-spacing: .02em !important; text-transform: none !important; text-decoration: none; white-space: nowrap; cursor: pointer; box-shadow: none !important; }
+html body .ljc-navbtn:hover, html body .site-nav .nav-right .lock:hover { border-color: #8b9097 !important; filter: none; }
+html body .ljc-navbtn b { color: #fff; font-weight: 800; }
+html body .ljc-navbtn .nm { overflow: hidden; text-overflow: ellipsis; min-width: 0; color: #c4c8ce; font-weight: 600; }
+html body .ljc-navbtn .fl { opacity: .7; font-size: 11px; }
+html body .ljc-navbtn small { display: none; }
+html body .site-nav .nav-right .lock.hot { background: linear-gradient(180deg, #e0343d, #c8161f 55%, #8e0f16) !important; border-color: transparent !important; }
+html body .ljc-misrifas { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(200, 22, 31, .7); background: rgba(200, 22, 31, .12); color: #fff; font: 700 13px Inter, system-ui, sans-serif; text-decoration: none; white-space: nowrap; cursor: pointer; }
+html body .ljc-misrifas:hover { background: rgba(200, 22, 31, .25); }
+
+/* menú desplegable */
+html body .ljc-dropwrap { position: relative; display: inline-flex; min-width: 0; }
+html body .ljc-drop { border-radius: 14px; padding: 6px; min-width: 260px; background: #131316; border: 1px solid #3d3f45; box-shadow: 0 18px 44px rgba(0, 0, 0, .65); }
+html body .ljc-drop-head { padding: 10px 12px 12px; }
+html body .ljc-drop button { border-radius: 10px; }
+html body .ljc-drop-head span b { color: #fff; }
+
+/* subnavegación de Rifas: enlaces de texto simples */
+html.lj-rifas .topbar .subnav { gap: 22px !important; padding: 0 0 14px !important; border-bottom: 1px solid #26272b; }
+html.lj-rifas .topbar .subnav a { padding: 4px 0 !important; border: 0 !important; border-radius: 0 !important; background: none !important; font: 600 13px Inter, system-ui, sans-serif !important; letter-spacing: .02em !important; text-transform: none !important; color: #8b9097 !important; }
+html.lj-rifas .topbar .subnav a:hover { color: #fff !important; }
+html.lj-rifas .topbar .wrap { padding-top: 28px !important; }
+
+@media (max-width: 720px) {
+  html body .site-nav { gap: 12px 10px !important; padding-bottom: 12px !important; }
+  html body .site-nav .nav-brand span { display: none; }
+  html body .site-nav .nav-brand img { width: 40px; height: 40px; }
+  html body .site-nav .nav-right { gap: 6px; }
+  html body .ljc-navbtn, html body .site-nav .nav-right .lock { padding: 8px 12px !important; font-size: 12px !important; }
+  html body .ljc-navbtn .nm, html body .ljc-navbtn .fl { display: none; }
+  html body .ljc-misrifas { padding: 8px 12px; font-size: 12px; }
+  html body .site-nav .nav-link { padding: 8px 14px !important; font-size: 12.5px !important; }
+  html body .site-nav .nav-link.nav-link-recargar { margin-left: 0 !important; }
+  html.lj-rifas .topbar .wrap { padding-top: 14px !important; }
+  html.lj-rifas .topbar .subnav { gap: 16px !important; overflow-x: auto; flex-wrap: nowrap !important; scrollbar-width: none; }
+  html.lj-rifas .topbar .subnav a { flex: none; }
+  html body .ljc-drop { top: 62px; }
+}
+
+/* ===== Ventanas de Rifas (recarga, confirmar ticket, etc.): mismo diseño que Rayas, colores de LitleJacob ===== */
+html.lj-rifas .elegir { border-radius: 22px !important; border: 1px solid #3d3f45 !important; background: linear-gradient(180deg, #18181c, #0f0f12) !important; padding: 22px 20px 20px !important; }
+html.lj-rifas .elegir h3 { font-family: "Oswald", Impact, sans-serif !important; font-weight: 700; font-size: 26px !important; letter-spacing: .03em; text-transform: uppercase; color: #fff !important; font-variant: normal !important; }
+html.lj-rifas .elegir .btn, html.lj-rifas .elegir .packs .pack, html.lj-rifas .elegir input { clip-path: none !important; border-radius: 16px !important; }
+html.lj-rifas .elegir .btn { border-radius: 999px !important; }
+html.lj-rifas .elegir input { border-radius: 12px !important; }
+html.lj-rifas .promo-banner { border-radius: 14px !important; border: 1px solid rgba(200, 22, 31, .7) !important; background: linear-gradient(90deg, rgba(200, 22, 31, .3), rgba(200, 22, 31, .08)) !important; }
+html.lj-rifas .pasos { list-style: none; display: flex; align-items: center; gap: 0; margin: 0 0 6px; padding: 10px 14px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); }
+html.lj-rifas .pasos li { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; font: 700 12px Inter, system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #8b9097; }
+html.lj-rifas .pasos li + li::before { content: ""; flex: 1; height: 2px; margin-right: 8px; border-radius: 2px; background: rgba(255, 255, 255, .1); }
+html.lj-rifas .pasos li b { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #c4c8ce; font-size: 12px; }
+html.lj-rifas .pasos li.on { color: #fff; }
+html.lj-rifas .pasos li.on b { background: linear-gradient(180deg, #e0343d, #8e0f16); color: #fff; box-shadow: 0 0 14px rgba(200, 22, 31, .5); }
+html.lj-rifas .pasos li.hecho b { background: #2ecc71; color: #04210f; }
+html.lj-rifas .packs .pack .tag { color: #8e0f16 !important; }
