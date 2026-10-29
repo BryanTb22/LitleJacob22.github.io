@@ -2591,6 +2591,7 @@ html.ljc-lock { overflow: hidden; }
             </div>
             <div class="ord-tabs" role="tablist">
                 <button type="button" class="ord-tab active" data-tab="orders" role="tab">Pedidos</button>
+                <button type="button" class="ord-tab" data-tab="items" role="tab">🛒 Pedidos de items</button>
                 <button type="button" class="ord-tab" data-tab="customers" role="tab">Clientes</button>
                 <button id="ordRefresh" type="button" class="ord-refresh" aria-label="Actualizar">↻ <span>Actualizar</span></button>
             </div>
@@ -5674,6 +5675,7 @@ service cloud.firestore {
         }
         // Emojis elegidos para que se vean bien en WhatsApp del celular y de la computadora
         function deliveryMessage(o) {
+            const esItem = o.origen === "items";
             const sets = (o.items || []).map(it => `⚡ ${it.qty > 1 ? it.qty + " × " : ""}${it.name}`).join("\n");
             const name = titleName(o.customerName).split(" ")[0] || "";
             return [
@@ -5682,10 +5684,10 @@ service cloud.firestore {
                 `Hola *${name}* ⚔️`,
                 `Tu pedido *${o.code || o._id}* de *LitleJacob Store* ya está en tu inventario de Dota 2 ✨`,
                 "",
-                "*Sets entregados:*",
+                esItem ? "*Items entregados:*" : "*Sets entregados:*",
                 sets,
                 "",
-                "➡️ Abre Dota 2, revisa tu inventario y equípalo.",
+                esItem ? "➡️ Abre Dota 2 y revisa tu inventario." : "➡️ Abre Dota 2, revisa tu inventario y equípalo.",
                 "⭐ Si te gustó la atención, recomiéndanos con tus amigos.",
                 "❤️ ¡Gracias por tu compra! Cualquier duda, escríbeme por aquí.",
                 "",
@@ -5712,7 +5714,8 @@ service cloud.firestore {
             const key = custKey(o.steamId, o.customerName);
             const st = statusMeta(o.status);
             const items = (o.items || []).map(it => `<li><span class="it-name">${it.qty > 1 ? `<b>${it.qty} ×</b> ` : ""}${escapeHtml(it.name)}</span><span class="it-price">${money((Number(it.price) || 0) * (it.qty || 1))}</span></li>`).join("");
-            const notes = [setsLabel(Number(o.count) || (o.items || []).reduce((n, it) => n + (it.qty || 1), 0))];
+            const lbl = n => isItemOrder(o) ? `${n} ${n === 1 ? "item" : "items"}` : setsLabel(n);
+            const notes = [lbl(Number(o.count) || (o.items || []).reduce((n, it) => n + (it.qty || 1), 0))];
             if (o.discount) notes.push(`Dscto. −${money(o.discount)}`);
             if (o.stockApplied) notes.push("stock descontado");
             else if (needsReserve(o)) notes.push("⚠ stock sin descontar");
@@ -5724,7 +5727,7 @@ service cloud.firestore {
                 <button type="button" class="ord-row" data-act="toggle" aria-expanded="${isOpen}">
                     <span class="ord-code">${escapeHtml(o.code || o._id)}</span>
                     <span class="ord-who">${escapeHtml(o.customerName || "Sin nombre")}</span>
-                    <span class="ord-sub">${fmtDate(o.createdAt)} · ${setsLabel(nSets)}${needsReserve(o) ? ` <i class="ord-flag">⚠ por confirmar</i>` : ""}${dueToday(o) ? ` <i class="ord-flag ok">🚚 entregar hoy</i>` : ""}</span>
+                    <span class="ord-sub">${fmtDate(o.createdAt)} · ${lbl(nSets)}${needsReserve(o) ? ` <i class="ord-flag">⚠ por confirmar</i>` : ""}${dueToday(o) ? ` <i class="ord-flag ok">🚚 entregar hoy</i>` : ""}</span>
                     <span class="ord-badge st-${escapeHtml(st.key)}">${st.txt}</span>
                     <b class="ord-amt">${money(o.total)}</b>
                     <span class="ord-chev" aria-hidden="true">▾</span>
@@ -5734,6 +5737,7 @@ service cloud.firestore {
                     <div class="ord-cust-name">👤 ${escapeHtml(o.customerName || "Sin nombre")}</div>
                     <div class="ord-cust-steam">${steamLineHtml(o.steamId)}</div>
                     ${phoneLineHtml(o)}
+                    ${isItemOrder(o) ? `<div class="ord-cust-steam">${o.tradelink ? `🔗 <a href="${escapeHtml(o.tradelink)}" target="_blank" rel="noopener noreferrer">Trade link ↗</a>` : "🔗 sin trade link"}${o.email ? ` · ✉ ${escapeHtml(o.email)}` : ""}</div>` : ""}
                 </div>
                 <ul class="ord-items">${items}</ul>
                 <div class="ord-total-row"><span class="ord-notes">${notes.join(" · ")}</span><b class="ord-total">${money(o.total)}</b></div>
@@ -6068,17 +6072,19 @@ service cloud.firestore {
                 b.classList.toggle("active", on);
                 b.setAttribute("aria-selected", on ? "true" : "false");
             });
-            const isOrders = ordState.tab === "orders";
+            const isOrders = ordState.tab === "orders" || ordState.tab === "items";
+            // "Pedidos" = Sets Caché; "Pedidos de items" = compras de la tienda de items (origen "items")
+            const base = ordState.tab === "items" ? ordState.orders.filter(o => isItemOrder(o) && o.tienda !== "rayas") : ordState.tab === "orders" ? ordState.orders.filter(o => !isItemOrder(o)) : ordState.orders;
             const now = new Date();
             const customers = customersList();
-            const pending = ordState.orders.filter(o => o.status === "pendiente").length;
-            const today = ordState.orders.filter(o => o.createdAt && o.createdAt.toDateString() === now.toDateString()).length;
-            const month = ordState.orders.filter(o => isSale(o) && o.createdAt && o.createdAt.getMonth() === now.getMonth() && o.createdAt.getFullYear() === now.getFullYear())
+            const pending = base.filter(o => o.status === "pendiente").length;
+            const today = base.filter(o => o.createdAt && o.createdAt.toDateString() === now.toDateString()).length;
+            const month = base.filter(o => isSale(o) && o.createdAt && o.createdAt.getMonth() === now.getMonth() && o.createdAt.getFullYear() === now.getFullYear())
                 .reduce((a, o) => a + (Number(o.total) || 0), 0);
             document.getElementById("ordStats").innerHTML = `
                 <div class="ord-sum warn"><b>${pending}</b><span>Pendientes</span></div>
-                <div class="ord-sum warn"><b>${ordState.orders.filter(needsReserve).length}</b><span>Por confirmar</span></div>
-                <div class="ord-sum warn"><b>${ordState.orders.filter(dueToday).length}</b><span>Entregar hoy</span></div>
+                <div class="ord-sum warn"><b>${base.filter(needsReserve).length}</b><span>Por confirmar</span></div>
+                <div class="ord-sum warn"><b>${base.filter(dueToday).length}</b><span>Entregar hoy</span></div>
                 <div class="ord-sum"><b>${today}</b><span>Pedidos hoy</span></div>
                 <div class="ord-sum ok"><b>${money(month)}</b><span>Ventas del mes</span></div>
                 <div class="ord-sum"><b>${customers.length}</b><span>Clientes</span></div>`;
@@ -6086,7 +6092,7 @@ service cloud.firestore {
             const chips = document.getElementById("ordChips");
             chips.hidden = !isOrders;
             if (isOrders) {
-                const count = k => k === "all" ? ordState.orders.length : k === "porconfirmar" ? ordState.orders.filter(needsReserve).length : k === "entregar" ? ordState.orders.filter(dueToday).length : ordState.orders.filter(o => (o.status || "pendiente") === k).length;
+                const count = k => k === "all" ? base.length : k === "porconfirmar" ? base.filter(needsReserve).length : k === "entregar" ? base.filter(dueToday).length : base.filter(o => (o.status || "pendiente") === k).length;
                 const defs = [{ key: "all", txt: "Todos" }, { key: "entregar", txt: "🚚 Entregar hoy" }, { key: "porconfirmar", txt: "📌 Por confirmar" }, { key: "pendiente", txt: "Pendientes" }, { key: "pagado", txt: "Pagados" }, { key: "entregado", txt: "Entregados" }, { key: "cancelado", txt: "Cancelados" }];
                 chips.innerHTML = defs.map(d => `<button type="button" class="ord-chip chip-${d.key} ${ordState.filter === d.key ? "active" : ""}" data-filter="${d.key}" aria-pressed="${ordState.filter === d.key}">${d.txt}<span class="chip-n">${count(d.key)}</span></button>`).join("");
             }
@@ -6106,15 +6112,16 @@ service cloud.firestore {
                 list.innerHTML = newCustomerHtml() + (rows.length ? rows.map(customerCardHtml).join("") : `<div class="ord-empty">${customers.length ? "Ningún cliente coincide con la búsqueda." : "Aún no hay clientes. Crea uno o aparecerán cuando lleguen pedidos."}</div>`);
                 return;
             }
-            const rows = ordState.orders.filter(o => (ordState.filter === "all" || (ordState.filter === "entregar" ? dueToday(o) : ordState.filter === "porconfirmar" ? needsReserve(o) : (o.status || "pendiente") === ordState.filter)) &&
+            const rows = base.filter(o => (ordState.filter === "all" || (ordState.filter === "entregar" ? dueToday(o) : ordState.filter === "porconfirmar" ? needsReserve(o) : (o.status || "pendiente") === ordState.filter)) &&
                 (!q || normalizeText(`${o.code || o._id} ${o.customerName} ${o.steamId}`).includes(q)))
                 .sort((a, b) => ordState.sort === "amount" ? (Number(b.total) || 0) - (Number(a.total) || 0) : (b.createdAt || 0) - (a.createdAt || 0));
-            list.innerHTML = rows.length ? rows.map(orderCardHtml).join("") : `<div class="ord-empty">${ordState.orders.length ? "No hay pedidos con ese filtro." : "Aún no hay pedidos. Aparecerán aquí cuando tus clientes envíen uno."}</div>`;
+            list.innerHTML = rows.length ? rows.map(orderCardHtml).join("") : `<div class="ord-empty">${base.length ? "No hay pedidos con ese filtro." : (ordState.tab === "items" ? "Aún no hay pedidos de items. Aparecerán aquí (y te llegará un correo) cuando alguien compre." : "Aún no hay pedidos. Aparecerán aquí cuando tus clientes envíen uno.")}</div>`;
         }
 
         // ---- Reserva manual: el stock SOLO baja cuando tú lo confirmas aquí ----
         function reserveItems(o) { return (o.items || []).filter(it => { const s = findSet(it.id); return s && s.stock != null; }); }
-        function needsReserve(o) { return !o.stockApplied && o.status !== "cancelado" && reserveItems(o).length > 0; }
+        function isItemOrder(o) { return o.origen === "items"; }
+        function needsReserve(o) { return !isItemOrder(o) && !o.stockApplied && o.status !== "cancelado" && reserveItems(o).length > 0; }
         async function confirmReserve(order, btn) {
             const tracked = reserveItems(order);
             if (!tracked.length) { showToast("Estos sets no tienen stock registrado.", "Stock"); return; }
