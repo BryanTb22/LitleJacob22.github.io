@@ -84,3 +84,40 @@ html.lj-rifas .nav-right .lock:hover { filter: brightness(1.15); color: #fff; }
 /* Botón Recargar del menú (igual que en Rayas Store, con el acento de LitleJacob) */
 .nav-link.nav-link-recargar { color: #fff !important; background: linear-gradient(180deg, #ff4fa6, #c4126b) !important; border-color: transparent !important; }
 .nav-link.nav-link-recargar:hover { filter: brightness(1.12); border-color: transparent !important; }
+
+/* Menú desplegable de usuario en la tienda */
+.ljc-dropwrap { position: relative; display: inline-block; }
+.ljc-drop { position: absolute; right: 0; top: calc(100% + 10px); z-index: 90; min-width: 250px; background: #131316; border: 1px solid #3d3f45; padding: 6px; box-shadow: 0 18px 44px rgba(0, 0, 0, .6); text-align: left; }
+.ljc-drop[hidden] { display: none; }
+.ljc-drop-head { display: grid; gap: 2px; padding: 10px 12px 12px; border-bottom: 1px solid #2a2b30; margin-bottom: 4px; overflow-wrap: anywhere; }
+.ljc-drop-head b { font-size: 17px; color: #fff; }
+.ljc-drop-head small { color: #8b9097; font-size: 13px; }
+.ljc-drop-head span { margin-top: 4px; font-size: 13px; color: #8b9097; }
+.ljc-drop-head span b { color: #f4f5f7; font-size: 14px; }
+.ljc-drop button { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; color: #e9eaee; padding: 11px 12px; cursor: pointer; font: 600 15px Inter, system-ui, sans-serif; text-align: left; text-transform: none; letter-spacing: 0; }
+.ljc-drop button i { font-style: normal; width: 22px; text-align: center; }
+.ljc-drop button:hover, .ljc-drop button:focus-visible { background: rgba(255, 255, 255, .06); color: #fff; outline: none; }
+.ljc-drop button.out { color: #ff6b73; border-top: 1px solid #2a2b30; margin-top: 4px; padding-top: 13px; }
+@media (max-width: 560px) { .ljc-drop { position: fixed; right: 10px; left: 10px; top: 64px; min-width: 0; } }
+
+/* Mis movimientos en el panel de cuenta */
+.ljc-movs { display: grid; gap: 10px; }
+.ljc-movs h3 { margin: 0; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: #c4c8ce; }
+.ljc-movs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ljc-movs li { border: 1px solid #2f3136; background: #18181c; }
+.ljc-movs .mv-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; list-style: none; }
+.ljc-movs summary.mv-row { cursor: pointer; }
+.ljc-movs summary::-webkit-details-marker { display: none; }
+.ljc-movs .mv-t { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.ljc-movs .mv-t b { font-size: 14px; color: #fff; }
+.ljc-movs .mv-t small { color: #8b9097; font-size: 12px; }
+.ljc-movs .mv-m { font-weight: 800; color: #ff8a90; white-space: nowrap; }
+.ljc-movs .mv-fl { opacity: .6; transition: transform .2s; }
+.ljc-movs details[open] .mv-fl { transform: rotate(180deg); }
+.ljc-movs .mv-items { padding: 4px 12px 10px 44px; display: grid; gap: 6px; font-size: 13px; color: #c4c8ce; }
+.ljc-movs .mv-item { display: flex; justify-content: space-between; gap: 10px; }
+.ljc-movs .mv-item em { font-style: normal; opacity: .7; }
+.ljc-movs .mv-est { justify-self: start; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; background: rgba(255, 255, 255, .08); }
+.ljc-movs .mv-est.est-entregado { background: rgba(60, 200, 120, .18); color: #6fe3a0; }
+.ljc-movs .mv-est.est-cancelado { background: rgba(255, 90, 90, .18); color: #ff8f8f; }
+.ljc-movs .mv-est.est-pagado { background: rgba(255, 200, 50, .18); color: #ffd35c; }
