@@ -11,7 +11,8 @@
   var SES_KEY = "lj_rifas_ses";
   var ADMIN_UID = "eLEZkdXiG5b0PpxHQCCei8D0Qxy1";
   var TABS = [["info", "👤", "Información personal"], ["trans", "🔁", "Transacciones"], ["seg", "🔒", "Seguridad"]];
-  var EST = { pagado: "Por entregar", entregado: "Entregado", cancelado: "Cancelado" };
+  var EST = { cooldown: "En cooldown", pagado: "Por entregar", entregado: "Entregado", cancelado: "Cancelado" };
+  function fechaCorta(iso) { var t = iso ? new Date(iso) : null; if (!t || !isFinite(t.getTime())) return ""; var p = function (n) { return (n < 10 ? "0" : "") + n; }; return p(t.getDate()) + "/" + p(t.getMonth() + 1); }
   var st = { abierto: false, tab: "info", perfil: null, compras: null, partes: null, premios: null, items: null, cargando: false, abiertos: {}, tTipo: "", tBuscar: "", msg: "", tipo: "", tienePass: undefined, emailAuth: "", verPass: false };
   var raiz = null, IMG_CACHE = {}, IMG_PEND = {};
 
@@ -79,7 +80,7 @@
           return { id: g.id && g.id.stringValue || "", name: g.name && g.name.stringValue || "Item", qty: num("qty") || 1, price: num("price") };
         });
         return { code: f.code && f.code.stringValue || "", monto: Number(f.creditos && (f.creditos.integerValue || f.creditos.doubleValue) || 0), t: f.createdAt && f.createdAt.timestampValue || "",
-          items: its, estado: f.status && f.status.stringValue || "pagado", tienda: f.tienda && f.tienda.stringValue || "" };
+          items: its, estado: f.status && f.status.stringValue || "pagado", tienda: f.tienda && f.tienda.stringValue || "", entregaDesde: f.entregaDesde && f.entregaDesde.timestampValue || "" };
       }).filter(function (c) { return c.monto > 0; });
     }).catch(function () { st.compras = []; }).then(pintar);
     consulta("rayas_part", "uid", s.uid, 100).then(function (docs) {
@@ -140,9 +141,10 @@
         det: [{ nombre: nom, img: p.img || "", qty: x.cantidad, unidad: x.cantidad === 1 ? "ticket" : "tickets", unit: x.cantidad ? x.costo / x.cantidad : 0, sub: x.costo, est: est, estTxt: txt }] });
     });
     (st.compras || []).forEach(function (c) {
-      out.push({ key: "c_" + (c.code || c.t), t: c.t, tipo: "compra", titulo: "Compra de items", code: c.code, est: c.estado, estTxt: EST[c.estado] || c.estado, monto: c.monto,
+      var cdTxt = c.estado === "cooldown" ? "En cooldown · lo recibes el " + fechaCorta(c.entregaDesde) : "";
+      out.push({ key: "c_" + (c.code || c.t), t: c.t, tipo: "compra", titulo: "Compra de items", code: c.code, est: c.estado, estTxt: cdTxt || EST[c.estado] || c.estado, monto: c.monto,
         tienda: c.tienda === "litlejacob" ? "LitleJacob Store" : (c.tienda === "rayas" ? "Rayas Store" : ""),
-        det: c.items.map(function (i) { return { nombre: i.name, img: imgDe(i), qty: i.qty, unidad: "", unit: i.price, sub: i.price * i.qty, est: c.estado, estTxt: EST[c.estado] || "" }; }) });
+        det: c.items.map(function (i) { return { nombre: i.name, img: imgDe(i), qty: i.qty, unidad: "", unit: i.price, sub: i.price * i.qty, est: c.estado, estTxt: cdTxt || EST[c.estado] || "" }; }) });
     });
     return out.sort(function (a, b) { return String(b.t).localeCompare(String(a.t)); });
   }

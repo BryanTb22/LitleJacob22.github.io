@@ -300,3 +300,6 @@ html.lj-rifas .drawer-foot .btn { border-radius: 999px !important; }
 html.lj-rifas .drawer .usal { border-radius: 999px !important; background: rgba(200, 22, 31, .14) !important; border: 1px solid rgba(200, 22, 31, .45) !important; color: #ff8a90 !important; padding: 3px 10px !important; font-weight: 800; }
 html.lj-rifas .drawer-foot .msg { display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 7px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); }
 html.lj-rifas .drawer-foot .msg::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+/* Pedidos en cooldown (panel admin) */
+#ljPanelAdmin .pa-urow-h .pedcd { color: #e0a23a; font-weight: 700; margin-left: 6px; font-size: 12px; }
+#ljPanelAdmin .pedcd-l { color: #f1dcb5; } #ljPanelAdmin .pedcd-l b { color: #e0a23a; }
