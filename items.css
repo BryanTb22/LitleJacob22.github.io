@@ -353,3 +353,11 @@ body.itx-pop-open{overflow:hidden}
 .ofr-adm { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 10px; }
 .ofr-b { flex-wrap: wrap; justify-content: flex-end; }
 .ofr-b .itx-btn { flex: none; }
+
+/* Precio más grande en las tarjetas: va solo en su línea y los botones debajo */
+.itx-price { flex-wrap: wrap; row-gap: 10px; }
+.itx-price b { flex: 1 0 100%; font-size: 34px; line-height: 1; }
+.itx-price b .desde { font-size: 11px; margin-bottom: 4px; }
+.itx-price .itx-act { flex: 1 0 100%; display: flex; gap: 8px; justify-content: flex-end; }
+@media (max-width: 640px) { .itx-price b { font-size: 27px; } }
+.itx-price .itx-act .itx-buy { flex: 1; text-align: center; }
