@@ -350,12 +350,24 @@
     if (itemsFiltrados().some((x) => sinTildes(x.nombre) === n)) { adm.nuevoNombre = ""; return ""; }
     return '<div class="itx-avisof" role="status"><span>✔ Item agregado (no se ve porque hay filtros activos)</span><button type="button" class="itx-btn gold sm" data-itx="quitarFiltros">Quitar filtros</button><button type="button" class="itx-btn ghost sm" data-itx="avisoCerrar" aria-label="Cerrar aviso">✕</button></div>';
   }
+  // Items por página = columnas que caben × filas, para que las filas salgan completas (sin huecos al final).
+  var GRID_COLS = 0, GRID_SEL = ".itx-grid";
+  function porPagina() { var c = GRID_COLS || 4; return c * Math.ceil(24 / c); }
+  function medirCols() {
+    var g = document.querySelector(GRID_SEL); if (!g) return;
+    var v = getComputedStyle(g).gridTemplateColumns; if (!v || v === "none") return;
+    var n = v.split(" ").filter(Boolean).length;
+    if (n && n !== GRID_COLS) { var antes = porPagina(); GRID_COLS = n; filtros.pag = Math.floor(filtros.pag * antes / porPagina()); renderTodo(); }
+  }
+  (function () { var t; window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(medirCols, 150); }); })();
+
   function gridHtml() {
     if (items.err) return '<div class="itx-empty"><strong>No se pudo cargar</strong><span>' + esc(items.err) + "</span></div>";
     if (!items.cargado) return '<div class="itx-grid itx-sk-grid" aria-busy="true" aria-label="Cargando items">' + new Array(9).join('<article class="itx-card itx-sk" aria-hidden="true"><div class="itx-thumb"></div><div class="itx-body"><i class="sk-l w80"></i><i class="sk-l w50"></i><i class="sk-l w60 tall"></i></div></article>') + "</div>";
     const l = itemsFiltrados();
     if (!l.length) return '<div class="itx-empty"><strong>' + (items.lista.length ? "Ningún item coincide" : "Pronto nuevos items") + "</strong><span>" + (items.lista.length ? "Prueba con otros filtros." : "Estamos subiendo el catálogo.") + "</span></div>";
-    const porPag = 24, total = Math.ceil(l.length / porPag);
+    const porPag = porPagina(), total = Math.ceil(l.length / porPag);
+    setTimeout(medirCols, 0);
     if (filtros.pag >= total) filtros.pag = Math.max(0, total - 1);
     return '<div class="itx-grid">' + l.slice(filtros.pag * porPag, filtros.pag * porPag + porPag).map(itemCardHtml).join("") + "</div>" + paginadorHtml(total, filtros.pag);
   }
