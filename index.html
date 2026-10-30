@@ -1991,6 +1991,16 @@ html.ljc-lock { overflow: hidden; }
 .ord-row .cust-name, .ord-row .ord-who { font-family: Inter, system-ui, sans-serif !important; font-variant: normal !important; text-transform: none !important; letter-spacing: 0 !important; }
 .ord-body .ord-total-row { justify-content: flex-start; }
 .ord-cust-steam a, .ord-cust-steam a:visited { color: #ffb4b8 !important; }
+/* Miniaturas de sets en Pedidos */
+.row-th { width: 40px; height: 27px; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid #3d3f45; border-radius: 2px; background: #0c0c0e; display: inline-block; }
+.row-th.th-none { text-align: center; line-height: 25px; font-size: 14px; }
+.row-th:last-of-type { margin-right: 8px; }
+.ord-items li { display: flex; align-items: center; gap: 12px; }
+.it-th { width: 120px; height: 80px; flex: none; object-fit: cover; border: 1px solid #3d3f45; border-radius: 3px; background: #0c0c0e; }
+.it-th.th-none { display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.ord-items .it-name { flex: 1; min-width: 0; }
+a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: underline; cursor: pointer; }
+@media (max-width: 640px) { .it-th { width: 84px; height: 56px; } }
 /* Pedido manual + cupo de entregas */
 .man-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border: 1px solid #26272b; background: #0c0c0e; }
 .man-cupo { font-size: 13px; color: #c4c8ce; display: flex; flex-direction: column; gap: 2px; }
@@ -5195,7 +5205,8 @@ html.ljc-lock { overflow: hidden; }
                 sets[String(s.id)] = {
                     price: s.price === null || s.price === undefined || s.price === "" || isNaN(Number(s.price)) ? null : Number(s.price),
                     stock: s.stock === null || s.stock === undefined ? null : Number(s.stock),
-                    soldOut: Boolean(s.soldOut)
+                    soldOut: Boolean(s.soldOut),
+                    img: s.img && !/^data:/i.test(s.img) ? String(s.img).slice(0, 300) : ""
                 };
             });
             return sets;
@@ -5652,6 +5663,7 @@ service cloud.firestore {
             openModal("ordersModal");
             renderOrders();
             loadOrders();
+            ljLiveQueue();   // deja las fotos de los sets en el catálogo en vivo para el correo de las 8:00
         }
         async function loadOrders() {
             ordState.loading = true; ordState.error = "";
@@ -5754,6 +5766,11 @@ service cloud.firestore {
                 "— *LitleJacob Store* · litlejacob.trade"
             ].join("\n");
         }
+        // @usuario de WhatsApp: WhatsApp aún no tiene un enlace oficial confirmado para abrir chat por @usuario.
+        // El clic copia el @ y abre WhatsApp (si tu cuenta ya lo permite abre el chat; si no, pega el @ en la búsqueda).
+        function waUserLinkHtml(ph) {
+            return `<a class="wa-user" href="https://wa.me/${escapeHtml(ph)}" target="_blank" rel="noopener noreferrer" data-user="${escapeHtml(ph)}" title="Copia el @ y abre WhatsApp"><b>${escapeHtml(ph)}</b> 💬</a>`;
+        }
         function waSendLink(phone, text) {
             if (isWaUser(phone)) return "https://api.whatsapp.com/send" + (text ? `?text=${encodeURIComponent(text)}` : "");
             return `https://api.whatsapp.com/send?phone=${phone}` + (text ? `&text=${encodeURIComponent(text)}` : "");
@@ -5767,13 +5784,19 @@ service cloud.firestore {
             }
             const ph = phoneFor(o);
             return ph
-                ? `<div class="ord-cust-steam">📱 ${isWaUser(ph) ? `<b>${escapeHtml(ph)}</b>` : `<a href="${waSendLink(ph)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(ph))}</a>`}</div>`
+                ? `<div class="ord-cust-steam">📱 ${isWaUser(ph) ? waUserLinkHtml(ph) : `<a href="${waSendLink(ph)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(ph))}</a>`}</div>`
                 : `<div class="ord-cust-steam">📱 sin WhatsApp · <button type="button" class="ord-link" data-act="phone-edit">Agregar número</button></div>`;
+        }
+        // Foto del set de un pedido: la del catálogo actual o, si el set ya no está, la guardada en el pedido
+        function setThumbSrc(it) { const s = findSet(it.id); return (s && s.img) || it.img || ""; }
+        function thumbHtml(it, cls) {
+            const src = setThumbSrc(it);
+            return src ? `<img class="${cls}" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async">` : `<span class="${cls} th-none" aria-hidden="true">🎁</span>`;
         }
         function orderCardHtml(o) {
             const key = custKey(o.steamId, o.customerName);
             const st = statusMeta(o.status);
-            const items = (o.items || []).map(it => `<li><span class="it-name">${it.qty > 1 ? `<b>${it.qty} ×</b> ` : ""}${escapeHtml(it.name)}</span><span class="it-price">${money((Number(it.price) || 0) * (it.qty || 1))}</span></li>`).join("");
+            const items = (o.items || []).map(it => `<li>${thumbHtml(it, "it-th")}<span class="it-name">${it.qty > 1 ? `<b>${it.qty} ×</b> ` : ""}${escapeHtml(it.name)}</span><span class="it-price">${money((Number(it.price) || 0) * (it.qty || 1))}</span></li>`).join("");
             const lbl = n => isItemOrder(o) ? `${n} ${n === 1 ? "item" : "items"}` : setsLabel(n);
             const notes = [lbl(Number(o.count) || (o.items || []).reduce((n, it) => n + (it.qty || 1), 0))];
             if (o.discount) notes.push(`Dscto. −${money(o.discount)}`);
@@ -5787,7 +5810,7 @@ service cloud.firestore {
                 <button type="button" class="ord-row" data-act="toggle" aria-expanded="${isOpen}">
                     <span class="ord-code">${escapeHtml(o.code || o._id)}</span>
                     <span class="ord-who">${escapeHtml(o.customerName || "Sin nombre")}</span>
-                    <span class="ord-sub">${fmtDate(o.createdAt)} · ${lbl(nSets)}${needsReserve(o) ? ` <i class="ord-flag">⚠ por confirmar</i>` : ""}${dueToday(o) ? ` <i class="ord-flag ok">🚚 entregar hoy</i>` : ""}</span>
+                    <span class="ord-sub">${(o.items || []).slice(0, 3).map(it => thumbHtml(it, "row-th")).join("")}${fmtDate(o.createdAt)} · ${lbl(nSets)}${needsReserve(o) ? ` <i class="ord-flag">⚠ por confirmar</i>` : ""}${dueToday(o) ? ` <i class="ord-flag ok">🚚 entregar hoy</i>` : ""}</span>
                     <span class="ord-badge st-${escapeHtml(st.key)}">${st.txt}</span>
                     <b class="ord-amt">${money(o.total)}</b>
                     <span class="ord-chev" aria-hidden="true">▾</span>
@@ -5857,7 +5880,7 @@ service cloud.firestore {
                 <div class="ord-body">
                 <div class="ord-cust-steam">${steamLineHtml(c.steamId)}</div>
                 ${c.account ? `<div class="cust-acc">✅ <b>Cuenta registrada</b> · ${escapeHtml(c.account.email)} · S/ ${c.account.creditos}${c.account.tradelink ? ` · <a href="${escapeHtml(c.account.tradelink)}" target="_blank" rel="noopener noreferrer">Trade link</a>` : " · sin trade link"}</div>` : ""}
-                <div class="ord-cust-steam">📱 ${c.phone ? (isWaUser(c.phone) ? `<b>${escapeHtml(c.phone)}</b>` : `<a href="${waSendLink(c.phone)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(c.phone))}</a>`) : "sin WhatsApp"}</div>
+                <div class="ord-cust-steam">📱 ${c.phone ? (isWaUser(c.phone) ? waUserLinkHtml(c.phone) : `<a href="${waSendLink(c.phone)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fmtPhone(c.phone))}</a>`) : "sin WhatsApp"}</div>
                 <div class="cust-stats">
                     <div><b>${c.orders}</b><span>${c.orders === 1 ? "Pedido" : "Pedidos"}</span></div>
                     <div><b>${money(c.spent)}</b><span>Gastado</span></div>
@@ -5957,7 +5980,7 @@ service cloud.firestore {
             const status = box.querySelector('[data-f="pick-status"]').value;
             const dateIso = box.querySelector('[data-f="pick-date"]').value;
             const when = dateIso && dateIso !== todayIso() ? new Date(dateIso + "T12:00:00") : new Date();
-            const lines = items.map(it => { const st = findSet(it.id); return { id: String(it.id), name: st ? String(st.name).slice(0, 80) : String(it.id), qty: it.qty, price: st ? Number(st.price) || 0 : 0 }; });
+            const lines = items.map(it => { const st = findSet(it.id); return { id: String(it.id), name: st ? String(st.name).slice(0, 80) : String(it.id), qty: it.qty, price: st ? Number(st.price) || 0 : 0, img: st && st.img && !/^data:/i.test(st.img) ? String(st.img).slice(0, 300) : "" }; });
             const subtotal = lines.reduce((t, it) => t + it.price * it.qty, 0);
             const order = { code: newOrderCode(), customerName: cust.name, steamId: cust.steamId || "", items: lines, count: lines.reduce((n, it) => n + it.qty, 0),
                 subtotal, discount: 0, total: subtotal, status, createdAt: when };
@@ -6497,6 +6520,12 @@ service cloud.firestore {
                 }
             });
             list.addEventListener("click", (e) => {
+                const wu = e.target.closest("a.wa-user");
+                if (wu) {
+                    try { navigator.clipboard && navigator.clipboard.writeText(wu.dataset.user).catch(() => {}); } catch (er) { /* sin portapapeles */ }
+                    showToast(`Copiado ${wu.dataset.user}. Se abre WhatsApp: si no abre el chat, pégalo en la búsqueda.`, "WhatsApp");
+                    return;   // el enlace se abre solo
+                }
                 const btn = e.target.closest("button[data-act]");
                 if (!btn || btn.disabled) return;
                 const act = btn.dataset.act;
