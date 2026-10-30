@@ -30,6 +30,7 @@
     root.querySelectorAll("img[data-fs]").forEach(function (im) {
       var id = im.getAttribute("data-fs");
       if (IMG[id]) { im.src = IMG[id]; return; }
+      if (window.fotoFs) { window.fotoFs(id).then(function (u) { if (u) { IMG[id] = u; im.src = u; } }); return; }
       fetch(BASE + "rayas/" + id).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
         var u = d && d.fields && d.fields.data && d.fields.data.stringValue;
         if (u && /^data:image\/(webp|jpeg|png);base64,/.test(u)) { IMG[id] = u; im.src = u; }

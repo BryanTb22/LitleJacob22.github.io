@@ -34,7 +34,7 @@
   function fmtSol(n) { return (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, ""); }
   function bajarQr(img) {
     try {
-      var src = img && img.getAttribute("src"); if (!src || src.indexOf("data:image/") !== 0) return false;
+      var src = img && img.getAttribute("src"); if (!src || !/^(data:image\/|blob:)/.test(src)) return false;
       var a = document.createElement("a"); a.href = src; a.download = "yape-qr.png"; a.rel = "noopener";
       document.body.appendChild(a); a.click(); a.remove(); return true;
     } catch (e) { return false; }
@@ -783,18 +783,24 @@
   function imgTag(src, alt, extra) {
     if (esFs(src)) {
       var id = src.slice(3);
-      return '<img data-fs="' + esc(id) + '"' + (IMG_CACHE[id] ? ' src="' + IMG_CACHE[id] + '"' : '') + ' alt="' + esc(alt) + '"' + (extra || '') + '>';
+      var ya = IMG_CACHE[id] || (window.fotoFsYa && window.fotoFsYa(id)) || "";
+      return '<img data-fs="' + esc(id) + '"' + (ya ? ' src="' + ya + '"' : '') + ' alt="' + esc(alt) + '"' + (extra || '') + '>';
     }
     var u = safeImg(src);
     return u ? '<img src="' + esc(u) + '" alt="' + esc(alt) + '"' + (extra || '') + '>' : '';
   }
-  function cargarFs(id) {
-    if (IMG_CACHE[id]) return Promise.resolve(IMG_CACHE[id]);
-    if (!IMG_PEND[id]) IMG_PEND[id] = fetch(DOC_URL.replace(/estado$/, id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+  // Pide una foto subida. Con fotos.js sale guardada del navegador (y como enlace corto); sin él, como antes.
+  function fsPedir(id) {
+    if (window.fotoFs) return window.fotoFs(id).then(function (u) { if (u) IMG_CACHE[id] = u; return IMG_CACHE[id]; });
+    return fetch(DOC_URL.replace(/estado$/, id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       var u = d && d.fields && d.fields.data && d.fields.data.stringValue;
       if (u && /^data:image\/(webp|jpeg|png);base64,/.test(u)) IMG_CACHE[id] = u;
       return IMG_CACHE[id];
     }).catch(function () { return null; });
+  }
+  function cargarFs(id) {
+    if (IMG_CACHE[id]) return Promise.resolve(IMG_CACHE[id]);
+    if (!IMG_PEND[id]) IMG_PEND[id] = fsPedir(id);
     return IMG_PEND[id];
   }
   var FOTO_VARS = { hero: "--art-hero", lava: "--art-lava", sombra: "--art-sombra" };
@@ -820,11 +826,7 @@
     for (var k = 0; k < els.length; k++) (function (el) {
       var id = el.getAttribute("data-fs");
       if (IMG_CACHE[id]) { el.src = IMG_CACHE[id]; return; }
-      if (!IMG_PEND[id]) IMG_PEND[id] = fetch(DOC_URL.replace(/estado$/, id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-        var u = d && d.fields && d.fields.data && d.fields.data.stringValue;
-        if (u && /^data:image\/(webp|jpeg|png);base64,/.test(u)) IMG_CACHE[id] = u;
-        return IMG_CACHE[id];
-      }).catch(function () { return null; });
+      if (!IMG_PEND[id]) IMG_PEND[id] = fsPedir(id);
       IMG_PEND[id].then(function (u) { if (u) { var all = document.querySelectorAll('img[data-fs="' + id + '"]'); for (var j = 0; j < all.length; j++) all[j].src = u; } });
     })(els[k]);
   }

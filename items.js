@@ -63,21 +63,31 @@
   function imgTag(src, alt, extra) {
     if (esFs(src)) {
       const id = src.slice(3);
-      return '<img data-fs="' + esc(id) + '"' + (IMG_CACHE[id] ? ' src="' + IMG_CACHE[id] + '"' : "") + ' alt="' + esc(alt) + '"' + (extra || "") + ">";
+      const ya = IMG_CACHE[id] || (window.fotoFsYa && window.fotoFsYa(id)) || "";
+      return '<img data-fs="' + esc(id) + '"' + (ya ? ' src="' + ya + '"' : "") + ' alt="' + esc(alt) + '"' + (extra || "") + ">";
     }
     const u = safeImg(src);
     return u ? '<img src="' + esc(u) + '" alt="' + esc(alt) + '" decoding="async"' + (extra || "") + ">" : "";
+  }
+  // Pide una foto subida. Con fotos.js sale guardada del navegador (y como enlace corto); sin él, como antes.
+  function fsPedir(id) {
+    if (window.fotoFs) return window.fotoFs(id).then((u) => { if (u) IMG_CACHE[id] = u; return IMG_CACHE[id]; });
+    return fetch(BASE + "rayas/" + id).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      const u = d && d.fields && d.fields.data && d.fields.data.stringValue;
+      if (u && /^data:image\/(webp|jpeg|png);base64,/.test(u)) IMG_CACHE[id] = u;
+      return IMG_CACHE[id];
+    }).catch(() => null);
   }
   function hidratarImgs() {
     document.querySelectorAll(".itx img[data-fs]:not([src]), #itxModal img[data-fs]:not([src]), #ljPanelAdmin img[data-fs]:not([src])").forEach((el) => {
       const id = el.getAttribute("data-fs");
       if (IMG_CACHE[id]) { el.src = IMG_CACHE[id]; return; }
-      if (!IMG_PEND[id]) IMG_PEND[id] = fetch(BASE + "rayas/" + id).then((r) => (r.ok ? r.json() : null)).then((d) => {
-        const u = d && d.fields && d.fields.data && d.fields.data.stringValue;
-        if (u && /^data:image\/(webp|jpeg|png);base64,/.test(u)) IMG_CACHE[id] = u;
-        return IMG_CACHE[id];
-      }).catch(() => null);
-      IMG_PEND[id].then((u) => { if (u) document.querySelectorAll('img[data-fs="' + id + '"]').forEach((x) => { x.src = u; }); });
+      const ir = () => {
+        if (!IMG_PEND[id]) IMG_PEND[id] = fsPedir(id);
+        IMG_PEND[id].then((u) => { if (u) document.querySelectorAll('img[data-fs="' + id + '"]').forEach((x) => { x.src = u; }); });
+      };
+      // Solo se baja cuando está por verse en pantalla (fotos.js); si ya se estaba bajando, se usa de frente.
+      if (window.fotoFsVer && !IMG_PEND[id]) window.fotoFsVer(el, id, ir); else ir();
     });
   }
   // Achica la foto en el navegador y la guarda como documento en Firestore.
@@ -220,8 +230,17 @@
     if (el.id === pre + "cdh") { F.cooldownHasta = localAIso(el.value) || F.cooldownHasta; return true; }
     return false;
   }
+  // Catálogo guardado en el navegador: en la siguiente visita se muestra al instante y se actualiza por detrás.
+  // Solo para clientes (el admin siempre ve lo último). El precio y el stock reales igual los revisa el servidor al pagar.
+  const ITEMS_GUARDA = "lj_items_guardados_v2";
+  function itemsGuardados() {
+    try { const raw = localStorage.getItem(ITEMS_GUARDA) || ""; const l = raw ? JSON.parse(raw) : null; return Array.isArray(l) && l.length ? { l: l, raw: raw } : null; } catch (e) { return null; }
+  }
   function cargarItems(forzar) {
     if (items.cargando || (items.cargado && !forzar)) return;
+    const cliente = !esAdmin();
+    let guardado = null;
+    if (cliente && !items.cargado && (guardado = itemsGuardados())) { items.lista = guardado.l; items.cargado = true; items.deGuardado = true; }
     items.cargando = true; items.err = "";
     const acc = [];
     const pag = (t) => fetch(BASE + "rayas_items?pageSize=300" + (t ? "&pageToken=" + encodeURIComponent(t) : ""), { cache: "no-store" }).then((r) => {
@@ -231,8 +250,18 @@
       (j.documents || []).forEach((d) => acc.push(itemDeDoc(d)));
       return j.nextPageToken && acc.length < 2000 ? pag(j.nextPageToken) : null;
     });
-    pag("").then(() => { items.lista = acc; items.cargado = true; }).catch((e) => { items.err = e.message || "No se pudo cargar el catálogo."; })
-      .then(() => { items.cargando = false; aplicarRutaCatalogo(); renderTodo(); });
+    pag("").then(() => {
+      const txt = cliente ? JSON.stringify(acc) : "", igual = !!(guardado && items.deGuardado && guardado.raw === txt);
+      items.lista = acc; items.cargado = true; items.deGuardado = false;
+      if (cliente && !igual) { try { localStorage.setItem(ITEMS_GUARDA, txt); } catch (e) { /* sin espacio: no pasa nada */ } }
+      return igual;
+    }).catch((e) => { if (items.deGuardado) { items.deGuardado = false; return true; } items.err = e.message || "No se pudo cargar el catálogo."; })
+      .then((yaPintado) => {
+        items.cargando = false;
+        if (yaPintado === true) return;            // lo guardado ya era lo último: no hace falta redibujar
+        if (!guardado) aplicarRutaCatalogo();      // primera vez: igual que antes
+        renderTodo();
+      });
   }
   function cargarSecciones() {
     fetch(DOC_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
@@ -1543,7 +1572,7 @@
   let uidVisto = null;
   function vigilarSesion() {
     const s = sesion(), uid = s ? s.uid : null;
-    if (uid !== uidVisto) { uidVisto = uid; renderTodo(); }
+    if (uid !== uidVisto) { uidVisto = uid; if (esAdmin()) cargarItems(); renderTodo(); }
   }
   function alCambiarRuta() {
     const h = location.hash.replace(/^#\/?/, "");
@@ -1552,7 +1581,9 @@
     if (h === "items" || /^items\//.test(h) || h === "vender" || /^item\//.test(h)) { cargarItems(); if (h === "vender") cargarPrecios(); setTimeout(() => { renderTodo(); const it = idItemHash() && itemPorId(idItemHash()); if (it) document.title = it.nombre + " • " + TIENDA; }, 0); }
   }
   function iniciar() {
-    cargarSecciones(); cargarItems();
+    // El catálogo (más de 1 MB) solo se baja cuando hace falta: al entrar a Items/Vender/un item, al abrir el carrito,
+    // o si es el admin. alCambiarRuta() de abajo lo pide si la página abre directo en una de esas secciones.
+    cargarSecciones(); if (esAdmin()) cargarItems();
     window.addEventListener("hashchange", alCambiarRuta);
     setInterval(vigilarSesion, 1500);
     if (/[?&]carrito=1(&|$)/.test(location.search)) {   // viene del botón Carrito de la página de rifas
