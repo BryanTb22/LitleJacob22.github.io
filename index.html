@@ -1991,6 +1991,29 @@ html.ljc-lock { overflow: hidden; }
 .ord-row .cust-name, .ord-row .ord-who { font-family: Inter, system-ui, sans-serif !important; font-variant: normal !important; text-transform: none !important; letter-spacing: 0 !important; }
 .ord-body .ord-total-row { justify-content: flex-start; }
 .ord-cust-steam a, .ord-cust-steam a:visited { color: #ffb4b8 !important; }
+/* Pedido manual + cupo de entregas */
+.man-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border: 1px solid #26272b; background: #0c0c0e; }
+.man-cupo { font-size: 13px; color: #c4c8ce; display: flex; flex-direction: column; gap: 2px; }
+.man-cupo b { font-family: var(--font-head, "Oswald", sans-serif); font-size: 16px; color: #6ee7b7; }
+.man-cupo.full b { color: #ffb4b8; }
+.man-cupo small { font-size: 11px; color: #8b9097; }
+.man-card { border-left-color: #34d399 !important; }
+.man-card .ord-head { padding: 10px 12px 0; }
+.man-card .cust-edit { padding: 10px 12px 12px; }
+.man-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.man-mode .man-m.active { background: linear-gradient(180deg, #c8161f, #7d0d13) !important; border-color: #e0343d !important; color: #fff !important; }
+.man-help { font-size: 12.5px; line-height: 1.5; color: #c4c8ce; padding: 8px 10px; border: 1px dashed #3d3f45; }
+.man-card[data-mode="existing"] .man-new, .man-card[data-mode="new"] .man-ex { display: none; }
+.man-info { margin-top: 6px; font-size: 12.5px; color: #c4c8ce; line-height: 1.6; }
+.man-info:empty { display: none; }
+.man-prev { font-size: 13px; line-height: 1.5; padding: 8px 10px; border: 1px solid #26272b; background: #0c0c0e; color: #c4c8ce; }
+.man-prev:empty { display: none; }
+.man-prev.ok { border-color: rgba(16,185,129,.45); color: #c9f5e2; }
+.man-prev.wait { border-color: rgba(245,158,11,.45); color: #fde68a; }
+.ord-plan { font-size: 13px; line-height: 1.5; padding: 8px 10px; border: 1px solid #26272b; background: #0c0c0e; }
+.ord-plan.ok { border-color: rgba(16,185,129,.45); color: #c9f5e2; }
+.ord-plan.wait { border-color: rgba(245,158,11,.4); color: #fde68a; }
+@media (max-width: 640px) { .man-mode { grid-template-columns: 1fr; } .man-bar .cust-new-btn { width: 100%; } }
 @media (max-width: 640px) {
   .ord-row { grid-template-columns: minmax(0,1fr) auto 14px; grid-template-areas: "who amt chev" "sub badge chev"; padding: 9px 10px; }
   .cust-card .ord-row { grid-template-areas: "who amt chev" "sub sub chev"; }
@@ -5542,7 +5565,7 @@ service cloud.firestore {
         }
 
         // ---- Ventana: Pedidos y clientes ----
-        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null, phoneEditing: null, creating: false, buying: null, open: {} };
+        const ordState = { tab: "orders", filter: "all", sort: "recent", orders: [], customers: {}, loading: false, error: "", editing: null, phoneEditing: null, creating: false, buying: null, manual: null, plan: null, open: {} };
         const friendSaved = {};   // última fecha de amistad guardada en Firestore, por cliente
         const friendTimers = {};  // guardado diferido (para los botones −1 / +1)
         function custKey(steamId, name) {
@@ -5573,11 +5596,52 @@ service cloud.firestore {
             if (left <= 0) return { txt: "✓ Entrega inmediata", cls: "fr-ok", since };
             return { txt: `Entrega desde ${ready.toLocaleDateString("es-PE")}, faltan ${left} ${left === 1 ? "día" : "días"}`, cls: "fr-wait", since };
         }
-        // Pedido pagado, sin entregar, cuyo cliente ya cumplió los 30 días de amistad
+        // ---- Cupo de entregas: máximo 8 SETS por día (límite de Steam); lo que pase de 8 se corre al día siguiente (día 31, 32…) ----
+        // Misma regla en functions/recordatorio.js (correo diario de las 8:00).
+        const ENTREGA_CAP = 8, ESPERA_DIAS = 30;   // Steam deja mandar 8 SETS por día (cuenta sets, no pedidos)
+        function setsDe(o) { return Math.max(1, Number(o.count) || (o.items || []).reduce((n, it) => n + (Number(it.qty) || 1), 0)); }
+        function isoDias(iso) { const p = iso.split("-").map(Number); return Date.UTC(p[0], p[1] - 1, p[2]) / 86400000; }
+        // Reparte los pedidos "Pagado" con fecha de amistad en días de entrega. Los ya entregados hoy ocupan cupo de hoy.
+        // extra (opcional): un pedido hipotético { id, base } para calcular la fecha antes de crearlo.
+        function buildPlan(extra) {
+            const hoy = todayIso();
+            const cnt = {}, pend = [];
+            ordState.orders.forEach(o => {
+                if (isItemOrder(o)) return;
+                if (o.status === "entregado") { if (o.entregadoDia && o.entregadoDia >= hoy) cnt[o.entregadoDia] = (cnt[o.entregadoDia] || 0) + setsDe(o); return; }
+                if (o.status !== "pagado") return;
+                const since = friendInfo(custKey(o.steamId, o.customerName)).since;
+                if (since) pend.push({ id: o._id, base: isoShift(since, ESPERA_DIAS), t: o.createdAt ? +o.createdAt : 0, n: setsDe(o) });
+            });
+            if (extra) pend.push({ id: extra.id, base: extra.base, t: Date.now(), n: Math.max(1, extra.n || 1) });
+            pend.sort((a, b) => (a.base < b.base ? -1 : a.base > b.base ? 1 : a.t - b.t));
+            const slots = {};
+            pend.forEach(p => {
+                const desde = p.base < hoy ? hoy : p.base;   // lo atrasado se entrega desde hoy, respetando el cupo
+                let d = desde;
+                while ((cnt[d] || 0) > 0 && (cnt[d] || 0) + p.n > ENTREGA_CAP) d = isoShift(d, 1);   // un pedido que no cabe pasa entero al día siguiente
+                cnt[d] = (cnt[d] || 0) + p.n;
+                slots[p.id] = { day: d, base: p.base, corrido: isoDias(d) - isoDias(desde) };
+            });
+            return { slots, cnt, hoy };
+        }
+        function getPlan() { return ordState.plan || (ordState.plan = buildPlan()); }
+        function planOf(o) { return getPlan().slots[o._id] || null; }
+        function fmtDia(iso) { return new Date(iso + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "2-digit" }); }
+        // Pedido pagado, sin entregar, que ya le toca entregar hoy (30 días de amistad cumplidos y dentro del cupo de 8 por día)
         function dueToday(o) {
             if (o.status !== "pagado") return false;
-            const fi = friendInfo(custKey(o.steamId, o.customerName));
-            return !!fi.since && fi.cls === "fr-ok";
+            const p = planOf(o);
+            return !!p && p.day <= todayIso();
+        }
+        function planLineHtml(o) {
+            if (o.status !== "pagado") return "";
+            const p = planOf(o);
+            if (!p) return `<div class="ord-plan wait">📅 Sin fecha de amistad: pon desde cuándo son amigos para programar la entrega.</div>`;
+            const plan = getPlan();
+            if (p.day <= plan.hoy) return `<div class="ord-plan ok">🚚 <b>Entregar hoy</b> · cupo de hoy ${plan.cnt[plan.hoy] || 0}/${ENTREGA_CAP} sets${p.corrido ? ` (por cupo se había corrido ${p.corrido} ${p.corrido === 1 ? "día" : "días"})` : ""}</div>`;
+            const dia = ESPERA_DIAS + p.corrido;
+            return `<div class="ord-plan wait">📅 Entrega programada: <b>${fmtDia(p.day)}</b>${p.corrido ? ` · día ${dia}: se corrió ${p.corrido} ${p.corrido === 1 ? "día" : "días"} porque ese día ya hay ${ENTREGA_CAP} sets por entregar` : ` · día ${ESPERA_DIAS} de amistad`}</div>`;
         }
         function findSet(id) { return DATA.sets.find(s => String(s.id) === String(id)); }
         function isSale(o) { return o.status === "pagado" || o.status === "entregado"; }
@@ -5738,6 +5802,7 @@ service cloud.firestore {
                 <ul class="ord-items">${items}</ul>
                 ${isItemOrder(o) ? itemHistoryHtml(o) : ""}
                 <div class="ord-total-row"><span class="ord-notes">${notes.join(" · ")}</span><b class="ord-total">${money(o.total)}</b></div>
+                ${planLineHtml(o)}
                 ${friendEditorHtml(key)}
                 <footer class="ord-actions">
                     <label class="ord-status-wrap"><span>Estado</span>
@@ -5818,15 +5883,16 @@ service cloud.firestore {
             </article>`;
         }
         // Selector de sets para registrar a mano lo que llevó un cliente
-        function purchasePickerHtml() {
+        function purchasePickerHtml(defStatus) {
             const today = todayIso();
+            defStatus = defStatus || "entregado";
             return `<div class="pick" data-pick>
                 <label class="lj-label">¿Qué llevó? (opcional)</label>
                 <div class="pick-row"><div class="pick-search"><input class="lj-input" data-f="pick-q" type="search" placeholder="🔎 Escribe para buscar un set…" autocomplete="off"><div class="pick-results" hidden></div></div><button type="button" class="fr-btn" data-act="pick-add">➕ Agregar</button></div>
                 <ul class="pick-list"></ul>
                 <div class="pick-meta">
                     <label>Fecha de compra<input class="lj-input fr-date" data-f="pick-date" type="date" value="${today}" max="${today}"></label>
-                    <label>Estado<select class="lj-input" data-f="pick-status">${ORDER_STATUSES.map(st => `<option value="${st.key}" ${st.key === "entregado" ? "selected" : ""}>${st.txt}</option>`).join("")}</select></label>
+                    <label>Estado<select class="lj-input" data-f="pick-status">${ORDER_STATUSES.map(st => `<option value="${st.key}" ${st.key === defStatus ? "selected" : ""}>${st.txt}</option>`).join("")}</select></label>
                 </div>
                 <div class="pick-total"></div>
             </div>`;
@@ -5881,9 +5947,10 @@ service cloud.firestore {
             else if (act === "pick-del") items.splice(i, 1);
             box.dataset.items = JSON.stringify(items);
             renderPick(card);
+            if (card.classList.contains("man-card")) manualPreview(card);
         }
         // Crea el pedido de la compra registrada a mano (misma estructura que los pedidos de la web)
-        async function savePurchase(card, cust) {
+        async function savePurchase(card, cust, extra) {
             const items = pickItems(card);
             if (!items.length) return null;
             const box = card.querySelector("[data-pick]");
@@ -5895,6 +5962,8 @@ service cloud.firestore {
             const order = { code: newOrderCode(), customerName: cust.name, steamId: cust.steamId || "", items: lines, count: lines.reduce((n, it) => n + it.qty, 0),
                 subtotal, discount: 0, total: subtotal, status, createdAt: when };
             if (cust.phone) order.phone = cust.phone;
+            if (status === "entregado") order.entregadoDia = isoOf(when);
+            if (extra) Object.assign(order, extra);
             if (isSale({ status })) {
                 const tracked = lines.filter(it => { const st = findSet(it.id); return st && st.stock != null; });
                 if (tracked.length && await confirmDialog(`¿Descontar del stock los sets de esta compra (${tracked.map(it => it.name).join(", ")})?`, "Descontar", "No descontar")) {
@@ -5966,6 +6035,120 @@ service cloud.firestore {
                 const o = await savePurchase(card, { name, steamId: steam || "", phone: phone || "" });
                 ordState.creating = false;
                 showToast(`Cliente creado: ${name}.` + (o ? ` Compra registrada (${o.code}).` : ""), "Clientes");
+                renderOrders();
+            } catch (e) {
+                card.classList.remove("is-busy");
+                err.textContent = fsErrorText(e);
+            }
+        }
+
+        // ---- Pedido manual (pestaña Pedidos = Sets Caché): cliente existente o NO registrado ----
+        function manualBarHtml() {
+            const plan = getPlan();
+            const hoyN = plan.cnt[plan.hoy] || 0;
+            return `<div class="man-bar"><span class="man-cupo ${hoyN >= ENTREGA_CAP ? "full" : ""}">🚚 Cupo de entregas de hoy: <b>${hoyN}/${ENTREGA_CAP} sets</b><small>Steam deja mandar ${ENTREGA_CAP} sets por día: lo que pase de ${ENTREGA_CAP} se corre al día siguiente (día ${ESPERA_DIAS + 1}).</small></span>
+                <button type="button" class="cust-save cust-new-btn" data-act="man-open" ${ordState.manualEl ? "disabled" : ""}>➕ Agregar pedido manual</button></div>`;
+        }
+        function manualFormHtml() {
+            const today = todayIso();
+            const custs = customersList().sort((a, b) => String(a.name).localeCompare(String(b.name), "es"));
+            const opts = custs.map(c => `<option value="${escapeHtml(c.key)}">${escapeHtml(c.name || "Sin nombre")}${c.steamId ? " · ID " + escapeHtml(c.steamId) : ""}${c.phone ? " · " + escapeHtml(fmtPhone(c.phone)) : ""}</option>`).join("");
+            return `<article class="ord-card cust-card cust-new man-card" data-manual="1" data-mode="new">
+                <header class="ord-head"><div class="ord-id"><b class="cust-name">➕ Agregar pedido manual</b></div></header>
+                <div class="cust-edit">
+                    <div class="man-mode" role="group" aria-label="Tipo de cliente">
+                        <button type="button" class="fr-btn man-m active" data-act="man-mode" data-mode="new">👤 Cliente no registrado</button>
+                        <button type="button" class="fr-btn man-m" data-act="man-mode" data-mode="existing">📇 Cliente existente</button>
+                    </div>
+                    <div class="man-help man-new">Para quien compró fuera de la web. Se guarda su ficha (WhatsApp o @ e ID de Steam) y esta compra: queda el registro y te llega el recordatorio por correo cuando cumpla su tiempo de amistad.</div>
+                    <div class="man-new"><label class="lj-label">ID de amigo de Steam *</label><input class="lj-input" data-f="steam" type="text" inputmode="numeric" maxlength="80" placeholder="Ej. 123456789 (o enlace del perfil)"></div>
+                    <div class="man-new"><label class="lj-label">WhatsApp (número o @usuario) *</label><input class="lj-input" data-f="phone" type="text" maxlength="40" autocapitalize="off" placeholder="Ej. 987 654 321 o @usuario"></div>
+                    <div class="man-new"><label class="lj-label">Nombre de Dota 2 (opcional)</label><input class="lj-input" data-f="name" type="text" maxlength="60" placeholder="Ej. noname"></div>
+                    <div class="man-ex"><label class="lj-label">Cliente *</label><select class="lj-input" data-f="man-cust"><option value="">Elige un cliente…</option>${opts}</select><div class="man-info"></div></div>
+                    <div><label class="lj-label">Amigos desde (el día que lo agregaste) *</label><div class="since-row"><input class="lj-input fr-date" data-f="since" type="date" value="${today}"><button type="button" class="fr-btn" data-act="man-today">Hoy</button><button type="button" class="fr-btn" data-act="new-month">📅 Hace 1 mes</button></div></div>
+                    <div class="man-prev"></div>
+                    ${purchasePickerHtml("pagado").replace("¿Qué llevó? (opcional)", "¿Qué llevó? *")}
+                    <div class="lj-error cust-edit-err"></div>
+                    <div class="cust-actions">
+                        <button type="button" class="fr-btn cust-btn" data-act="man-cancel">Cancelar</button>
+                        <button type="button" class="cust-save" data-act="man-save">💾 Crear pedido</button>
+                    </div>
+                </div>
+            </article>`;
+        }
+        function manualOpen() {
+            const t = document.createElement("div");
+            t.innerHTML = manualFormHtml();
+            ordState.manualEl = t.firstElementChild;
+            renderOrders();
+            manualPreview(ordState.manualEl);
+            const i = ordState.manualEl.querySelector('[data-f="steam"]'); if (i) i.focus();
+        }
+        function manualClose() { ordState.manualEl = null; renderOrders(); }
+        function manualFill(card) {
+            const key = card.querySelector('[data-f="man-cust"]').value;
+            const c = key ? customersList().find(x => x.key === key) : null;
+            card.querySelector(".man-info").innerHTML = c ? `${steamLineHtml(c.steamId)}<br>📱 ${c.phone ? escapeHtml(fmtPhone(c.phone)) : "sin WhatsApp"}` : "";
+            const since = c ? friendInfo(c.key).since : "";
+            card.querySelector('[data-f="since"]').value = since || todayIso();
+        }
+        // Muestra cuándo le tocaría entregar este pedido (con el cupo de 8 por día)
+        function manualPreview(card) {
+            const box = card.querySelector(".man-prev");
+            const since = card.querySelector('[data-f="since"]').value;
+            const status = card.querySelector('[data-f="pick-status"]').value;
+            if (!validIso(since)) { box.className = "man-prev"; box.textContent = ""; return; }
+            if (status !== "pagado") { box.className = "man-prev"; box.textContent = "ℹ️ La entrega solo se programa (y te llega el recordatorio) cuando el estado es “Pagado”."; return; }
+            const nSets = pickItems(card).reduce((n, it) => n + it.qty, 0) || 1;
+            const plan = buildPlan({ id: "__nuevo", base: isoShift(since, ESPERA_DIAS), n: nSets });
+            const p = plan.slots.__nuevo;
+            const esHoy = p.day <= plan.hoy;
+            box.className = "man-prev " + (esHoy ? "ok" : "wait");
+            box.innerHTML = esHoy ? `🚚 Le toca entregar <b>hoy</b> (cupo de hoy ${(plan.cnt[plan.hoy] || 0)}/${ENTREGA_CAP} sets contando este pedido).`
+                : `📅 Entrega: <b>${fmtDia(p.day)}</b> · día ${ESPERA_DIAS + p.corrido}${p.corrido ? `: se corre ${p.corrido} ${p.corrido === 1 ? "día" : "días"} porque ese día ya hay ${ENTREGA_CAP} sets por entregar` : " de amistad"}. Te llegará el recordatorio a tu correo ese día.`;
+        }
+        async function saveManualOrder(card) {
+            const err = card.querySelector(".cust-edit-err");
+            err.textContent = "";
+            const f = n => card.querySelector(`[data-f="${n}"]`);
+            const existing = card.dataset.mode === "existing";
+            const since = f("since").value;
+            let name, steam, phone, known = null;
+            if (existing) {
+                known = customersList().find(c => c.key === f("man-cust").value);
+                if (!known) { err.textContent = "Elige el cliente."; return; }
+                name = known.name || ""; steam = known.steamId || ""; phone = known.phone || "";
+            } else {
+                steam = normalizeSteamId(f("steam").value);
+                phone = normalizePhone(f("phone").value);
+                name = f("name").value.trim().replace(/\s+/g, " ").slice(0, 60);
+                if (steam === null) { err.textContent = "El ID de amigo de Steam son solo números (ej. 123456789)."; return; }
+                if (!steam) { err.textContent = "Escribe el ID de amigo de Steam del cliente."; return; }
+                if (phone === null) { err.textContent = "Revisa el WhatsApp: un número (ej. 987 654 321) o un @usuario (ej. @tuusuario)."; return; }
+                if (!phone) { err.textContent = "Escribe su número de WhatsApp o su @usuario."; return; }
+                if (!name) name = "Cliente " + steam;
+            }
+            if (!validIso(since)) { err.textContent = "Pon desde cuándo son amigos (fecha de amistad)."; return; }
+            if (!pickItems(card).length) { err.textContent = "Agrega al menos un set."; return; }
+            const key = custKey(steam, name);
+            if (!existing && customersList().some(c => c.key === key)) { err.textContent = "Ya existe un cliente con ese ID de Steam. Cámbialo a “Cliente existente”."; return; }
+            const cur = ordState.customers[key];
+            if (existing && cur && validIso(cur.friendSince) && cur.friendSince !== since &&
+                !(await confirmDialog(`Cambiarás la fecha de amistad de ${name} (de ${cur.friendSince} a ${since}). Afecta también sus otros pedidos. ¿Continuar?`, "Cambiar fecha"))) return;
+            card.classList.add("is-busy");
+            try {
+                if (!cur || cur.friendSince !== since || !existing) {
+                    const fields = { friendSince: since, name, steamId: steam, phone: phone || "", updatedAt: new Date() };
+                    await fsRequest(`customers/${encodeURIComponent(key)}`, { method: "PATCH", auth: true, query: maskQuery(Object.keys(fields)), body: { fields: fsFields(fields) } });
+                    ordState.customers[key] = Object.assign(cur || { _id: key }, fields);
+                    friendSaved[key] = since;
+                }
+                const o = await savePurchase(card, { name, steamId: steam, phone: phone || "" }, { origen: "manual", manual: true, clienteRegistrado: !!(known && known.account) });
+                ordState.manualEl = null;
+                ordState.plan = null;
+                const p = planOf({ _id: o.code });
+                const cuando = o.status !== "pagado" ? "" : !p ? "" : p.day <= todayIso() ? " Hoy le toca entregarlo." : ` Entrega: ${fmtDia(p.day)}${p.corrido ? ` (día ${ESPERA_DIAS + p.corrido}, por el cupo de ${ENTREGA_CAP} por día)` : ""}. Te llegará el recordatorio por correo.`;
+                showToast(`Pedido ${o.code} creado para ${name}.${cuando}`, "Pedidos");
                 renderOrders();
             } catch (e) {
                 card.classList.remove("is-busy");
@@ -6064,6 +6247,7 @@ service cloud.firestore {
         }
 
         function renderOrders() {
+            ordState.plan = null;
             document.querySelectorAll("#ordersModal .ord-tab").forEach(b => {
                 const on = b.dataset.tab === ordState.tab;
                 b.classList.toggle("active", on);
@@ -6112,7 +6296,10 @@ service cloud.firestore {
             const rows = base.filter(o => (ordState.filter === "all" || (ordState.filter === "entregar" ? dueToday(o) : ordState.filter === "porconfirmar" ? needsReserve(o) : (o.status || "pendiente") === ordState.filter)) &&
                 (!q || normalizeText(`${o.code || o._id} ${o.customerName} ${o.steamId}`).includes(q)))
                 .sort((a, b) => ordState.sort === "amount" ? (Number(b.total) || 0) - (Number(a.total) || 0) : (b.createdAt || 0) - (a.createdAt || 0));
-            list.innerHTML = rows.length ? rows.map(orderCardHtml).join("") : `<div class="ord-empty">${base.length ? "No hay pedidos con ese filtro." : (ordState.tab === "items" ? "Aún no hay pedidos de items. Aparecerán aquí (y te llegará un correo) cuando alguien compre." : "Aún no hay pedidos. Aparecerán aquí cuando tus clientes envíen uno.")}</div>`;
+            const pre = ordState.tab === "orders" ? manualBarHtml() : "";
+            list.innerHTML = pre + (rows.length ? rows.map(orderCardHtml).join("") : `<div class="ord-empty">${base.length ? "No hay pedidos con ese filtro." : (ordState.tab === "items" ? "Aún no hay pedidos de items. Aparecerán aquí (y te llegará un correo) cuando alguien compre." : "Aún no hay pedidos. Aparecerán aquí cuando tus clientes envíen uno.")}</div>`);
+            // El formulario se conserva entre redibujados (buscar, filtrar) para no perder lo que ya escribiste
+            if (ordState.manualEl && ordState.tab === "orders" && list.firstElementChild) list.firstElementChild.after(ordState.manualEl);
         }
 
         // ---- Reserva manual: el stock SOLO baja cuando tú lo confirmas aquí ----
@@ -6170,6 +6357,7 @@ service cloud.firestore {
                 }
             }
             const announce = status === "entregado" && order.status !== "entregado";
+            if (announce) { fields.entregadoDia = todayIso(); keys.push("entregadoDia"); }   // ocupa cupo de hoy (8 por día)
             if (announce && phoneFor(order)) openDelivery(Object.assign({}, order, fields));
             try {
                 await fsRequest(`orders/${encodeURIComponent(order._id)}`, { method: "PATCH", auth: true, query: maskQuery(keys), body: { fields: fsFields(fields) } });
@@ -6228,6 +6416,7 @@ service cloud.firestore {
         function changeFriendSince(key, iso) {
             if (iso && !validIso(iso)) return;
             ordState.customers[key] = Object.assign(ordState.customers[key] || { _id: key }, { friendSince: iso || "" });
+            ordState.plan = null;
             refreshFriendUi(key);
             clearTimeout(friendTimers[key]);
             friendTimers[key] = setTimeout(() => setFriendSince(key, iso || ""), 700);
@@ -6245,6 +6434,7 @@ service cloud.firestore {
                 showToast(fsErrorText(e), "Error");
             }
             refreshFriendUi(key);
+            renderOrders();   // actualiza fechas de entrega, "Entregar hoy" y cupo
         }
 
         function initOrdersPanel() {
@@ -6253,6 +6443,7 @@ service cloud.firestore {
                 ordState.editing = null;
                 ordState.creating = false;
                 ordState.buying = null;
+                ordState.manualEl = null;
                 renderOrders();
             }));
             document.getElementById("ordRefresh").addEventListener("click", loadOrders);
@@ -6289,6 +6480,12 @@ service cloud.firestore {
                 document.querySelectorAll(".pick-search").forEach(ps => { if (!ps.contains(e.target)) { const r = ps.querySelector(".pick-results"); if (r) r.hidden = true; } });
             });
             list.addEventListener("change", (e) => {
+                const mc = e.target.closest(".man-card");
+                if (mc) {
+                    if (e.target.dataset.f === "man-cust") manualFill(mc);
+                    if (["man-cust", "since", "pick-status"].includes(e.target.dataset.f)) manualPreview(mc);
+                    return;
+                }
                 const act = e.target.dataset.act;
                 if (act === "status") {
                     const o = orderOf(e.target);
@@ -6311,9 +6508,21 @@ service cloud.firestore {
                     if (on) ordState.open[id] = true; else delete ordState.open[id];
                     return;
                 }
+                if (act === "man-open") { manualOpen(); return; }
+                if (act === "man-cancel") { manualClose(); return; }
+                if (act === "man-save") { saveManualOrder(btn.closest(".man-card")); return; }
+                if (act === "man-mode") {
+                    const card = btn.closest(".man-card");
+                    card.dataset.mode = btn.dataset.mode;
+                    card.querySelectorAll(".man-m").forEach(b => b.classList.toggle("active", b === btn));
+                    if (btn.dataset.mode === "existing") manualFill(card); else card.querySelector('[data-f="since"]').value = todayIso();
+                    manualPreview(card);
+                    return;
+                }
+                if (act === "man-today") { const card = btn.closest(".man-card"); card.querySelector('[data-f="since"]').value = todayIso(); manualPreview(card); return; }
                 if (act === "pick-choose") { pickAction(btn.closest(".cust-card"), act, btn.dataset.id); btn.closest(".cust-card").querySelector('[data-f="pick-q"]').focus(); return; }
                 if (act.startsWith("pick-")) { pickAction(btn.closest(".cust-card"), act, Number(btn.dataset.i)); return; }
-                if (act === "new-month") { btn.closest(".since-row").querySelector('[data-f="since"]').value = isoShift(todayIso(), -30); return; }
+                if (act === "new-month") { btn.closest(".since-row").querySelector('[data-f="since"]').value = isoShift(todayIso(), -30); const mc = btn.closest(".man-card"); if (mc) manualPreview(mc); return; }
                 if (act === "buy-open") { ordState.buying = btn.closest(".cust-card").dataset.key; ordState.editing = null; renderOrders(); return; }
                 if (act === "buy-cancel") { ordState.buying = null; renderOrders(); return; }
                 if (act === "buy-save") { const card = btn.closest(".cust-card"); saveCustomerPurchase(card.dataset.key, card); return; }
