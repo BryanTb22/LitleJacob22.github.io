@@ -790,7 +790,7 @@
     return u ? '<img src="' + esc(u) + '" alt="' + esc(alt) + '"' + (extra || '') + '>' : '';
   }
   // Pide una foto subida. Con fotos.js sale guardada del navegador (y como enlace corto); sin él, como antes.
-  function fsPedir(id) {
+  function fotoPedir(id) {
     if (window.fotoFs) return window.fotoFs(id).then(function (u) { if (u) IMG_CACHE[id] = u; return IMG_CACHE[id]; });
     return fetch(DOC_URL.replace(/estado$/, id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       var u = d && d.fields && d.fields.data && d.fields.data.stringValue;
@@ -800,7 +800,7 @@
   }
   function cargarFs(id) {
     if (IMG_CACHE[id]) return Promise.resolve(IMG_CACHE[id]);
-    if (!IMG_PEND[id]) IMG_PEND[id] = fsPedir(id);
+    if (!IMG_PEND[id]) IMG_PEND[id] = fotoPedir(id);
     return IMG_PEND[id];
   }
   var FOTO_VARS = { hero: "--art-hero", lava: "--art-lava", sombra: "--art-sombra" };
@@ -826,7 +826,7 @@
     for (var k = 0; k < els.length; k++) (function (el) {
       var id = el.getAttribute("data-fs");
       if (IMG_CACHE[id]) { el.src = IMG_CACHE[id]; return; }
-      if (!IMG_PEND[id]) IMG_PEND[id] = fsPedir(id);
+      if (!IMG_PEND[id]) IMG_PEND[id] = fotoPedir(id);
       IMG_PEND[id].then(function (u) { if (u) { var all = document.querySelectorAll('img[data-fs="' + id + '"]'); for (var j = 0; j < all.length; j++) all[j].src = u; } });
     })(els[k]);
   }

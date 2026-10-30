@@ -70,7 +70,7 @@
     return u ? '<img src="' + esc(u) + '" alt="' + esc(alt) + '" decoding="async"' + (extra || "") + ">" : "";
   }
   // Pide una foto subida. Con fotos.js sale guardada del navegador (y como enlace corto); sin él, como antes.
-  function fsPedir(id) {
+  function fotoPedir(id) {
     if (window.fotoFs) return window.fotoFs(id).then((u) => { if (u) IMG_CACHE[id] = u; return IMG_CACHE[id]; });
     return fetch(BASE + "rayas/" + id).then((r) => (r.ok ? r.json() : null)).then((d) => {
       const u = d && d.fields && d.fields.data && d.fields.data.stringValue;
@@ -83,7 +83,7 @@
       const id = el.getAttribute("data-fs");
       if (IMG_CACHE[id]) { el.src = IMG_CACHE[id]; return; }
       const ir = () => {
-        if (!IMG_PEND[id]) IMG_PEND[id] = fsPedir(id);
+        if (!IMG_PEND[id]) IMG_PEND[id] = fotoPedir(id);
         IMG_PEND[id].then((u) => { if (u) document.querySelectorAll('img[data-fs="' + id + '"]').forEach((x) => { x.src = u; }); });
       };
       // Solo se baja cuando está por verse en pantalla (fotos.js); si ya se estaba bajando, se usa de frente.
