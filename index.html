@@ -1991,6 +1991,18 @@ html.ljc-lock { overflow: hidden; }
 .ord-row .cust-name, .ord-row .ord-who { font-family: Inter, system-ui, sans-serif !important; font-variant: normal !important; text-transform: none !important; letter-spacing: 0 !important; }
 .ord-body .ord-total-row { justify-content: flex-start; }
 .ord-cust-steam a, .ord-cust-steam a:visited { color: #ffb4b8 !important; }
+/* Editar pedido */
+.ord-edit { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid #3d3f45; background: #0c0c0e; }
+.ord-edit .oe-title { font-family: var(--font-head, "Oswald", sans-serif); font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: #fff; }
+.ord-edit .oe-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ord-edit .oe-total { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.ord-edit .oe-total .fr-btn { padding: 0 14px; }
+.ord-edit .pick-meta label:last-child { display: none; }
+.ord-edit .pick-meta { grid-template-columns: 1fr; }
+.ord-edit-btn { min-height: 44px; border-radius: 2px !important; border: 1px solid #8b9097; background: #1b1b1f; color: #eef0f3; font-weight: 800; cursor: pointer; }
+.ord-edit-btn:hover { background: #26272b; }
+.ord-actions .ord-edit-btn { flex: 1; padding: 0 14px; white-space: nowrap; }
+@media (max-width: 640px) { .ord-edit .oe-grid { grid-template-columns: 1fr; } }
 /* Miniaturas de sets en Pedidos */
 .row-th { width: 40px; height: 27px; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid #3d3f45; border-radius: 2px; background: #0c0c0e; display: inline-block; }
 .row-th.th-none { text-align: center; line-height: 25px; font-size: 14px; }
@@ -5804,7 +5816,7 @@ service cloud.firestore {
             else if (needsReserve(o)) notes.push("⚠ stock sin descontar");
             if (o.paidWith === "creditos") notes.push(`💎 pagado con S/ ${Number(o.creditos) || 0}`);
             if (o.paymentMethod) notes.push(`Pago: ${escapeHtml(o.paymentMethod)}`);
-            const isOpen = !!ordState.open[o._id] || ordState.phoneEditing === o._id;
+            const isOpen = !!ordState.open[o._id] || ordState.phoneEditing === o._id || ordState.editingOrder === o._id;
             const nSets = Number(o.count) || (o.items || []).reduce((n, it) => n + (it.qty || 1), 0);
             return `<article class="ord-card st-${escapeHtml(st.key)}${isOpen ? " open" : ""}" data-id="${escapeHtml(o._id)}">
                 <button type="button" class="ord-row" data-act="toggle" aria-expanded="${isOpen}">
@@ -5816,6 +5828,7 @@ service cloud.firestore {
                     <span class="ord-chev" aria-hidden="true">▾</span>
                 </button>
                 <div class="ord-body">
+                ${ordState.editingOrder === o._id ? orderEditHtml(o) : `
                 <div class="ord-cust">
                     <div class="ord-cust-name">👤 ${escapeHtml(o.customerName || "Sin nombre")}</div>
                     <div class="ord-cust-steam">${steamLineHtml(o.steamId)}</div>
@@ -5832,11 +5845,114 @@ service cloud.firestore {
                         <select class="lj-input ord-status" data-act="status">${ORDER_STATUSES.map(s => `<option value="${s.key}" ${s.key === st.key ? "selected" : ""}>${s.txt}</option>`).join("")}</select>
                     </label>
                     ${needsReserve(o) ? `<button type="button" class="ord-reserve" data-act="reserve">✅ Confirmar reserva · descontar stock</button>` : ""}
+                    ${isItemOrder(o) ? "" : `<button type="button" class="ord-edit-btn" data-act="oe-open">✏️ Editar pedido</button>`}
                     <button type="button" class="ord-wa" data-act="notify">📲 Avisar entrega</button>
                     <button type="button" class="ord-del" data-act="delete">🗑 Eliminar</button>
-                </footer>
+                </footer>`}
                 </div>
             </article>`;
+        }
+
+        // ---- Editar un pedido de Sets Caché: cliente, sets, total y fecha ----
+        function orderEditHtml(o) {
+            const items = (o.items || []).map(it => ({ id: String(it.id), qty: Number(it.qty) || 1 }));
+            const picker = purchasePickerHtml("pagado").replace("¿Qué llevó? (opcional)", "Sets del pedido *")
+                .replace('<div class="pick" data-pick>', `<div class="pick" data-pick data-items="${escapeHtml(JSON.stringify(items))}">`);
+            return `<div class="cust-card ord-edit" data-oe="${escapeHtml(o._id)}">
+                <div class="oe-title">✏️ Editar pedido ${escapeHtml(o.code || o._id)}</div>
+                <div class="oe-grid">
+                    <div><label class="lj-label">Nombre de Dota 2 *</label><input class="lj-input" data-f="name" type="text" maxlength="60" value="${escapeHtml(o.customerName || "")}"></div>
+                    <div><label class="lj-label">ID de amigo de Steam</label><input class="lj-input" data-f="steam" type="text" inputmode="numeric" maxlength="80" value="${escapeHtml(o.steamId || "")}" placeholder="Ej. 123456789"></div>
+                    <div><label class="lj-label">WhatsApp (número o @usuario)</label><input class="lj-input" data-f="phone" type="text" maxlength="40" autocapitalize="off" value="${escapeHtml(o.phone ? fmtPhone(o.phone) : "")}" placeholder="Ej. 987 654 321 o @usuario"></div>
+                </div>
+                ${picker}
+                <div class="oe-total"><div><label class="lj-label">Total cobrado (S/) *</label><input class="lj-input" data-f="total" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(String(Number(o.total) || 0))}"></div>
+                    <button type="button" class="fr-btn" data-act="oe-recalc">🔄 Recalcular con los sets</button></div>
+                <div class="cust-edit-help">Si cambias nombre o ID de Steam, se conserva su fecha de amistad. El estado se cambia con el selector de siempre, al cerrar el editor.</div>
+                <div class="lj-error cust-edit-err"></div>
+                <div class="cust-actions">
+                    <button type="button" class="fr-btn cust-btn" data-act="oe-cancel">Cancelar</button>
+                    <button type="button" class="cust-save" data-act="oe-save">💾 Guardar cambios</button>
+                </div>
+            </div>`;
+        }
+        // Al abrir el editor: pone la fecha del pedido y muestra los sets
+        function initOrderEdit() {
+            const box = document.querySelector("#ordList .ord-edit");
+            if (!box) return;
+            const o = ordState.orders.find(x => x._id === box.dataset.oe);
+            const d = box.querySelector('[data-f="pick-date"]');
+            if (o && o.createdAt instanceof Date && !isNaN(o.createdAt)) d.value = isoOf(o.createdAt);
+            renderPick(box);
+        }
+        // Líneas del pedido editado: conserva el precio original de los sets que ya estaban (por descuentos)
+        function editedLines(o, box) {
+            const old = o.items || [];
+            return pickItems(box).map(it => {
+                const was = old.find(l => String(l.id) === String(it.id));
+                const st = findSet(it.id);
+                const img = (st && st.img && !/^data:/i.test(st.img) ? st.img : (was && was.img) || "");
+                return { id: String(it.id), name: st ? String(st.name).slice(0, 80) : (was ? was.name : String(it.id)), qty: it.qty,
+                    price: was ? Number(was.price) || 0 : (st ? Number(st.price) || 0 : 0), img: String(img).slice(0, 300) };
+            });
+        }
+        function r2(n) { return Math.round(n * 100) / 100; }
+        async function saveOrderEdit(o, box) {
+            const err = box.querySelector(".cust-edit-err");
+            err.textContent = "";
+            const f = n => box.querySelector(`[data-f="${n}"]`);
+            const name = f("name").value.trim().replace(/\s+/g, " ").slice(0, 60);
+            const steam = normalizeSteamId(f("steam").value);
+            const phone = normalizePhone(f("phone").value);
+            const total = Number(String(f("total").value).replace(",", "."));
+            const dateIso = f("pick-date").value;
+            if (!name) { err.textContent = "Escribe el nombre de Dota 2 del cliente."; return; }
+            if (steam === null) { err.textContent = "El ID de amigo de Steam son solo números (ej. 123456789)."; return; }
+            if (phone === null) { err.textContent = "Revisa el WhatsApp: un número (ej. 987 654 321) o un @usuario (ej. @tuusuario)."; return; }
+            const lines = editedLines(o, box);
+            if (!lines.length) { err.textContent = "El pedido debe tener al menos un set."; return; }
+            if (!isFinite(total) || total < 0) { err.textContent = "Revisa el total."; return; }
+            if (!validIso(dateIso)) { err.textContent = "Revisa la fecha de compra."; return; }
+            const subtotal = r2(lines.reduce((t, l) => t + l.price * l.qty, 0));
+            const createdAt = o.createdAt instanceof Date && isoOf(o.createdAt) === dateIso ? o.createdAt : new Date(dateIso + "T12:00:00");
+            // Si el pedido ya descontó stock, ofrecer ajustarlo con la diferencia
+            const delta = {};
+            if (o.stockApplied) {
+                (o.items || []).forEach(l => { delta[String(l.id)] = (delta[String(l.id)] || 0) + (Number(l.qty) || 1); });   // vuelve al stock
+                lines.forEach(l => { delta[l.id] = (delta[l.id] || 0) - l.qty; });                                         // sale del stock
+                Object.keys(delta).forEach(id => { const s = findSet(id); if (!delta[id] || !s || s.stock == null) delete delta[id]; });
+            }
+            let applyStock = false;
+            if (Object.keys(delta).length) {
+                const txt = Object.entries(delta).map(([id, d]) => `${findSet(id).name}: ${d > 0 ? "+" : "−"}${Math.abs(d)}`).join(", ");
+                applyStock = await confirmDialog(`Este pedido ya descontó stock. ¿Ajustar el stock con el cambio? ${txt}`, "Sí, ajustar", "No tocar el stock");
+            }
+            const fields = { customerName: name, steamId: steam || "", phone: phone || "", items: lines, count: lines.reduce((n, l) => n + l.qty, 0),
+                subtotal, discount: Math.max(0, r2(subtotal - total)), total: r2(total), createdAt, updatedAt: new Date() };
+            box.classList.add("is-busy");
+            try {
+                await fsRequest(`orders/${encodeURIComponent(o._id)}`, { method: "PATCH", auth: true, query: maskQuery(Object.keys(fields)), body: { fields: fsFields(fields) } });
+                // Nuevo nombre / ID de Steam: lleva la fecha de amistad a la ficha nueva (si no existe)
+                const oldKey = custKey(o.steamId, o.customerName), newKey = custKey(fields.steamId, name);
+                const oc = ordState.customers[oldKey];
+                if (newKey !== oldKey && !ordState.customers[newKey] && oc && oc.friendSince) {
+                    const cf = { friendSince: oc.friendSince, name, steamId: fields.steamId, phone: fields.phone || oc.phone || "", updatedAt: new Date() };
+                    await fsRequest(`customers/${encodeURIComponent(newKey)}`, { method: "PATCH", auth: true, query: maskQuery(Object.keys(cf)), body: { fields: fsFields(cf) } });
+                    ordState.customers[newKey] = Object.assign({ _id: newKey }, cf);
+                    friendSaved[newKey] = cf.friendSince;
+                }
+                Object.assign(o, fields);
+                if (applyStock) {
+                    Object.entries(delta).forEach(([id, d]) => { const s = findSet(id); s.stock += d; s.soldOut = s.stock <= 0; });
+                    commit();
+                }
+                ordState.editingOrder = null;
+                showToast(`Pedido ${o.code || o._id} actualizado${applyStock ? " y stock ajustado" : ""}.`, "Pedidos");
+                renderOrders();
+            } catch (e) {
+                box.classList.remove("is-busy");
+                err.textContent = fsErrorText(e);
+            }
         }
         function openDelivery(o) {
             if (!phoneFor(o)) { ordState.phoneEditing = o._id; renderOrders(); focusPhone(o); return false; }
@@ -6323,6 +6439,7 @@ service cloud.firestore {
             list.innerHTML = pre + (rows.length ? rows.map(orderCardHtml).join("") : `<div class="ord-empty">${base.length ? "No hay pedidos con ese filtro." : (ordState.tab === "items" ? "Aún no hay pedidos de items. Aparecerán aquí (y te llegará un correo) cuando alguien compre." : "Aún no hay pedidos. Aparecerán aquí cuando tus clientes envíen uno.")}</div>`);
             // El formulario se conserva entre redibujados (buscar, filtrar) para no perder lo que ya escribiste
             if (ordState.manualEl && ordState.tab === "orders" && list.firstElementChild) list.firstElementChild.after(ordState.manualEl);
+            if (ordState.editingOrder) initOrderEdit();
         }
 
         // ---- Reserva manual: el stock SOLO baja cuando tú lo confirmas aquí ----
@@ -6467,6 +6584,7 @@ service cloud.firestore {
                 ordState.creating = false;
                 ordState.buying = null;
                 ordState.manualEl = null;
+                ordState.editingOrder = null;
                 renderOrders();
             }));
             document.getElementById("ordRefresh").addEventListener("click", loadOrders);
@@ -6535,6 +6653,14 @@ service cloud.firestore {
                     const on = !card.classList.contains("open");
                     card.classList.toggle("open", on); btn.setAttribute("aria-expanded", on ? "true" : "false");
                     if (on) ordState.open[id] = true; else delete ordState.open[id];
+                    return;
+                }
+                if (act === "oe-open") { const o = orderOf(btn); if (o) { ordState.editingOrder = o._id; ordState.open[o._id] = true; renderOrders(); } return; }
+                if (act === "oe-cancel") { ordState.editingOrder = null; renderOrders(); return; }
+                if (act === "oe-save") { const o = orderOf(btn); if (o) saveOrderEdit(o, btn.closest(".ord-edit")); return; }
+                if (act === "oe-recalc") {
+                    const o = orderOf(btn), box = btn.closest(".ord-edit");
+                    if (o) box.querySelector('[data-f="total"]').value = r2(editedLines(o, box).reduce((t, l) => t + l.price * l.qty, 0));
                     return;
                 }
                 if (act === "man-open") { manualOpen(); return; }
