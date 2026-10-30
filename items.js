@@ -84,7 +84,7 @@
       if (IMG_CACHE[id]) { el.src = IMG_CACHE[id]; return; }
       const ir = () => {
         if (!IMG_PEND[id]) IMG_PEND[id] = fotoPedir(id);
-        IMG_PEND[id].then((u) => { if (u) document.querySelectorAll('img[data-fs="' + id + '"]').forEach((x) => { x.src = u; }); });
+        IMG_PEND[id].then((u) => { if (u) document.querySelectorAll('img[data-fs="' + id + '"]').forEach((x) => { x.src = u; }); else delete IMG_PEND[id]; });   // si falló, se reintenta en el próximo dibujo
       };
       // Solo se baja cuando está por verse en pantalla (fotos.js); si ya se estaba bajando, se usa de frente.
       if (window.fotoFsVer && !IMG_PEND[id]) window.fotoFsVer(el, id, ir); else ir();
