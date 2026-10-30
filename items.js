@@ -506,15 +506,17 @@
     const o = itemPorId(id); if (!o) return;
     const ns = (Number(o.stock) || 0) + delta;
     if (ns < 0) return;
-    fsPedir("rayas_items/" + encodeURIComponent(id) + "?updateMask.fieldPaths=stock", { method: "PATCH", body: JSON.stringify({ fields: { stock: { integerValue: String(ns) } } }) }).then((r) => {
+    // Sin unidades: queda agotada y oculta para los clientes. Al volver a tener stock, se muestra otra vez.
+    var act = ns === 0 ? false : ((Number(o.stock) || 0) === 0 && o.activo === false ? true : null);
+    fsPedir("rayas_items/" + encodeURIComponent(id) + "?updateMask.fieldPaths=stock" + (act !== null ? "&updateMask.fieldPaths=activo" : ""), { method: "PATCH", body: JSON.stringify({ fields: act !== null ? { stock: { integerValue: String(ns) }, activo: { booleanValue: act } } : { stock: { integerValue: String(ns) } } }) }).then((r) => {
       if (!r.ok) throw new Error("No se pudo cambiar el stock (" + r.status + ").");
-      o.stock = ns; adm.msg = ""; renderTodo();
+      o.stock = ns; if (act !== null) o.activo = act; adm.msg = ""; renderTodo();
     }).catch((e) => { adm.msg = e.message; renderTodo(); });
   }
-  // Quita UNA unidad de la oferta; si era la última, borra la oferta.
+  // Quita UNA unidad de la oferta; si era la última, queda agotada y oculta (no se borra).
   function quitarUnidad(id) {
     const o = itemPorId(id); adm.itemDel = null; if (!o) return;
-    if ((Number(o.stock) || 0) > 1) cambiarStock(id, -1); else borrarItem(id);
+    if ((Number(o.stock) || 0) > 0) cambiarStock(id, -1);
   }
   function estilosFormHtml(F) {
     const nEst = Number(F.estilos) || 0;
