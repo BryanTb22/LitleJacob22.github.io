@@ -111,7 +111,7 @@
   /* ---------- imágenes (fs:img-… guardadas en Firestore, o https / img/…) ---------- */
   function imgTag(src, alt) {
     src = String(src || "").trim();
-    if (/^fs:img-[\w\-]+$/.test(src)) { var id = src.slice(3); return '<img data-fs="' + esc(id) + '"' + (IMG_CACHE[id] ? ' src="' + IMG_CACHE[id] + '"' : "") + ' alt="' + esc(alt) + '">'; }
+    if (/^fs:img-[\w\-]+$/.test(src)) { var id = src.slice(3), ya = IMG_CACHE[id] || (window.fotoFsYa && window.fotoFsYa(id)) || ""; return '<img data-fs="' + esc(id) + '"' + (ya ? ' src="' + ya + '"' : "") + ' alt="' + esc(alt) + '">'; }
     if (/^img\/[\w.\-]+$/.test(src) || /^https:\/\/[^\s"'<>()]+$/.test(src)) return '<img src="' + esc(src) + '" alt="' + esc(alt) + '" decoding="async">';
     return "";
   }
@@ -120,7 +120,7 @@
     raiz.querySelectorAll("img[data-fs]:not([src])").forEach(function (el) {
       var id = el.getAttribute("data-fs");
       if (IMG_CACHE[id]) { el.src = IMG_CACHE[id]; return; }
-      if (!IMG_PEND[id]) IMG_PEND[id] = fetch(BASE + "rayas/" + id).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!IMG_PEND[id]) IMG_PEND[id] = window.fotoFs ? window.fotoFs(id).then(function (u) { if (u) IMG_CACHE[id] = u; return IMG_CACHE[id]; }) : fetch(BASE + "rayas/" + id).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
         var u = d && d.fields && d.fields.data && d.fields.data.stringValue; if (u && /^data:image\/(webp|jpeg|png);base64,/.test(u)) IMG_CACHE[id] = u; return IMG_CACHE[id];
       }).catch(function () { return null; });
       IMG_PEND[id].then(function (u) { if (u) raiz.querySelectorAll('img[data-fs="' + id + '"]').forEach(function (x) { x.src = u; }); });
