@@ -5596,9 +5596,10 @@ service cloud.firestore {
             if (left <= 0) return { txt: "✓ Entrega inmediata", cls: "fr-ok", since };
             return { txt: `Entrega desde ${ready.toLocaleDateString("es-PE")}, faltan ${left} ${left === 1 ? "día" : "días"}`, cls: "fr-wait", since };
         }
-        // ---- Cupo de entregas: máximo 8 por día; del noveno en adelante se corre al día siguiente (día 31, 32…) ----
+        // ---- Cupo de entregas: máximo 8 SETS por día (límite de Steam); lo que pase de 8 se corre al día siguiente (día 31, 32…) ----
         // Misma regla en functions/recordatorio.js (correo diario de las 8:00).
-        const ENTREGA_CAP = 8, ESPERA_DIAS = 30;
+        const ENTREGA_CAP = 8, ESPERA_DIAS = 30;   // Steam deja mandar 8 SETS por día (cuenta sets, no pedidos)
+        function setsDe(o) { return Math.max(1, Number(o.count) || (o.items || []).reduce((n, it) => n + (Number(it.qty) || 1), 0)); }
         function isoDias(iso) { const p = iso.split("-").map(Number); return Date.UTC(p[0], p[1] - 1, p[2]) / 86400000; }
         // Reparte los pedidos "Pagado" con fecha de amistad en días de entrega. Los ya entregados hoy ocupan cupo de hoy.
         // extra (opcional): un pedido hipotético { id, base } para calcular la fecha antes de crearlo.
@@ -5607,19 +5608,19 @@ service cloud.firestore {
             const cnt = {}, pend = [];
             ordState.orders.forEach(o => {
                 if (isItemOrder(o)) return;
-                if (o.status === "entregado") { if (o.entregadoDia && o.entregadoDia >= hoy) cnt[o.entregadoDia] = (cnt[o.entregadoDia] || 0) + 1; return; }
+                if (o.status === "entregado") { if (o.entregadoDia && o.entregadoDia >= hoy) cnt[o.entregadoDia] = (cnt[o.entregadoDia] || 0) + setsDe(o); return; }
                 if (o.status !== "pagado") return;
                 const since = friendInfo(custKey(o.steamId, o.customerName)).since;
-                if (since) pend.push({ id: o._id, base: isoShift(since, ESPERA_DIAS), t: o.createdAt ? +o.createdAt : 0 });
+                if (since) pend.push({ id: o._id, base: isoShift(since, ESPERA_DIAS), t: o.createdAt ? +o.createdAt : 0, n: setsDe(o) });
             });
-            if (extra) pend.push({ id: extra.id, base: extra.base, t: Date.now() });
+            if (extra) pend.push({ id: extra.id, base: extra.base, t: Date.now(), n: Math.max(1, extra.n || 1) });
             pend.sort((a, b) => (a.base < b.base ? -1 : a.base > b.base ? 1 : a.t - b.t));
             const slots = {};
             pend.forEach(p => {
                 const desde = p.base < hoy ? hoy : p.base;   // lo atrasado se entrega desde hoy, respetando el cupo
                 let d = desde;
-                while ((cnt[d] || 0) >= ENTREGA_CAP) d = isoShift(d, 1);
-                cnt[d] = (cnt[d] || 0) + 1;
+                while ((cnt[d] || 0) > 0 && (cnt[d] || 0) + p.n > ENTREGA_CAP) d = isoShift(d, 1);   // un pedido que no cabe pasa entero al día siguiente
+                cnt[d] = (cnt[d] || 0) + p.n;
                 slots[p.id] = { day: d, base: p.base, corrido: isoDias(d) - isoDias(desde) };
             });
             return { slots, cnt, hoy };
@@ -5638,9 +5639,9 @@ service cloud.firestore {
             const p = planOf(o);
             if (!p) return `<div class="ord-plan wait">📅 Sin fecha de amistad: pon desde cuándo son amigos para programar la entrega.</div>`;
             const plan = getPlan();
-            if (p.day <= plan.hoy) return `<div class="ord-plan ok">🚚 <b>Entregar hoy</b> · cupo de hoy ${plan.cnt[plan.hoy] || 0}/${ENTREGA_CAP}${p.corrido ? ` (por cupo se había corrido ${p.corrido} ${p.corrido === 1 ? "día" : "días"})` : ""}</div>`;
+            if (p.day <= plan.hoy) return `<div class="ord-plan ok">🚚 <b>Entregar hoy</b> · cupo de hoy ${plan.cnt[plan.hoy] || 0}/${ENTREGA_CAP} sets${p.corrido ? ` (por cupo se había corrido ${p.corrido} ${p.corrido === 1 ? "día" : "días"})` : ""}</div>`;
             const dia = ESPERA_DIAS + p.corrido;
-            return `<div class="ord-plan wait">📅 Entrega programada: <b>${fmtDia(p.day)}</b>${p.corrido ? ` · día ${dia}: se corrió ${p.corrido} ${p.corrido === 1 ? "día" : "días"} porque ese día ya hay ${ENTREGA_CAP} entregas` : ` · día ${ESPERA_DIAS} de amistad`}</div>`;
+            return `<div class="ord-plan wait">📅 Entrega programada: <b>${fmtDia(p.day)}</b>${p.corrido ? ` · día ${dia}: se corrió ${p.corrido} ${p.corrido === 1 ? "día" : "días"} porque ese día ya hay ${ENTREGA_CAP} sets por entregar` : ` · día ${ESPERA_DIAS} de amistad`}</div>`;
         }
         function findSet(id) { return DATA.sets.find(s => String(s.id) === String(id)); }
         function isSale(o) { return o.status === "pagado" || o.status === "entregado"; }
@@ -5946,6 +5947,7 @@ service cloud.firestore {
             else if (act === "pick-del") items.splice(i, 1);
             box.dataset.items = JSON.stringify(items);
             renderPick(card);
+            if (card.classList.contains("man-card")) manualPreview(card);
         }
         // Crea el pedido de la compra registrada a mano (misma estructura que los pedidos de la web)
         async function savePurchase(card, cust, extra) {
@@ -6044,7 +6046,7 @@ service cloud.firestore {
         function manualBarHtml() {
             const plan = getPlan();
             const hoyN = plan.cnt[plan.hoy] || 0;
-            return `<div class="man-bar"><span class="man-cupo ${hoyN >= ENTREGA_CAP ? "full" : ""}">🚚 Cupo de entregas de hoy: <b>${hoyN}/${ENTREGA_CAP}</b><small>Del noveno en adelante se corre al día siguiente (día ${ESPERA_DIAS + 1}).</small></span>
+            return `<div class="man-bar"><span class="man-cupo ${hoyN >= ENTREGA_CAP ? "full" : ""}">🚚 Cupo de entregas de hoy: <b>${hoyN}/${ENTREGA_CAP} sets</b><small>Steam deja mandar ${ENTREGA_CAP} sets por día: lo que pase de ${ENTREGA_CAP} se corre al día siguiente (día ${ESPERA_DIAS + 1}).</small></span>
                 <button type="button" class="cust-save cust-new-btn" data-act="man-open" ${ordState.manualEl ? "disabled" : ""}>➕ Agregar pedido manual</button></div>`;
         }
         function manualFormHtml() {
@@ -6097,12 +6099,13 @@ service cloud.firestore {
             const status = card.querySelector('[data-f="pick-status"]').value;
             if (!validIso(since)) { box.className = "man-prev"; box.textContent = ""; return; }
             if (status !== "pagado") { box.className = "man-prev"; box.textContent = "ℹ️ La entrega solo se programa (y te llega el recordatorio) cuando el estado es “Pagado”."; return; }
-            const plan = buildPlan({ id: "__nuevo", base: isoShift(since, ESPERA_DIAS) });
+            const nSets = pickItems(card).reduce((n, it) => n + it.qty, 0) || 1;
+            const plan = buildPlan({ id: "__nuevo", base: isoShift(since, ESPERA_DIAS), n: nSets });
             const p = plan.slots.__nuevo;
             const esHoy = p.day <= plan.hoy;
             box.className = "man-prev " + (esHoy ? "ok" : "wait");
-            box.innerHTML = esHoy ? `🚚 Le toca entregar <b>hoy</b> (cupo de hoy ${(plan.cnt[plan.hoy] || 0)}/${ENTREGA_CAP} contando este pedido).`
-                : `📅 Entrega: <b>${fmtDia(p.day)}</b> · día ${ESPERA_DIAS + p.corrido}${p.corrido ? `: se corre ${p.corrido} ${p.corrido === 1 ? "día" : "días"} porque ese día ya hay ${ENTREGA_CAP} entregas` : " de amistad"}. Te llegará el recordatorio a tu correo ese día.`;
+            box.innerHTML = esHoy ? `🚚 Le toca entregar <b>hoy</b> (cupo de hoy ${(plan.cnt[plan.hoy] || 0)}/${ENTREGA_CAP} sets contando este pedido).`
+                : `📅 Entrega: <b>${fmtDia(p.day)}</b> · día ${ESPERA_DIAS + p.corrido}${p.corrido ? `: se corre ${p.corrido} ${p.corrido === 1 ? "día" : "días"} porque ese día ya hay ${ENTREGA_CAP} sets por entregar` : " de amistad"}. Te llegará el recordatorio a tu correo ese día.`;
         }
         async function saveManualOrder(card) {
             const err = card.querySelector(".cust-edit-err");
