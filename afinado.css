@@ -70,11 +70,12 @@ html.af .itx-filt input, html.af .itx-filt select, html.af .itx-bar input, html.
 html.af .itx-bar input { padding-left: 16px; }
 
 /* ---------- Ruta de navegación ---------- */
-html.af .crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; letter-spacing: .04em; margin-bottom: 14px; }
-html.af .crumb a { color: var(--itx-muted); text-decoration: none; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .05); }
-html.af .crumb a:hover { color: var(--itx-gold-l); background: rgba(212, 175, 55, .12); }
-html.af .crumb > span:not(:last-child) { opacity: .5; }
-html.af .crumb > span:last-child { color: var(--itx-gold-l); font-weight: 700; }
+html.af .crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--itx-muted); margin-bottom: 14px; }
+html.af .crumb a { color: var(--itx-muted) !important; font-weight: 400; text-decoration: none; transition: color .2s; }
+html.af .crumb a:hover { color: var(--itx-gold-l) !important; text-decoration: none; }
+html.af .crumb .sep { margin: 0; opacity: .6; }
+html.af .crumb .act { margin: 0; color: var(--itx-muted); font-weight: 400; }
+html.af .crumb, html.af .crumb .act, html.af .crumb .sep { color: var(--itx-muted) !important; }
 
 /* ---------- Página de un item y ofertas ---------- */
 html.af .itx-pg h1 { letter-spacing: .03em; }

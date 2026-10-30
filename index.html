@@ -2044,7 +2044,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
 </style>
 <link rel="stylesheet" href="cabecera.css?v=6">
 <link rel="stylesheet" href="tailwind.css?v=1" data-keep="">
-<link rel="stylesheet" href="afinado.css?v=3"></head>
+<link rel="stylesheet" href="afinado.css?v=4"></head>
 <body class="relative selection:bg-amber-500 selection:text-black">
 
     <!-- Canvas de Partículas y Brillos Sutiles Estilo Dota 2 -->
@@ -2320,7 +2320,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
 
         <!-- =================== VISTA: SETS CACHÉ =================== -->
         <div id="view-sets" class="view" hidden="">
-        <div class="crumb"><a href="#inicio">Inicio</a> <span>›</span> <span>Sets Caché</span></div>
+        <nav class="crumb" aria-label="Ruta"><a href="#inicio">Inicio</a><span class="sep" aria-hidden="true">/</span><span class="act" aria-current="page">Sets Caché</span></nav>
 
         <!-- PORTADA (estilo Rifas) -->
         <header class="sets-hero">
@@ -2454,7 +2454,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
 
         <!-- =================== VISTA: COMPRO INVENTARIOS Y CUENTAS =================== -->
         <div id="view-compro" class="view" hidden="">
-            <div class="crumb"><a href="#inicio">Inicio</a> <span>›</span> <span>Compro inventarios y cuentas</span></div>
+            <nav class="crumb" aria-label="Ruta"><a href="#inicio">Inicio</a><span class="sep" aria-hidden="true">/</span><span class="act" aria-current="page">Compro inventarios y cuentas</span></nav>
             <header class="text-center mb-8 sm:mb-10">
                 <div class="hero-kicker">Vende con LitleJacob</div>
                 <h1 class="font-cinzel font-extrabold text-2xl sm:text-4xl md:text-5xl tracking-wider gold-gradient-text uppercase leading-tight">Compro inventarios<br class="sm:hidden"> y cuentas</h1>
@@ -2974,13 +2974,13 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
         } catch (e) { /* sin almacenamiento: se queda el afinado */ }
         // Solo si aún no están (antes cada "Publicar" guardaba una copia más de cada uno).
         if (!/(^|\s)af(\s|$)/.test(document.documentElement.className)) document.documentElement.className += " af";
-        if (!document.querySelector('link[href^="afinado.css"]')) { var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "afinado.css?v=3"; document.head.appendChild(l); }
+        if (!document.querySelector('link[href^="afinado.css"]')) { var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "afinado.css?v=4"; document.head.appendChild(l); }
         document.addEventListener("DOMContentLoaded", function () { var s = document.createElement("script"); s.src = "afinado.js?v=1"; document.body.appendChild(s); });
     })();
     </script>
     <script src="mejoras.js?v=3"></script>
     <script src="detalles.js?v=2" defer=""></script>
-<script src="items.js?v=43" defer=""></script>
+<script src="items.js?v=44" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
     <script>
