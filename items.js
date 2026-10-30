@@ -411,7 +411,7 @@
 
   /* ---------- Comprar items: vista ---------- */
   function cabecera(kicker, t1, t2, sub) {
-    return '<div class="crumb"><a href="#inicio">Inicio</a> <span>›</span> <span>' + esc(t1 + " " + t2) + "</span></div>" +
+    return '<nav class="crumb" aria-label="Ruta"><a href="#inicio">Inicio</a><span class="sep" aria-hidden="true">/</span><span class="act" aria-current="page">' + esc(t1 + " " + t2) + "</span></nav>" +
       '<header class="text-center mb-8 sm:mb-10"><div class="hero-kicker">' + esc(kicker) + '</div><h1 class="font-cinzel font-extrabold text-2xl sm:text-4xl md:text-5xl tracking-wider gold-gradient-text uppercase leading-tight">' + esc(t1) + " " + esc(t2) + "</h1>" +
       '<div class="ornamental-divider"><div class="ornamental-dot"></div><div class="ornamental-line-left"></div><div class="ornamental-diamond"></div><div class="ornamental-line-right"></div><div class="ornamental-dot"></div></div>' +
       '<p class="mt-2 text-xs sm:text-sm text-stone-300 max-w-xl mx-auto">' + sub + "</p></header>";
@@ -441,13 +441,17 @@
     if (location.hash !== r) { try { history.replaceState(null, "", location.pathname + location.search + r); } catch (e) { /* sin historial */ } }
   }
   function migaCatalogoHtml(tipo, heroe, nombre) {
-    const sep = " <span>›</span> ";
-    let l = '<a href="#inicio">Inicio</a>' + sep + '<a href="#items">Comprar items</a>';
-    if (tipo) l += sep + (heroe || nombre ? '<a href="' + rutaCatalogo(tipo, "") + '">' + esc(tipo) + "</a>" : "<span>" + esc(tipo) + "</span>");
-    if (heroe) l += sep + (nombre ? '<a href="' + rutaCatalogo(tipo, heroe) + '">' + esc(heroe) + "</a>" : "<span>" + esc(heroe) + "</span>");
-    if (nombre) l += sep + "<span>" + esc(nombre) + "</span>";
-    return '<div class="crumb">' + l + "</div>";
+    // Igual que la ruta del perfil: texto simple con "/" y la página actual sin enlace.
+    const sep = '<span class="sep" aria-hidden="true">/</span>';
+    const partes = [['Inicio', '#inicio'], ['Comprar items', '#items']];
+    if (tipo) partes.push([tipo, rutaCatalogo(tipo, "")]);
+    if (heroe) partes.push([heroe, rutaCatalogo(tipo, heroe)]);
+    if (nombre) partes.push([nombre, ""]);
+    return '<nav class="crumb" aria-label="Ruta">' + partes.map(function (p, k) {
+      return k === partes.length - 1 ? '<span class="act" aria-current="page">' + esc(p[0]) + '</span>' : '<a href="' + p[1] + '">' + esc(p[0]) + '</a>';
+    }).join(sep) + '</nav>';
   }
+
   function parecidosHtml(it) {
     const l = items.lista.filter((x) => x.id !== it.id && sinTildes(x.nombre) !== sinTildes(it.nombre) && x.stock > 0 && (x.activo || esAdmin()));
     const mismo = l.filter((x) => it.heroe && x.heroe === it.heroe), tipo = l.filter((x) => x.tipo === it.tipo && (!it.heroe || x.heroe !== it.heroe));
