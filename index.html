@@ -2952,7 +2952,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
     </script>
     <script src="fotos.js?v=3"></script>
     <script src="steam.js?v=3" defer=""></script>
-    <script src="perfil.js?v=5" defer=""></script>
+    <script src="perfil.js?v=6" defer=""></script>
     <script src="panel-admin.js?v=2" defer=""></script>
     <script src="cuenta.js?v=17" defer=""></script>
     <script src="recarga.js?v=7" defer=""></script>
@@ -5688,10 +5688,13 @@ service cloud.firestore {
                     fsRequest("rayas_users", { auth: true, query: "pageSize=300" }).catch(e => { console.warn("Cuentas de clientes:", e); return null; })
                 ]);
                 ordState.accounts = ((u && u.documents) || []).map(fsDoc);
-                ordState.orders = ((o && o.documents) || []).map(fsDoc);
+                // Los pedidos de Sets Caché de Rayas Store (tienda "rayas") y sus fichas (customers/r_…) se manejan en el panel de Rayas:
+                // cada tienda tiene su propio cupo de 8 por día y su propia fecha de amistad.
+                ordState.orders = ((o && o.documents) || []).map(fsDoc).filter(x => isItemOrder(x) || x.tienda !== "rayas");
                 ordState.customers = {};
                 ((c && c.documents) || []).forEach(d => {
                     const x = fsDoc(d);
+                    if (String(x._id).indexOf("r_") === 0) return;
                     ordState.customers[x._id] = x;
                     friendSaved[x._id] = x.friendSince || "";
                 });
