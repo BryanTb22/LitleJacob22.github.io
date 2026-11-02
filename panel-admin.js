@@ -21,7 +21,7 @@
     var min = Math.ceil(ms / 60000), h = Math.floor(min / 60), d = Math.floor(h / 24);
     return d >= 1 ? d + " d " + (h % 24) + " h" : h >= 1 ? h + " h " + (min % 60) + " min" : min + " min";
   }
-  var TABS = { config: "⚙ Configuración", usuarios: "Usuarios y saldo", pagina: "Textos y contactos", items: "Items", pedidos: "🛒 Pedidos", compras: "Compras" };
+  var TABS = { config: "⚙ Configuración", usuarios: "Usuarios y saldo", pagina: "Textos y contactos", items: "Items", pedidos: "🛒 Pedidos", compras: "Compras", pub: "🖼 Publicaciones" };
 
   var st = {
     abierto: false, tab: "", raiz: null,
@@ -65,7 +65,7 @@
       .then(function (j) { return (j || []).filter(function (x) { return x.document; }).map(function (x) { return x.document; }); });
   }
   function seccion() { var v = document.body.getAttribute("data-vista") || "inicio"; return (v === "items" || v === "vender") ? "items" : "inicio"; }
-  function tabsDe(sc) { return sc === "items" ? ["config", "items", "pedidos", "compras", "usuarios"] : ["config", "usuarios", "pagina"]; }
+  function tabsDe(sc) { return sc === "items" ? ["config", "items", "pedidos", "compras", "usuarios", "pub"] : ["config", "usuarios", "pagina", "pub"]; }
 
   /* ---------- estado compartido (rayas/estado) ---------- */
   function leerEstado() {
@@ -420,6 +420,23 @@
   function tabItems() { return window.ljItems && window.ljItems.adminLista ? window.ljItems.adminLista() : '<p class="pa-hint">Cargando…</p>'; }
   function tabCompras() { return window.ljItems && window.ljItems.compras ? '<div class="pa-grp">' + window.ljItems.compras().replace('Admin · ', '') + '</div>' : '<p class="pa-hint">Cargando…</p>'; }
 
+  /* ---------- generador de publicaciones (publicador.js se carga solo al usarlo) ---------- */
+  function tabPub() {
+    return '<div class="pa-grp"><h3>🖼 Generador de publicaciones</h3>' +
+      '<p class="pa-hint">Sube la foto in-game del item (y si quieres la oficial de Steam), pon el nombre y los precios, y te arma la <b>imagen de venta 1080×1350</b> con el estilo de LitleJacob más <b>3 textos para WhatsApp</b> listos para copiar. Todo se hace en tu navegador; no se guarda ni se publica nada.</p>' +
+      '<div class="pa-acc"><button type="button" class="pa-btn rojo" data-pa="pubAbrir">Abrir generador</button></div>' +
+      (st.pubMsg ? '<p class="pa-hint err">' + esc(st.pubMsg) + '</p>' : '') + '</div>';
+  }
+  function abrirPub() {
+    if (!esAdmin()) return;
+    var ir = function () { st.pubMsg = ""; cerrar(); window.ljPublicador.abrir(); };
+    if (window.ljPublicador) return ir();
+    var sc = document.createElement("script"); sc.src = "publicador.js?v=1";
+    sc.onload = function () { if (window.ljPublicador) ir(); };
+    sc.onerror = function () { st.pubMsg = "No se pudo cargar el generador. Revisa que publicador.js esté subido al repositorio."; pintar(); };
+    document.head.appendChild(sc);
+  }
+
   /* ---------- dibujo ---------- */
   function estadoPublicacion() {
     var d = document.getElementById("draftStatus"); return d ? d.textContent.replace(/^[^A-Za-zÁÉÍÓÚáéíóú]+/, "") : "";
@@ -429,7 +446,7 @@
     var sc = seccion(), lista = tabsDe(sc);
     if (lista.indexOf(st.tab) < 0) st.tab = lista[0];
     var nom = sc === "items" ? "Compra y venta de items" : "General";
-    var cuerpo = st.tab === "config" ? tabConfig(sc) : st.tab === "usuarios" ? tabUsuarios() : st.tab === "pagina" ? tabPagina() : st.tab === "items" ? tabItems() : st.tab === "pedidos" ? tabPedidos() : tabCompras();
+    var cuerpo = st.tab === "config" ? tabConfig(sc) : st.tab === "usuarios" ? tabUsuarios() : st.tab === "pagina" ? tabPagina() : st.tab === "items" ? tabItems() : st.tab === "pedidos" ? tabPedidos() : st.tab === "pub" ? tabPub() : tabCompras();
     var body = r.querySelector(".pa-body"), top = body ? body.scrollTop : 0, foco = document.activeElement && r.contains(document.activeElement) ? document.activeElement.id : "", sel = foco && document.activeElement.selectionStart;
     var pill = document.getElementById("draftStatus"), pub = estadoPublicacion(), sucio = !!(pill && pill.classList.contains("dirty"));
     r.innerHTML = '<div class="pa-scrim" data-pa="cerrar"></div><aside class="pa-drawer" role="dialog" aria-modal="true" aria-label="Panel de administración">' +
@@ -485,6 +502,7 @@
       case "pedAbrir": var pid = t.getAttribute("data-id"); st.pedAbierto = st.pedAbierto === pid ? null : pid; pintar(); break;
       case "pedFiltro": st.pedFiltro = t.getAttribute("data-f"); pintar(); break;
       case "pedRecargar": st.pedidos = null; pintar(); break;
+      case "pubAbrir": abrirPub(); break;
     }
   }
   function alCambio(e) {
