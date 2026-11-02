@@ -11,7 +11,7 @@
   var SES_KEY = "lj_rifas_ses";
   var ADMIN_UID = "eLEZkdXiG5b0PpxHQCCei8D0Qxy1";
   var TABS = [["info", "👤", "Información personal"], ["trans", "🔁", "Transacciones"], ["seg", "🔒", "Seguridad"]];
-  var EST = { cooldown: "En cooldown", pagado: "Por entregar", entregado: "Entregado", cancelado: "Cancelado" };
+  var EST = { cooldown: "En cooldown", pendiente: "Pendiente", pagado: "Por entregar", entregado: "Entregado", cancelado: "Cancelado" };
   function fechaCorta(iso) { var t = iso ? new Date(iso) : null; if (!t || !isFinite(t.getTime())) return ""; var p = function (n) { return (n < 10 ? "0" : "") + n; }; return p(t.getDate()) + "/" + p(t.getMonth() + 1); }
   var st = { abierto: false, tab: "info", perfil: null, compras: null, partes: null, premios: null, items: null, cargando: false, abiertos: {}, tTipo: "", tBuscar: "", msg: "", tipo: "", tienePass: undefined, emailAuth: "", verPass: false };
   var raiz = null, IMG_CACHE = {}, IMG_PEND = {};
@@ -77,9 +77,9 @@
         var f = d.fields || {};
         var its = ((f.items && f.items.arrayValue && f.items.arrayValue.values) || []).map(function (v) {
           var g = (v.mapValue && v.mapValue.fields) || {}, num = function (k) { return Number(g[k] && (g[k].integerValue || g[k].doubleValue) || 0); };
-          return { id: g.id && g.id.stringValue || "", name: g.name && g.name.stringValue || "Item", qty: num("qty") || 1, price: num("price") };
+          return { id: g.id && g.id.stringValue || "", name: g.name && g.name.stringValue || "Item", qty: num("qty") || 1, price: num("price"), img: g.img && g.img.stringValue || "" };
         });
-        return { code: f.code && f.code.stringValue || "", monto: Number(f.creditos && (f.creditos.integerValue || f.creditos.doubleValue) || 0), t: f.createdAt && f.createdAt.timestampValue || "",
+        return { sets: !(f.origen && f.origen.stringValue === "items"), code: f.code && f.code.stringValue || "", monto: Number(f.creditos && (f.creditos.integerValue || f.creditos.doubleValue) || 0), t: f.createdAt && f.createdAt.timestampValue || "",
           items: its, estado: f.status && f.status.stringValue || "pagado", tienda: f.tienda && f.tienda.stringValue || "", entregaDesde: f.entregaDesde && f.entregaDesde.timestampValue || "" };
       }).filter(function (c) { return c.monto > 0; });
     }).catch(function () { st.compras = []; }).then(pintar);
@@ -101,6 +101,12 @@
         return j.nextPageToken && acc.length < 2000 ? pag(j.nextPageToken) : null;
       });
     })("").catch(function () { /* sin catálogo */ }).then(function () { st.items = acc; pintar(); });
+  }
+  // Foto de un set comprado: la guarda el pedido. Las de LitleJacob son "img/…" y las de Rayas "fs:img-…" o https.
+  function fotoSet(it, tienda) {
+    var i = String(it.img || "");
+    if (/^img\//.test(i) && tienda === "rayas") return "https://rayas.trade/" + i;
+    return i;
   }
   function imgDe(it) {
     var l = st.items || [], b = null;
@@ -142,16 +148,16 @@
     });
     (st.compras || []).forEach(function (c) {
       var cdTxt = c.estado === "cooldown" ? "En cooldown · lo recibes el " + fechaCorta(c.entregaDesde) : "";
-      out.push({ key: "c_" + (c.code || c.t), t: c.t, tipo: "compra", titulo: "Compra de items", code: c.code, est: c.estado, estTxt: cdTxt || EST[c.estado] || c.estado, monto: c.monto,
+      out.push({ key: "c_" + (c.code || c.t), t: c.t, tipo: c.sets ? "sets" : "compra", titulo: c.sets ? "Compra de sets" : "Compra de items", code: c.code, est: c.estado, estTxt: cdTxt || EST[c.estado] || c.estado, monto: c.monto,
         tienda: c.tienda === "litlejacob" ? "LitleJacob Store" : (c.tienda === "rayas" ? "Rayas Store" : ""),
-        det: c.items.map(function (i) { return { nombre: i.name, img: imgDe(i), qty: i.qty, unidad: "", unit: i.price, sub: i.price * i.qty, est: c.estado, estTxt: cdTxt || EST[c.estado] || "" }; }) });
+        det: c.items.map(function (i) { return { nombre: i.name, img: c.sets ? fotoSet(i, c.tienda) : imgDe(i), qty: i.qty, unidad: "", unit: i.price, sub: i.price * i.qty, est: c.estado, estTxt: cdTxt || EST[c.estado] || "" }; }) });
     });
     return out.sort(function (a, b) { return String(b.t).localeCompare(String(a.t)); });
   }
   function transHtml() {
     var f = filas(), cargandoAun = st.compras === null && st.partes === null;
-    var cab = '<div class="pf-tools"><div class="pf-sec-h"><h2>Transacciones</h2><p>Tus compras de items y tickets de rifas. Toca una fila para ver el detalle.</p></div><div class="pf-filtros">' +
-      '<select id="pf-tipo" aria-label="Tipo de transacción"><option value="">Todas</option><option value="compra"' + (st.tTipo === "compra" ? " selected" : "") + '>Compras de items</option><option value="rifa"' + (st.tTipo === "rifa" ? " selected" : "") + '>Rifas</option></select>' +
+    var cab = '<div class="pf-tools"><div class="pf-sec-h"><h2>Transacciones</h2><p>Tus compras de items, sets y tickets de rifas. Toca una fila para ver el detalle.</p></div><div class="pf-filtros">' +
+      '<select id="pf-tipo" aria-label="Tipo de transacción"><option value="">Todas</option><option value="compra"' + (st.tTipo === "compra" ? " selected" : "") + '>Compras de items</option><option value="sets"' + (st.tTipo === "sets" ? " selected" : "") + '>Compras de sets</option><option value="rifa"' + (st.tTipo === "rifa" ? " selected" : "") + '>Rifas</option></select>' +
       '<input id="pf-buscar" type="search" placeholder="Buscar por ID o nombre del item" autocomplete="off" value="' + esc(st.tBuscar) + '"></div></div>';
     if (!f.length) return cab + '<div class="pf-vacio-t">' + (cargandoAun ? "Cargando tus transacciones…" : "Todavía no tienes transacciones. Tus compras de items y tus tickets de rifas aparecerán aquí.") + '</div>';
     return cab + '<div class="pf-tabla"><div class="pf-th"><span>Tipo / Fecha</span><span>ID</span><span>Estado</span><span>Sistema de pago</span><span>Importe</span><span class="r">Saldo</span></div>' +
