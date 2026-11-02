@@ -4363,7 +4363,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
             soldState.loading = true; soldState.error = ""; renderSold();
             try {
                 const o = await fsRequest("orders", { auth: true, query: "pageSize=300&orderBy=" + encodeURIComponent("createdAt desc") });
-                soldState.orders = ((o && o.documents) || []).map(fsDoc);
+                soldState.orders = ((o && o.documents) || []).map(fsDoc).filter(x => !isItemOrder(x) && x.tienda !== "rayas");   // solo sets de LitleJacob (los de Rayas van en su panel)
             } catch (e) { soldState.error = fsErrorText(e); }
             soldState.loading = false; renderSold();
         }
