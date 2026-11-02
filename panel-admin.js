@@ -431,7 +431,7 @@
     if (!esAdmin()) return;
     var ir = function () { st.pubMsg = ""; cerrar(); window.ljPublicador.abrir(); };
     if (window.ljPublicador) return ir();
-    var sc = document.createElement("script"); sc.src = "publicador.js?v=10";
+    var sc = document.createElement("script"); sc.src = "publicador.js?v=11";
     sc.onload = function () { if (window.ljPublicador) ir(); };
     sc.onerror = function () { st.pubMsg = "No se pudo cargar el generador. Revisa que publicador.js esté subido al repositorio."; pintar(); };
     document.head.appendChild(sc);
