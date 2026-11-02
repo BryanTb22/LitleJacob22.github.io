@@ -188,7 +188,7 @@
       tipo: sv("tipo"), heroe: sv("heroe"), ranura: sv("ranura"), rareza: sv("rareza"), calidad: sv("calidad"),
       estilos: nv("estilos"), estOk: sv("estOk"), descripcion: sv("descripcion"), steamUsd: nv("steamUsd"), steamAct: (f.steamAct && f.steamAct.timestampValue) || "",
       activo: f.activo ? f.activo.booleanValue !== false : true, creado: (f.creado && f.creado.timestampValue) || "", cooldownHasta: (f.cooldownHasta && f.cooldownHasta.timestampValue) || "",
-      previas: pvDeCampo(f.previas) };
+      previas: pvDeCampo(f.previas).length ? pvDeCampo(f.previas) : pvLista([sv("vista")]) };
   }
   /* ---------- Previsualización en el juego: campo "previas" = lista de fotos "fs:img-…" (hasta 6) de esa versión. Sin el campo = sin previsualización. ---------- */
   const PV_MAX = 6;
