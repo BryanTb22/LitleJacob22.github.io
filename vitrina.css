@@ -1,0 +1,27 @@
+/* Vitrina de Sets Caché en el Inicio (ver vitrina.js). Colores de LitleJacob: negro, rojo y plata. */
+.lj-vitrina { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(250px, 330px) 1fr; gap: 14px; align-items: stretch; margin: 14px 0 6px; padding: 12px; border-radius: 18px; overflow: hidden;
+  border: 1px solid rgba(200, 22, 31, .4); background: radial-gradient(60% 120% at 0% 50%, rgba(120, 14, 20, .4), transparent 70%), linear-gradient(180deg, #121214, #0b0b0d); box-shadow: 0 18px 50px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(255, 255, 255, .03); }
+.lj-vit-cofre { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 14px; text-decoration: none; color: #fff; background: rgba(0, 0, 0, .35); border: 1px solid rgba(200, 22, 31, .35); transition: box-shadow .25s, border-color .25s; }
+.lj-vit-cofre:hover { border-color: rgba(255, 90, 100, .85); box-shadow: 0 0 0 1px rgba(255, 110, 80, .35), 0 0 22px rgba(200, 22, 31, .4); }
+.lj-vit-cofre img { width: 96px; height: 72px; object-fit: cover; border-radius: 10px; flex: none; box-shadow: 0 0 22px rgba(200, 22, 31, .45); }
+.lj-vit-cofre span { display: grid; gap: 4px; min-width: 0; }
+.lj-vit-cofre small { font: 700 11px/1 "Oswald", "Barlow Condensed", "Arial Narrow", sans-serif; letter-spacing: .22em; text-transform: uppercase; color: #ff5a63; }
+.lj-vit-cofre b { font: 700 clamp(18px, 1.6vw, 24px)/1.05 "Oswald", "Barlow Condensed", "Arial Narrow", sans-serif; letter-spacing: .03em; text-transform: uppercase; background: linear-gradient(180deg, #fff 0%, #d9dce1 45%, #8b9097 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lj-vit-cofre em { font: 500 12.5px/1.3 "Inter", system-ui, sans-serif; font-style: normal; color: #c9ccd3; }
+.lj-vit-pista { position: relative; overflow: hidden; min-width: 0; -webkit-mask: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); mask: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
+.lj-vit-in { display: flex; gap: 10px; width: max-content; height: 100%; animation: ljVitrina 70s linear infinite; }
+.lj-vit-pista:hover .lj-vit-in { animation-play-state: paused; }
+.lj-vit-set { position: relative; display: grid; grid-template-rows: 1fr auto auto; width: 132px; padding: 6px 6px 8px; gap: 3px; border-radius: 12px; text-decoration: none; color: #fff; background: rgba(0, 0, 0, .4); border: 1px solid rgba(217, 221, 228, .14); transition: border-color .2s, box-shadow .2s, transform .2s; }
+.lj-vit-set:hover { border-color: rgba(255, 90, 100, .8); box-shadow: 0 0 20px rgba(200, 22, 31, .35); transform: translateY(-2px); }
+.lj-vit-set img { width: 100%; aspect-ratio: 64 / 56; object-fit: cover; object-position: 50% 30%; border-radius: 8px; }
+.lj-vit-set b { font: 700 11px/1.15 "Oswald", "Barlow Condensed", "Arial Narrow", sans-serif; letter-spacing: .05em; text-transform: uppercase; color: #eef0f3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lj-vit-set i { font: 700 12px/1 "Oswald", "Barlow Condensed", "Arial Narrow", sans-serif; font-style: normal; color: #ff5a63; }
+@keyframes ljVitrina { to { transform: translateX(-50%); } }
+/* en temporada de Halloween la reemplaza la vitrina "Especial Diretide" */
+html.hw .lj-vitrina { display: none; }
+@media (max-width: 760px) {
+  .lj-vitrina { grid-template-columns: 1fr; }
+  .lj-vit-cofre img { width: 76px; height: 58px; }
+  .lj-vit-set { width: 112px; }
+}
+@media (prefers-reduced-motion: reduce) { .lj-vit-in { animation: none; } }
