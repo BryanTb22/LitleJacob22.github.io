@@ -13,12 +13,23 @@
     var tf = localStorage.getItem("lj_temporada"); if (tf) hw = tf === "halloween";
   } catch (e) { /* sin almacenamiento: manda la fecha */ }
   if (!hw) return;
-  window.HW_CONFIG = { tienda: "LitleJacob Store", portadas: ".home-hero, .hero", sombrero: ".lj-h2-in > .logo-slot.left, img.hero-logo", franjaDespues: ".home-hero, #inicio.hero", brasas: false };
+  window.HW_CONFIG = {
+    tienda: "LitleJacob Store",
+    portadas: ".home-hero, .hero, .sets-hero",                       // escenas de noche (luna de sangre, cementerio, niebla)
+    sombrero: "", calabazas: false, iconoCinta: false,               // sin dibujos genéricos: la temática la ponen los héroes
+    figuras: { ".home-hero": ["treant", "necro", "nightstalker"], ".hero": ["treant", "nightstalker", "necro"], ".sets-hero": ["wk", "pudge"], ".hw-banda": ["treant", "wk"] },
+    colgante: "img/hw-brood.webp",                                   // Broodmother baja por el hilo
+    franjaDespues: "#inicio.hero",                                   // en Rifas: franja con nombres de héroes
+    vitrina: "#catalogData", vitrinaDespues: ".home-hero",             // en Inicio: vitrina "Especial Diretide" con el Tesoro del Terror del catálogo
+    marcos: ".dota-card, .itx-card, .cofre-tile, .sell-card, .info-card, .howto-step, #setsPromo .promo-card, .lj-card3, .section-card, .buy-option, .pf-card, .lj-trust-i, .card.frame, .step, .itx-pg-foto",
+    terror: ".sets-hero-title, [id^=view-] header.text-center h1, .home-block-title, .m-sec-title h2, .sell-title, .section-name",
+    bandas: "#ljPerfilPagina .pf-top",
+    profundo: true, nieblaFija: true, brasas: false, fatuo: [350, 80, 62], hoja: [0, 18]
+  };
   function prender() {
     document.documentElement.classList.add("hw");
-    var f = document.createElement("link"); f.rel = "stylesheet"; f.href = "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Creepster&display=swap"; document.head.appendChild(f);
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "tema-halloween.css?v=1"; document.head.appendChild(l);
-    var s = document.createElement("script"); s.src = "tema-halloween.js?v=1"; document.body.appendChild(s);
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "tema-halloween.css?v=2"; document.head.appendChild(l);
+    var s = document.createElement("script"); s.src = "tema-halloween.js?v=2"; document.body.appendChild(s);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", prender); else prender();
 })();
