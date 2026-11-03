@@ -11,7 +11,7 @@
   if (window.HW) return;
   var C = Object.assign({ tienda: "Rayas Store", portadas: ".hero", sombrero: "img.hero-logo", franjaDespues: "#inicio.hero", brasas: true,
     marcos: "", terror: "", bandas: "" /* la banda de noche va antes de este elemento */, profundo: false, nieblaFija: false, fatuo: [138, 95, 72], hoja: [16, 38],
-    calabazas: true, iconoCinta: true, figuras: null /* { "selector de portada": ["treant", "necro"] } → img/hw-<nombre>.webp (arte oficial ya recortado) */, colgante: "" /* imagen que cuelga de un hilo arriba a la derecha */,
+    calabazas: true, iconoCinta: true, brasaTonos: [[18, 36], [262, 280]] /* colores de las brasas (tono HSL): naranja y morado; LitleJacob usa rojos */, figuras: null /* { "selector de portada": ["treant", "necro"] } → img/hw-<nombre>.webp (arte oficial ya recortado) */, colgante: "" /* imagen que cuelga de un hilo arriba a la derecha */,
     vitrina: "" /* selector del JSON del catálogo (#catalogData): arma la vitrina "Especial Diretide" con el cofre de Halloween que ya tiene la web */, vitrinaDespues: "", vitrinaEnlace: "#sets-cache", diretide: /terror|diretide|halloween/i }, window.HW_CONFIG || {});
   var raiz = document.documentElement, app = document.getElementById("app") || document.body;
   var reducir = false;
@@ -176,7 +176,7 @@
   function nueva(abajo) {
     var r = Math.random(), tipo = C.brasas ? (r < .14 ? "fatuo" : (r < .26 ? "hoja" : "brasa")) : (r < .45 ? "fatuo" : "hoja");
     var p = { tipo: tipo, x: Math.random() * W, y: abajo ? H + 20 : Math.random() * H, t: Math.random() * 6.28, ts: Math.random() * .02 + .006 };
-    if (tipo === "brasa") { p.r = Math.random() * 1.9 + .6; p.vy = -(Math.random() * .4 + .12); p.vx = (Math.random() - .5) * .25; p.a = Math.random() * .6 + .25; p.h = Math.random() < .7 ? 18 + Math.random() * 18 : 262 + Math.random() * 18; }
+    if (tipo === "brasa") { p.r = Math.random() * 1.9 + .6; p.vy = -(Math.random() * .4 + .12); p.vx = (Math.random() - .5) * .25; p.a = Math.random() * .6 + .25; var tn = C.brasaTonos[Math.random() < .7 ? 0 : C.brasaTonos.length - 1]; p.h = tn[0] + Math.random() * (tn[1] - tn[0]); }
     else if (tipo === "fatuo") { p.r = Math.random() * 3 + 3; p.vy = -(Math.random() * .12 + .03); p.vx = (Math.random() - .5) * .3; p.a = Math.random() * .35 + .2; p.h = C.fatuo[0] + Math.random() * 30; p.s = C.fatuo[1]; p.l = C.fatuo[2]; }
     else { p.r = Math.random() * 5 + 5; p.y = abajo ? -20 : p.y; p.vy = Math.random() * .45 + .25; p.vx = (Math.random() - .3) * .5; p.a = Math.random() * .35 + .35; p.h = C.hoja[0] + Math.random() * (C.hoja[1] - C.hoja[0]); p.rot = Math.random() * 6.28; p.vr = (Math.random() - .5) * .03; }
     return p;

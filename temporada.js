@@ -24,12 +24,12 @@
     marcos: ".dota-card, .itx-card, .cofre-tile, .sell-card, .info-card, .howto-step, #setsPromo .promo-card, .lj-card3, .section-card, .buy-option, .pf-card, .lj-trust-i, .card.frame, .step, .itx-pg-foto",
     terror: ".sets-hero-title, [id^=view-] header.text-center h1, .home-block-title, .m-sec-title h2, .sell-title, .section-name",
     bandas: "#ljPerfilPagina .pf-top",
-    profundo: true, nieblaFija: true, brasas: false, fatuo: [350, 80, 62], hoja: [0, 18]
+    profundo: true, nieblaFija: true, brasas: true, brasaTonos: [[0, 14], [350, 360]], fatuo: [350, 80, 62], hoja: [0, 18]
   };
   function prender() {
     document.documentElement.classList.add("hw");
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "tema-halloween.css?v=2"; document.head.appendChild(l);
-    var s = document.createElement("script"); s.src = "tema-halloween.js?v=2"; document.body.appendChild(s);
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "tema-halloween.css?v=3"; document.head.appendChild(l);
+    var s = document.createElement("script"); s.src = "tema-halloween.js?v=3"; document.body.appendChild(s);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", prender); else prender();
 })();
