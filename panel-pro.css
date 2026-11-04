@@ -302,3 +302,16 @@ html.lj-rifas .drawer.adm .drawer-body:not(.rail) { padding-top: 16px; }
 /* Pestaña Items: toda la fila (foto + nombre) abre la página del item */
 #ljPanelAdmin a.pa-it-go { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; color: inherit; text-decoration: none; }
 #ljPanelAdmin a.pa-it-go:hover .pa-it-tx b { color: var(--pp-acc); text-decoration: underline; }
+
+/* ============ Pedidos: chip de estado y buscador ============ */
+#ljPanelAdmin .ped-est { flex: none; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; border: 1px solid var(--pp-line2); color: var(--pp-dim); background: rgba(255, 255, 255, .05); }
+#ljPanelAdmin .ped-est.e-pagado { color: #ffc93c; border-color: rgba(255, 201, 60, .45); background: rgba(255, 201, 60, .1); }
+#ljPanelAdmin .ped-est.e-cooldown { color: #7fb8ff; border-color: rgba(127, 184, 255, .45); background: rgba(127, 184, 255, .1); }
+#ljPanelAdmin .ped-est.e-entregado { color: var(--pp-ok); border-color: rgba(65, 217, 143, .4); background: rgba(65, 217, 143, .1); }
+#ljPanelAdmin .ped-est.e-cancelado { text-decoration: line-through; }
+#ljPanelAdmin .pa-urow-h .ped-est { margin-left: auto; }
+@media (max-width: 560px) { #ljPanelAdmin .ped-est { display: none; } }
+#ljPanelAdmin .pa-ut a { color: var(--pp-acc); }
+/* Item agotado en la lista: foto apagada y aviso */
+#ljPanelAdmin .pa-it.agot img { filter: grayscale(1); opacity: .55; }
+#ljPanelAdmin .pa-it.agot .pa-it-tx small { color: var(--pp-bad); }
