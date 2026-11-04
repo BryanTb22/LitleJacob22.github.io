@@ -385,6 +385,16 @@
     }).then(function (r) { if (!r.ok) throw new Error("Error " + r.status); }).catch(function (e) { p.estado = antes; st.pedMsg = "No se guardó: " + e.message; pintar(); });
   }
   function pedClave(p) { return p.uid || p.steam || (p.cliente || "").toLowerCase(); }
+  // Enlace de WhatsApp (agrega 51 si es un celular peruano de 9 dígitos).
+  function waLink(tel) {
+    var d = String(tel || "").replace(/\D/g, "");
+    if (d.length === 9 && d.charAt(0) === "9") d = "51" + d;
+    return d.length >= 10 && d.length <= 15 ? "https://wa.me/" + d : "";
+  }
+  function waHtml(tel) {
+    var u = waLink(tel);
+    return u ? '<a href="' + u + '" target="_blank" rel="noopener" title="Escribirle por WhatsApp">' + esc(tel) + ' ↗</a>' : esc(tel || "—");
+  }
   // Línea de item del pedido: foto + nombre con enlace a su página (como se vende).
   function pedItemHtml(i, mini) {
     var r = window.ljItems && window.ljItems.porPedido ? window.ljItems.porPedido(i.id, i.nombre) : null;
@@ -408,16 +418,20 @@
     var chips = [["pagado", "💰 Por entregar"], ["cooldown", "🔒 En cooldown"], ["entregado", "✅ Entregados"], ["cancelado", "✖ Cancelados"], ["todos", "Todos"]].map(function (c) {
       return '<button type="button" role="tab" data-pa="pedFiltro" data-f="' + c[0] + '" aria-selected="' + (fl === c[0]) + '">' + c[1] + ' (' + cuenta(c[0]) + ')</button>'; }).join("");
     var lista = todos.filter(function (p) { return fl === "todos" || p.estado === fl; });
+    var fb = (st.pedBusca || "").trim().toLowerCase();
+    if (fb) lista = lista.filter(function (p) { return ((p.cliente || "") + " " + p.code + " " + (p.steam || "") + " " + (p.whatsapp || "") + " " + p.items.map(function (i) { return i.nombre; }).join(" ")).toLowerCase().indexOf(fb) >= 0; });
     return '<div class="pa-sub chips" role="tablist">' + chips + '</div><div class="pa-grp"><h3>Pedidos de items (' + lista.length + ')</h3>' +
+      '<div class="pa-field"><label for="pa-ped-buscar">Buscar</label><input id="pa-ped-buscar" placeholder="Cliente, código, item, Steam o WhatsApp" value="' + esc(st.pedBusca || "") + '" autocomplete="off"></div>' +
       '<p class="pa-hint">Los pedidos de Sets Caché siguen en la barra de <b>Sets Caché</b> → Pedidos.</p>' +
       (st.pedMsg ? '<p class="pa-hint err">' + esc(st.pedMsg) + '</p>' : '') +
       '<div class="pa-ulist">' + (lista.length ? lista.map(function (p) {
         var ab = st.pedAbierto === p.id, n = p.items.reduce(function (a, i) { return a + i.qty; }, 0);
-        var cab = '<button type="button" class="pa-urow-h" data-pa="pedAbrir" data-id="' + esc(p.id) + '" aria-expanded="' + ab + '"><b>' + esc(p.cliente || "Sin nombre") + ' · ' + n + (n === 1 ? ' item' : ' items') + (p.estado === "cooldown" ? ' <small class="pedcd">🔒 entregar el ' + esc(fechaCorta(p.entregaDesde)) + '</small>' : '') + '</b><span class="pa-usal">' + fmtPrecio(p.total) + '</span><i>' + (ab ? "▴" : "▾") + '</i></button>';
+        var estTx = (PED_ESTADOS.filter(function (e) { return e[0] === p.estado; })[0] || [0, p.estado])[1];
+        var cab = '<button type="button" class="pa-urow-h" data-pa="pedAbrir" data-id="' + esc(p.id) + '" aria-expanded="' + ab + '"><b>' + esc(p.cliente || "Sin nombre") + ' · ' + n + (n === 1 ? ' item' : ' items') + (p.estado === "cooldown" ? ' <small class="pedcd">🔒 entregar el ' + esc(fechaCorta(p.entregaDesde)) + '</small>' : '') + '</b><small class="ped-est e-' + esc(p.estado) + '">' + esc(estTx) + '</small><span class="pa-usal">' + fmtPrecio(p.total) + '</span><i>' + (ab ? "▴" : "▾") + '</i></button>';
         if (!ab) return '<div class="pa-urow">' + cab + '</div>';
         return '<div class="pa-urow open">' + cab + '<div class="pa-ut"><span>Pedido <b>' + esc(p.code) + '</b> · ' + (p.fecha ? esc(p.fecha.toLocaleString("es-PE")) : "") + '</span>' +
           p.items.map(function (i) { return '<span class="ped-row">' + pedItemHtml(i) + '<b class="ped-pr">' + fmtPrecio(i.precio * i.qty) + '</b></span>'; }).join("") +
-          '<span>ID de Steam: ' + esc(p.steam || "—") + '</span><span>WhatsApp: ' + esc(p.whatsapp || "—") + '</span><span>' + esc(p.email) + '</span>' +
+          '<span>ID de Steam: ' + esc(p.steam || "—") + '</span><span>WhatsApp: ' + waHtml(p.whatsapp) + '</span><span>' + esc(p.email) + '</span>' +
           (tradeValido(p.tradelink) ? '<span><a href="' + esc(p.tradelink) + '" target="_blank" rel="noopener">Abrir trade link ↗</a></span>' : '<span class="pa-warn">Sin trade link</span>') +
           '<span>Pagado con saldo: ' + fmtPrecio(p.creditos) + '</span>' +
           (p.entregaDesde ? '<span class="pedcd-l">🔒 ' + (p.estado === "cooldown" ? 'En cooldown de Steam: <b>no lo entregues todavía</b>. Se libera el <b>' + esc(fechaEntrega(p.entregaDesde)) + '</b>' + (cdRestante(p.entregaDesde) ? ' (faltan ' + esc(cdRestante(p.entregaDesde)) + ')' : ' (ya pasó: en la próxima hora pasa solo a Por entregar)') : 'Estuvo en cooldown hasta el ' + esc(fechaEntrega(p.entregaDesde)) + (p.liberadoEn ? ' · liberado y avisado por correo' : '')) + '</span>' : '') +
@@ -525,6 +539,7 @@
   }
   function alEscribir(e) {
     if (e.target.id === "pa-u-buscar") { st.uFiltro = e.target.value; pintar(); }
+    if (e.target.id === "pa-ped-buscar") { st.pedBusca = e.target.value; pintar(); }
   }
   function montar() {
     if (st.raiz) return;
