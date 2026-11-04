@@ -21,7 +21,7 @@
     var min = Math.ceil(ms / 60000), h = Math.floor(min / 60), d = Math.floor(h / 24);
     return d >= 1 ? d + " d " + (h % 24) + " h" : h >= 1 ? h + " h " + (min % 60) + " min" : min + " min";
   }
-  var TABS = { config: "⚙ Configuración", usuarios: "👥 Usuarios y saldo", pagina: "📝 Textos y contactos", items: "🧩 Items", pedidos: "🛒 Pedidos", compras: "📥 Compras", pub: "🖼 Publicaciones" };
+  var TABS = { config: "⚙ Configuración", usuarios: "👥 Usuarios y saldo", pagina: "📝 Textos y contactos", items: "🧩 Items", pedidos: "🛒 Pedidos", compras: "📥 Compras", pub: "🖼 Publicaciones", reclamos: "📕 Reclamos" };
 
   var st = {
     abierto: false, tab: "", raiz: null,
@@ -65,7 +65,103 @@
       .then(function (j) { return (j || []).filter(function (x) { return x.document; }).map(function (x) { return x.document; }); });
   }
   function seccion() { var v = document.body.getAttribute("data-vista") || "inicio"; return (v === "items" || v === "vender") ? "items" : "inicio"; }
-  function tabsDe(sc) { return sc === "items" ? ["config", "items", "pedidos", "compras", "usuarios", "pub"] : ["config", "usuarios", "pagina", "pub"]; }
+  // ---------- Libro de Reclamaciones: lista para el admin ----------
+  function recLeer(doc) {
+    var f = doc.fields || {}, g = function (k) { var v = f[k]; if (!v) return ""; return v.stringValue !== undefined ? v.stringValue : v.timestampValue !== undefined ? v.timestampValue : v.booleanValue !== undefined ? v.booleanValue : v.integerValue !== undefined ? v.integerValue : v.doubleValue !== undefined ? v.doubleValue : ""; };
+    var o = { id: doc.name.split("/").pop() };
+    ["numero", "tienda", "tipo", "tipoDoc", "numDoc", "nombre", "domicilio", "telefono", "email", "apoderado", "bienTipo", "bien", "monto", "pedidoRef", "detalle", "pedido", "estado", "creado", "vence", "respondido"].forEach(function (k) { o[k] = g(k); });
+    o.menor = g("menor") === true; o.numero = o.numero || o.id; o.estado = o.estado || "pendiente";
+    return o;
+  }
+  function cargarReclamos() {
+    st.recCargando = true; st.recMsg = "";
+    token().then(function (tk) {
+      return fetch(BASE.replace("/documents/", "/documents:runQuery"), { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk }, body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "reclamos" }], orderBy: [{ field: { fieldPath: "creado" }, direction: "DESCENDING" }], limit: 300 } }) });
+    }).then(function (r) { if (!r.ok) throw new Error(r.status === 403 ? "Firebase todavía no te deja leer los reclamos: falta publicar la regla nueva (ver documento reclamos-panel)." : "Error " + r.status); return r.json(); })
+      .then(function (j) { st.reclamos = (j || []).filter(function (x) { return x.document; }).map(function (x) { return recLeer(x.document); }); st.recCargando = false; pintar(); })
+      .catch(function (e) { st.reclamos = []; st.recCargando = false; st.recMsg = e.message; pintar(); });
+  }
+  // Días hábiles (lunes a viernes) que faltan hasta la fecha límite; negativo si ya venció.
+  function recDiasHabiles(venceIso) {
+    if (!venceIso) return null;
+    var hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    var v = new Date(venceIso); v.setHours(0, 0, 0, 0);
+    var paso = v >= hoy ? 1 : -1, n = 0, d = new Date(hoy);
+    while ((paso > 0 && d < v) || (paso < 0 && d > v)) { d.setDate(d.getDate() + paso); var w = d.getDay(); if (w !== 0 && w !== 6) n += paso; }
+    return n;
+  }
+  function recPlazoHtml(r) {
+    if (r.estado === "respondido") return '<small class="ped-est rec-est e-entregado">✔ Respondido</small>';
+    if (r.estado === "archivado") return '<small class="ped-est rec-est">🗂 Archivado</small>';
+    var d = recDiasHabiles(r.vence);
+    if (d === null) return '<small class="ped-est rec-est e-pagado">Pendiente</small>';
+    if (d < 0) return '<small class="ped-est rec-est e-vencido">⚠ Vencido hace ' + (-d) + (d === -1 ? ' día hábil' : ' días hábiles') + '</small>';
+    if (d === 0) return '<small class="ped-est rec-est e-vencido">⚠ Vence hoy</small>';
+    return '<small class="ped-est rec-est ' + (d <= 3 ? 'e-vencido' : 'e-pagado') + '">⏳ Quedan ' + d + (d === 1 ? ' día hábil' : ' días hábiles') + '</small>';
+  }
+  function recGmail(r) {
+    var marca = r.tienda === "rayas" ? "Rayas Store" : "LitleJacob Store";
+    var cuerpo = "Hola " + r.nombre + ":\n\nTe escribimos por tu " + r.tipo + " N° " + r.numero + " del Libro de Reclamaciones de " + marca + ", registrado el " + (r.creado ? new Date(r.creado).toLocaleDateString("es-PE") : "") + ".\n\nTu pedido: " + r.pedido + "\n\nNuestra respuesta:\n\n\n\nAtentamente,\n" + marca + "\nTIRAPO BUSTILLOS BRYAN DARWIN · RUC 10712504761";
+    return "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(r.email) + "&su=" + encodeURIComponent("Respuesta a tu " + r.tipo + " N° " + r.numero + " · " + marca) + "&body=" + encodeURIComponent(cuerpo);
+  }
+  function recCambiarEstado(id, est) {
+    var r = (st.reclamos || []).filter(function (x) { return x.id === id; })[0]; if (!r) return;
+    var antes = r.estado, ahora = new Date().toISOString();
+    r.estado = est; r.guardando = true; pintar();
+    var campos = { estado: { stringValue: est } }, mask = "updateMask.fieldPaths=estado";
+    if (est === "respondido") { campos.respondido = { timestampValue: ahora }; mask += "&updateMask.fieldPaths=respondido"; }
+    fs("reclamos/" + encodeURIComponent(id) + "?" + mask + "&currentDocument.exists=true", { method: "PATCH", body: JSON.stringify({ fields: campos }) })
+      .then(function (res) { if (!res.ok) throw new Error(res.status === 403 ? "Firebase no te deja cambiarlo: falta publicar la regla nueva." : "Error " + res.status); r.guardando = false; if (est === "respondido") r.respondido = ahora; pintar(); })
+      .catch(function (e) { r.estado = antes; r.guardando = false; st.recMsg = "No se guardó: " + e.message; pintar(); });
+  }
+  function tabReclamos() {
+    if (!st.reclamos) { if (!st.recCargando) cargarReclamos(); return '<p class="pa-hint">Cargando reclamos…</p>'; }
+    var esta = "litlejacob", soloEsta = !st.recTodas;
+    var base = st.reclamos.filter(function (r) { return !soloEsta || r.tienda === esta || !r.tienda; });
+    var fl = st.recFiltro || "pendiente";
+    var cuenta = function (e) { return base.filter(function (r) { return e === "todos" ? r.estado !== "archivado" : r.estado === e; }).length; };
+    var urg = base.filter(function (r) { var d = recDiasHabiles(r.vence); return r.estado === "pendiente" && d !== null && d <= 3; }).length;
+    var lista = base.filter(function (r) { return fl === "todos" ? r.estado !== "archivado" : r.estado === fl; });
+    var chips = [["pendiente", "⏳ Pendientes"], ["respondido", "✔ Respondidos"], ["archivado", "🗂 Archivados"], ["todos", "Todos"]].map(function (c) {
+      return '<button type="button" role="tab" data-pa="recFiltro" data-f="' + c[0] + '" aria-selected="' + (fl === c[0]) + '">' + c[1] + ' (' + cuenta(c[0]) + ')</button>';
+    }).join("");
+    var stats = '<div class="adm-stats"><div class="adm-stat' + (cuenta("pendiente") ? ' acc' : '') + '"><small>Pendientes</small><b>' + cuenta("pendiente") + '</b></div><div class="adm-stat' + (urg ? ' acc' : '') + '"><small>Por vencer (≤ 3 días)</small><b>' + urg + '</b></div><div class="adm-stat"><small>Respondidos</small><b>' + cuenta("respondido") + '</b></div></div>';
+    var filas = lista.map(function (r) {
+      var ab = st.recAbierto === r.id, id = esc(r.id);
+      var cab = '<button type="button" class="pa-urow-h" data-pa="recAbrir" data-id="' + id + '" aria-expanded="' + ab + '"><b>' + esc(r.numero) + ' · ' + esc(r.tipo === "queja" ? "Queja" : "Reclamo") + ' · ' + esc(r.nombre) + '</b>' + recPlazoHtml(r) + '<i>' + (ab ? "▴" : "▾") + '</i></button>';
+      if (!ab) return '<div class="pa-urow">' + cab + '</div>';
+      var fila = function (k, v) { return v ? '<div class="pa-frow"><span>' + k + '</span><div>' + v + '</div></div>' : ''; };
+      var det = '<div class="pa-ficha rec-ficha">' +
+        fila("Tienda", esc(r.tienda === "rayas" ? "Rayas Store" : "LitleJacob Store")) +
+        fila("Registrado", esc(r.creado ? fechaHora(r.creado) : "—")) +
+        fila("Responder antes del", esc(r.vence ? new Date(r.vence).toLocaleDateString("es-PE") : "—") + ' (15 días hábiles)') +
+        (r.respondido ? fila("Respondido el", esc(fechaHora(r.respondido))) : '') +
+        fila("Documento", esc(r.tipoDoc + " " + r.numDoc)) +
+        fila("Correo", '<a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a>') +
+        fila("Teléfono", soloDigitos(r.telefono) ? '<a href="https://wa.me/' + esc(waNum(r.telefono)) + '" target="_blank" rel="noopener">' + esc(r.telefono) + ' ↗</a>' : esc(r.telefono)) +
+        fila("Domicilio", esc(r.domicilio)) +
+        (r.menor ? fila("Menor de edad", "Sí · apoderado: " + esc(r.apoderado)) : '') +
+        fila(r.bienTipo === "servicio" ? "Servicio" : "Producto", esc(r.bien)) +
+        fila("Monto reclamado", r.monto ? "S/ " + esc(r.monto) : "") +
+        fila("Pedido / referencia", esc(r.pedidoRef)) +
+        fila("Qué pasó", '<p class="rec-txt">' + esc(r.detalle) + '</p>') +
+        fila("Qué pide", '<p class="rec-txt">' + esc(r.pedido) + '</p>') +
+        '<div class="pa-acc">' +
+        '<a class="pa-btn rojo sm" href="' + esc(recGmail(r)) + '" target="_blank" rel="noopener">✉ Responder por correo</a>' +
+        (r.estado !== "respondido" ? '<button class="pa-btn ghost sm" type="button" data-pa="recEstado" data-e="respondido" data-id="' + id + '"' + (r.guardando ? ' disabled' : '') + '>✔ Marcar respondido</button>' : '<button class="pa-btn ghost sm" type="button" data-pa="recEstado" data-e="pendiente" data-id="' + id + '"' + (r.guardando ? ' disabled' : '') + '>↺ Volver a pendiente</button>') +
+        (r.estado !== "archivado" ? '<button class="pa-btn ghost sm" type="button" data-pa="recEstado" data-e="archivado" data-id="' + id + '" title="Para reclamos de prueba: lo saca de la lista sin borrarlo"' + (r.guardando ? ' disabled' : '') + '>🗂 Archivar (prueba)</button>' : '') +
+        '</div></div>';
+      return '<div class="pa-urow open">' + cab + det + '</div>';
+    }).join("");
+    return '<div class="pa-sub" role="tablist">' + chips + '</div>' + stats +
+      '<div class="pa-grp"><h3>Libro de Reclamaciones</h3>' +
+      '<p class="pa-hint">Por ley tienes <b>15 días hábiles</b> para responder cada reclamo o queja al correo del cliente. Responde, y luego marca "Respondido". Los de prueba, archívalos (no se borran).</p>' +
+      '<label class="rec-todas"><input type="checkbox" data-pa="recTodas"' + (st.recTodas ? ' checked' : '') + '> Ver también los de Rayas Store</label>' +
+      (st.recMsg ? '<p class="pa-hint err">' + esc(st.recMsg) + '</p>' : '') +
+      '<div class="pa-ulist">' + (filas || '<p class="pa-hint">' + (fl === "pendiente" ? "🎉 No hay reclamos pendientes." : "No hay reclamos aquí.") + '</p>') + '</div>' +
+      '<div class="pa-acc"><button class="pa-btn ghost sm" type="button" data-pa="recRecargar">↻ Actualizar</button></div></div>';
+  }
+  function tabsDe(sc) { return sc === "items" ? ["config", "items", "pedidos", "compras", "usuarios", "pub", "reclamos"] : ["config", "usuarios", "pagina", "pub", "reclamos"]; }
 
   /* ---------- estado compartido (rayas/estado) ---------- */
   function leerEstado() {
@@ -579,7 +675,7 @@
     var sc = seccion(), lista = tabsDe(sc);
     if (lista.indexOf(st.tab) < 0) st.tab = lista[0];
     var nom = sc === "items" ? "Compra y venta de items" : "General";
-    var cuerpo = st.tab === "config" ? tabConfig(sc) : st.tab === "usuarios" ? tabUsuarios() : st.tab === "pagina" ? tabPagina() : st.tab === "items" ? tabItems() : st.tab === "pedidos" ? tabPedidos() : st.tab === "pub" ? tabPub() : tabCompras();
+    var cuerpo = st.tab === "config" ? tabConfig(sc) : st.tab === "usuarios" ? tabUsuarios() : st.tab === "pagina" ? tabPagina() : st.tab === "items" ? tabItems() : st.tab === "pedidos" ? tabPedidos() : st.tab === "pub" ? tabPub() : st.tab === "reclamos" ? tabReclamos() : tabCompras();
     var body = r.querySelector(".pa-body"), top = body ? body.scrollTop : 0, foco = document.activeElement && r.contains(document.activeElement) ? document.activeElement.id : "", sel = foco && document.activeElement.selectionStart;
     var pill = document.getElementById("draftStatus"), pub = estadoPublicacion(), sucio = !!(pill && pill.classList.contains("dirty"));
     r.innerHTML = '<div class="pa-scrim" data-pa="cerrar"></div><aside class="pa-drawer" role="dialog" aria-modal="true" aria-label="Panel de administración">' +
@@ -619,6 +715,11 @@
       case "probarCorreos": probarCorreos(); break;
       case "guardarTextos": guardarTextos(); break;
       case "subU": st.subU = t.getAttribute("data-s"); pintar(); break;
+      case "recFiltro": st.recFiltro = t.getAttribute("data-f"); st.recAbierto = null; pintar(); break;
+      case "recAbrir": var rid = t.getAttribute("data-id"); st.recAbierto = st.recAbierto === rid ? null : rid; pintar(); break;
+      case "recEstado": recCambiarEstado(t.getAttribute("data-id"), t.getAttribute("data-e")); break;
+      case "recRecargar": st.reclamos = null; st.recMsg = ""; pintar(); break;
+      case "recTodas": st.recTodas = !!t.checked; pintar(); break;
       case "uAbrir": st.uAbierto = st.uAbierto === uid ? null : uid; st.delU = null; pintar(); break;
       case "cred": var u = usuarioPorUid(uid); if (u && !u.guardando) guardarCreditos(uid, u.creditos + Number(t.getAttribute("data-d"))); break;
       case "editU": st.uAbierto = uid; st.fichaU = uid; st.editU = uid; st.uMsg = ""; pintar(); break;
