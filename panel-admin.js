@@ -21,7 +21,7 @@
     var min = Math.ceil(ms / 60000), h = Math.floor(min / 60), d = Math.floor(h / 24);
     return d >= 1 ? d + " d " + (h % 24) + " h" : h >= 1 ? h + " h " + (min % 60) + " min" : min + " min";
   }
-  var TABS = { config: "⚙ Configuración", usuarios: "👥 Usuarios y saldo", pagina: "📝 Textos y contactos", items: "🧩 Items", pedidos: "🛒 Pedidos", compras: "📥 Compras", pub: "🖼 Publicaciones", reclamos: "📕 Reclamos" };
+  var TABS = { config: "⚙ Configuración", usuarios: "👥 Usuarios y saldo", pagina: "📝 Textos y contactos", items: "🧩 Items", pedidos: "🛒 Pedidos", compras: "📥 Compras", pub: "🖼 Publicaciones", reclamos: "📕 Reclamos", ventas: "📊 Ventas" };
 
   var st = {
     abierto: false, tab: "", raiz: null,
@@ -65,6 +65,66 @@
       .then(function (j) { return (j || []).filter(function (x) { return x.document; }).map(function (x) { return x.document; }); });
   }
   function seccion() { var v = document.body.getAttribute("data-vista") || "inicio"; return (v === "items" || v === "vender") ? "items" : "inicio"; }
+  // ---------- Resumen de ventas (pedidos de items de esta tienda) ----------
+  function ventasHtml(pedidos, per) {
+    var ahora = new Date(), hoy0 = new Date(ahora); hoy0.setHours(0, 0, 0, 0);
+    var dias = per === "hoy" ? 1 : per === "7" ? 7 : per === "30" ? 30 : 0;
+    var desde = dias ? new Date(hoy0.getTime() - (dias - 1) * 864e5) : null;
+    var vivos = pedidos.filter(function (p) { return p.estado !== "cancelado" && p.fecha; });
+    var enPer = vivos.filter(function (p) { return !desde || p.fecha >= desde; });
+    var total = enPer.reduce(function (a, p) { return a + (Number(p.total) || 0); }, 0);
+    var nItems = enPer.reduce(function (a, p) { return a + p.items.reduce(function (b, i) { return b + (Number(i.qty) || 1); }, 0); }, 0);
+    var porEntregar = vivos.filter(function (p) { return p.estado === "pagado" || p.estado === "cooldown"; }).length;
+    var r2 = function (n) { return Math.round(n * 100) / 100; };
+    var sol = function (n) { n = r2(n); return "S/ " + (n % 1 ? n.toFixed(2) : n); };
+    // Comparación con el periodo anterior del mismo largo
+    var comp = "";
+    if (dias) {
+      var desdeAnt = new Date(desde.getTime() - dias * 864e5);
+      var ant = vivos.filter(function (p) { return p.fecha >= desdeAnt && p.fecha < desde; }).reduce(function (a, p) { return a + (Number(p.total) || 0); }, 0);
+      if (ant > 0) { var pct = Math.round((total - ant) / ant * 100); comp = '<em class="ven-var ' + (pct >= 0 ? 'sube' : 'baja') + '">' + (pct >= 0 ? '▲ ' : '▼ ') + Math.abs(pct) + '% vs. periodo anterior</em>'; }
+      else if (total > 0) comp = '<em class="ven-var sube">▲ nuevo (antes S/ 0)</em>';
+    }
+    var chips = [["hoy", "Hoy"], ["7", "7 días"], ["30", "30 días"], ["todo", "Todo"]].map(function (c) {
+      return '<button type="button" role="tab" data-pa="venPer" data-p="' + c[0] + '" aria-selected="' + (per === c[0]) + '">' + c[1] + '</button>';
+    }).join("");
+    var stats = '<div class="adm-stats ven-stats">' +
+      '<div class="adm-stat acc"><small>Ventas</small><b>' + sol(total) + '</b>' + comp + '</div>' +
+      '<div class="adm-stat"><small>Pedidos</small><b>' + enPer.length + '</b></div>' +
+      '<div class="adm-stat"><small>Ticket promedio</small><b>' + (enPer.length ? sol(total / enPer.length) : "—") + '</b></div>' +
+      '<div class="adm-stat"><small>Items vendidos</small><b>' + nItems + '</b></div>' +
+      '<div class="adm-stat"><small>Por entregar</small><b>' + porEntregar + '</b></div></div>';
+    // Gráfico por día
+    var nDias = dias === 1 ? 14 : (dias || 30), barras = [], max = 0;
+    for (var k = nDias - 1; k >= 0; k--) {
+      var d0 = new Date(hoy0.getTime() - k * 864e5), d1 = new Date(d0.getTime() + 864e5);
+      var v = vivos.filter(function (p) { return p.fecha >= d0 && p.fecha < d1; }).reduce(function (a, p) { return a + (Number(p.total) || 0); }, 0);
+      barras.push({ d: d0, v: r2(v) }); if (v > max) max = v;
+    }
+    var etq = function (d) { return d.toLocaleDateString("es-PE", { day: "numeric", month: "short" }); };
+    var graf = '<div class="ven-chart" role="img" aria-label="Ventas por día">' + barras.map(function (b, i) {
+      var h = max ? Math.max(2, Math.round(b.v / max * 100)) : 2;
+      return '<div class="ven-col" title="' + esc(etq(b.d) + ': ' + sol(b.v)) + '"><span class="ven-val">' + (b.v && (nDias <= 14 || b.v === r2(max)) ? esc(sol(b.v)) : '') + '</span><span class="ven-bar' + (b.v ? '' : ' cero') + '" style="height:' + h + '%"></span><span class="ven-dia">' + (i === 0 || i === barras.length - 1 || i === Math.floor(barras.length / 2) || nDias <= 7 ? esc(etq(b.d)) : '') + '</span></div>';
+    }).join("") + '</div>';
+    // Más vendidos
+    var mapI = {};
+    enPer.forEach(function (p) { p.items.forEach(function (i) { var key = i.id || i.nombre; var o = mapI[key] || (mapI[key] = { id: i.id, nombre: i.nombre, qty: 0, ing: 0 }); o.qty += Number(i.qty) || 1; o.ing += (Number(i.precio) || 0) * (Number(i.qty) || 1); }); });
+    var topI = Object.keys(mapI).map(function (k) { return mapI[k]; }).sort(function (a, b) { return b.ing - a.ing || b.qty - a.qty; }).slice(0, 5);
+    var listaI = topI.length ? topI.map(function (o, n) { return '<div class="ven-row"><span class="ven-n">' + (n + 1) + '</span>' + pedItemHtml({ id: o.id, nombre: o.nombre, qty: o.qty }, true) + '<b>' + sol(o.ing) + '</b></div>'; }).join("") : '<p class="pa-hint">Sin ventas en este periodo.</p>';
+    // Mejores clientes
+    var mapC = {};
+    enPer.forEach(function (p) { var key = p.uid || (p.cliente || "").toLowerCase(); var o = mapC[key] || (mapC[key] = { uid: p.uid, nombre: p.cliente || "Sin nombre", n: 0, tot: 0 }); o.n++; o.tot += Number(p.total) || 0; });
+    var topC = Object.keys(mapC).map(function (k) { return mapC[k]; }).sort(function (a, b) { return b.tot - a.tot; }).slice(0, 5);
+    var listaC = topC.length ? topC.map(function (o, n) { return '<div class="ven-row"><span class="ven-n">' + (n + 1) + '</span><span class="ven-cli"><b>' + esc(o.nombre) + '</b><small>' + o.n + (o.n === 1 ? ' compra' : ' compras') + '</small></span><b>' + sol(o.tot) + '</b>' + (o.uid ? '<button class="pa-ico" type="button" data-pa="informe" data-uid="' + esc(o.uid) + '" title="Informe de compras">🧾</button>' : '') + '</div>'; }).join("") : '<p class="pa-hint">Sin ventas en este periodo.</p>';
+    return '<div class="pa-sub" role="tablist">' + chips + '</div>' + stats +
+      '<div class="pa-grp"><h3>Ventas por día</h3>' + graf + '<p class="pa-hint">Solo pedidos de items de esta tienda (sin cancelados). Pasa el mouse o toca una barra para ver el monto.</p></div>' +
+      '<div class="ven-dos"><div class="pa-grp"><h3>🏆 Más vendidos</h3>' + listaI + '</div><div class="pa-grp"><h3>⭐ Mejores clientes</h3>' + listaC + '</div></div>';
+  }
+  function tabVentas() {
+    if (window.ljItems && window.ljItems.porPedido) window.ljItems.porPedido("", "");
+    if (!st.pedidos) { cargarPedidos(); return '<p class="pa-hint">Cargando ventas…</p>'; }
+    return ventasHtml(st.pedidos, st.venPer || "30");
+  }
   // ---------- Libro de Reclamaciones: lista para el admin ----------
   function recLeer(doc) {
     var f = doc.fields || {}, g = function (k) { var v = f[k]; if (!v) return ""; return v.stringValue !== undefined ? v.stringValue : v.timestampValue !== undefined ? v.timestampValue : v.booleanValue !== undefined ? v.booleanValue : v.integerValue !== undefined ? v.integerValue : v.doubleValue !== undefined ? v.doubleValue : ""; };
@@ -161,7 +221,7 @@
       '<div class="pa-ulist">' + (filas || '<p class="pa-hint">' + (fl === "pendiente" ? "🎉 No hay reclamos pendientes." : "No hay reclamos aquí.") + '</p>') + '</div>' +
       '<div class="pa-acc"><button class="pa-btn ghost sm" type="button" data-pa="recRecargar">↻ Actualizar</button></div></div>';
   }
-  function tabsDe(sc) { return sc === "items" ? ["config", "items", "pedidos", "compras", "usuarios", "pub", "reclamos"] : ["config", "usuarios", "pagina", "pub", "reclamos"]; }
+  function tabsDe(sc) { return sc === "items" ? ["config", "ventas", "items", "pedidos", "compras", "usuarios", "pub", "reclamos"] : ["config", "ventas", "usuarios", "pagina", "pub", "reclamos"]; }
 
   /* ---------- estado compartido (rayas/estado) ---------- */
   function leerEstado() {
@@ -675,7 +735,7 @@
     var sc = seccion(), lista = tabsDe(sc);
     if (lista.indexOf(st.tab) < 0) st.tab = lista[0];
     var nom = sc === "items" ? "Compra y venta de items" : "General";
-    var cuerpo = st.tab === "config" ? tabConfig(sc) : st.tab === "usuarios" ? tabUsuarios() : st.tab === "pagina" ? tabPagina() : st.tab === "items" ? tabItems() : st.tab === "pedidos" ? tabPedidos() : st.tab === "pub" ? tabPub() : st.tab === "reclamos" ? tabReclamos() : tabCompras();
+    var cuerpo = st.tab === "config" ? tabConfig(sc) : st.tab === "usuarios" ? tabUsuarios() : st.tab === "pagina" ? tabPagina() : st.tab === "items" ? tabItems() : st.tab === "pedidos" ? tabPedidos() : st.tab === "pub" ? tabPub() : st.tab === "reclamos" ? tabReclamos() : st.tab === "ventas" ? tabVentas() : tabCompras();
     var body = r.querySelector(".pa-body"), top = body ? body.scrollTop : 0, foco = document.activeElement && r.contains(document.activeElement) ? document.activeElement.id : "", sel = foco && document.activeElement.selectionStart;
     var pill = document.getElementById("draftStatus"), pub = estadoPublicacion(), sucio = !!(pill && pill.classList.contains("dirty"));
     r.innerHTML = '<div class="pa-scrim" data-pa="cerrar"></div><aside class="pa-drawer" role="dialog" aria-modal="true" aria-label="Panel de administración">' +
@@ -715,6 +775,7 @@
       case "probarCorreos": probarCorreos(); break;
       case "guardarTextos": guardarTextos(); break;
       case "subU": st.subU = t.getAttribute("data-s"); pintar(); break;
+      case "venPer": st.venPer = t.getAttribute("data-p"); pintar(); break;
       case "recFiltro": st.recFiltro = t.getAttribute("data-f"); st.recAbierto = null; pintar(); break;
       case "recAbrir": var rid = t.getAttribute("data-id"); st.recAbierto = st.recAbierto === rid ? null : rid; pintar(); break;
       case "recEstado": recCambiarEstado(t.getAttribute("data-id"), t.getAttribute("data-e")); break;
