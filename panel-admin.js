@@ -21,7 +21,7 @@
     var min = Math.ceil(ms / 60000), h = Math.floor(min / 60), d = Math.floor(h / 24);
     return d >= 1 ? d + " d " + (h % 24) + " h" : h >= 1 ? h + " h " + (min % 60) + " min" : min + " min";
   }
-  var TABS = { config: "⚙ Configuración", usuarios: "Usuarios y saldo", pagina: "Textos y contactos", items: "Items", pedidos: "🛒 Pedidos", compras: "Compras", pub: "🖼 Publicaciones" };
+  var TABS = { config: "⚙ Configuración", usuarios: "👥 Usuarios y saldo", pagina: "📝 Textos y contactos", items: "🧩 Items", pedidos: "🛒 Pedidos", compras: "📥 Compras", pub: "🖼 Publicaciones" };
 
   var st = {
     abierto: false, tab: "", raiz: null,
@@ -327,12 +327,18 @@
     }
     var f = st.uFiltro.trim().toLowerCase();
     var lista = st.usuarios.filter(function (u) { return !f || (u.nombre + " " + u.email + " " + u.whatsapp + " " + u.tradelink + " " + u.steam).toLowerCase().indexOf(f) >= 0; });
-    return subtabs + '<div class="pa-grp"><h3>Usuarios (' + st.usuarios.length + ')</h3>' +
+    var _tot = 0, _con = 0;
+    st.usuarios.forEach(function (u) { var c = Number(u.creditos) || 0; _tot += c; if (c > 0) _con++; });
+    var statsU = '<div class="adm-stats">' +
+      '<div class="adm-stat"><small>Usuarios</small><b>' + st.usuarios.length + '</b></div>' +
+      '<div class="adm-stat acc"><small>Saldo total</small><b>S/ ' + esc((_tot % 1 ? (Math.round(_tot * 100) / 100).toFixed(2) : _tot)) + '</b></div>' +
+      '<div class="adm-stat"><small>Con saldo</small><b>' + _con + '</b></div></div>';
+    return subtabs + statsU + '<div class="pa-grp"><h3>Lista de usuarios</h3>' +
       '<div class="pa-field"><label for="pa-u-buscar">Buscar</label><input id="pa-u-buscar" placeholder="Nombre, Steam, correo o WhatsApp" value="' + esc(st.uFiltro) + '" autocomplete="off"></div>' +
       (st.uMsg && !st.editU ? '<p class="pa-hint err">' + esc(st.uMsg) + '</p>' : '') +
       '<div class="pa-ulist">' + (lista.length ? lista.map(function (u) {
         var id = esc(u.uid), ab = st.uAbierto === u.uid;
-        var cab = '<button type="button" class="pa-urow-h" data-pa="uAbrir" data-uid="' + id + '" aria-expanded="' + ab + '">' + avatarUsuario(u) + '<b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="pa-usal">S/ ' + fmtSol(u.creditos) + '</span><i>' + (ab ? "▴" : "▾") + '</i></button>';
+        var cab = '<button type="button" class="pa-urow-h" data-pa="uAbrir" data-uid="' + id + '" aria-expanded="' + ab + '">' + avatarUsuario(u) + '<b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="pa-usal' + ((Number(u.creditos) || 0) > 0 ? '' : ' cero') + '">S/ ' + fmtSol(u.creditos) + '</span><i>' + (ab ? "▴" : "▾") + '</i></button>';
         if (!ab) return '<div class="pa-urow">' + cab + '</div>';
         return '<div class="pa-urow open">' + cab + '<div class="pa-ut"><span>WhatsApp: ' + esc(u.whatsapp || "—") + '</span><span>' + esc(u.email) + '</span>' +
           (tradeValido(u.tradelink) ? '<span><a href="' + esc(u.tradelink) + '" target="_blank" rel="noopener">Abrir trade link ↗</a></span>' : '<span class="pa-warn">Sin trade link</span>') + '</div>' +
@@ -453,7 +459,7 @@
       '<div class="pa-head"><h2>Panel admin · ' + nom + '</h2><div class="pa-head-b"><button class="pa-btn ghost sm peligro" type="button" data-pa="salir">⎋ Cerrar sesión</button><button class="pa-btn ghost sm" type="button" data-pa="cerrar">Cerrar panel</button></div></div>' +
       '<div class="pa-body"><div class="pa-tabs" role="tablist">' + lista.map(function (k) {
         return '<button type="button" role="tab" data-pa="tab" data-t="' + k + '" aria-selected="' + (st.tab === k) + '">' + (k === "config" && sc === "inicio" ? "⚙ Configuraciones principales" : TABS[k]) + '</button>';
-      }).join("") + '</div>' + cuerpo + '</div>' +
+      }).join("") + '</div><div class="pa-cnt">' + cuerpo + '</div></div>' +
       '<div class="pa-foot"><button class="pa-btn rojo ancho" type="button" data-pa="proxy" data-id="adminPublishBtn"' + (sucio ? '' : ' disabled') + '>Guardar y publicar</button>' +
       '<div class="pa-pub' + (sucio ? ' pend' : '') + '" role="status">' + esc(sucio ? pub || "Tienes cambios sin publicar." : (pub && !/todo publicado/i.test(pub) ? pub : "Todo está publicado.")) + '</div></div></aside>';
     var nb = r.querySelector(".pa-body"); if (nb && top) nb.scrollTop = top;
