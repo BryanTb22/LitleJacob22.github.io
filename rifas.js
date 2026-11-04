@@ -1259,14 +1259,20 @@
       '<button class="subtab" type="button" role="tab" data-a="subU" data-s="lista" aria-selected="' + (sub === "lista") + '">👥 Usuarios (' + admin.usuarios.length + ')</button>' +
       '<button class="subtab" type="button" role="tab" data-a="subU" data-s="crear" aria-selected="' + (sub === "crear") + '">➕ Crear cuenta</button></div>';
     if (sub === "crear") return subtabs + formNueva;
-    return subtabs + '<div class="grp"><h3>Usuarios (' + admin.usuarios.length + ')</h3>' +
+    var _tot = 0, _con = 0;
+    admin.usuarios.forEach(function (u) { var c = Number(u.creditos) || 0; _tot += c; if (c > 0) _con++; });
+    var statsU = '<div class="adm-stats">' +
+      '<div class="adm-stat"><small>Usuarios</small><b>' + admin.usuarios.length + '</b></div>' +
+      '<div class="adm-stat acc"><small>Saldo total</small><b>S/ ' + esc((_tot % 1 ? (Math.round(_tot * 100) / 100).toFixed(2) : _tot)) + '</b></div>' +
+      '<div class="adm-stat"><small>Con saldo</small><b>' + _con + '</b></div></div>';
+    return subtabs + statsU + '<div class="grp"><h3>Lista de usuarios</h3>' +
       '<div class="field"><label for="u-buscar">Buscar</label><input id="u-buscar" placeholder="Nombre, Steam, correo o WhatsApp" value="' + esc(admin.uFiltro) + '"></div>' +
       (admin.uMsg ? '<p class="hint" style="color:var(--danger)">' + esc(admin.uMsg) + '</p>' : '') +
       '<div class="ulist">' + (lista.length ? lista.map(function (u) {
         var id = esc(u.uid);
         var abierto = !!(admin.uOpen && admin.uOpen[u.uid]) || admin.fichaU === "u_" + u.uid || (admin.editU && admin.editU === u.uid) || admin.delU === u.uid;
         return '<div class="urow' + (abierto ? ' open' : '') + '"><button type="button" class="urow-sum" data-a="abrirU" data-uid="' + id + '" aria-expanded="' + abierto + '">' + avatarUsuario(u) +
-          '<b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="ucr">' + 'S/ ' + fmtSol(Number(u.creditos) || 0) + '</span><i aria-hidden="true">▾</i></button>' +
+          '<b>' + esc(u.nombre || "(sin nombre)") + '</b><span class="ucr' + ((Number(u.creditos) || 0) > 0 ? '' : ' cero') + '">' + 'S/ ' + fmtSol(Number(u.creditos) || 0) + '</span><i aria-hidden="true">▾</i></button>' +
           '<div class="urow-body"><div class="t"><span>WhatsApp: ' + esc(u.whatsapp) + '</span><span>' + esc(u.email) + '</span>' +
           (tradeValido(u.tradelink) ? '<span><a href="' + esc(u.tradelink) + '" target="_blank" rel="noopener">Abrir trade link ↗</a></span>' : '<span style="color:var(--fuchsia)">Sin trade link</span>') + '</div>' +
           '<div class="ucred">' +
@@ -1291,16 +1297,16 @@
   function panelAdmin() {
     var titulo = admin.editando ? (admin.editando.nuevo ? "Nuevo premio" : "Editar premio") : "Panel admin · Rifas";
     var cuerpo;
-    if (admin.editando) cuerpo = formPremio();
+    if (admin.editando) cuerpo = '<div class="drawer-cnt">' + formPremio() + '</div>';
     else cuerpo = '<div class="tabs" role="tablist">' +
       '<button class="tab" role="tab" type="button" data-a="tab" data-t="config" aria-selected="' + (admin.tab === "config") + '">⚙ Configuración</button>' +
-      '<button class="tab" role="tab" type="button" data-a="tab" data-t="premios" aria-selected="' + (admin.tab === "premios") + '">Premios</button>' +
-      '<button class="tab" role="tab" type="button" data-a="tab" data-t="usuarios" aria-selected="' + (admin.tab === "usuarios") + '">Usuarios y saldo</button>' +
-      '<button class="tab" role="tab" type="button" data-a="tab" data-t="pagina" aria-selected="' + (admin.tab === "pagina") + '">Textos y contactos</button>' +
-      '</div>' + (admin.tab === "config" ? tabConfig() : admin.tab === "pagina" ? tabPagina() : (admin.tab === "usuarios" ? tabUsuarios() : listaPremios()));
-    return '<aside class="drawer" role="dialog" aria-label="Panel de administración">' +
-      '<div class="drawer-head"><h2>' + titulo + '</h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" type="button" data-a="salir" title="Cerrar la sesión de administrador" style="color:var(--danger,#ff7a7a)">⎋ Cerrar sesión</button><button class="btn btn-ghost btn-sm" type="button" data-a="cerrar">Cerrar panel</button></div></div>' +
-      '<div class="drawer-body">' + cuerpo + '</div>' +
+      '<button class="tab" role="tab" type="button" data-a="tab" data-t="premios" aria-selected="' + (admin.tab === "premios") + '">🎟 Premios</button>' +
+      '<button class="tab" role="tab" type="button" data-a="tab" data-t="usuarios" aria-selected="' + (admin.tab === "usuarios") + '">👥 Usuarios y saldo</button>' +
+      '<button class="tab" role="tab" type="button" data-a="tab" data-t="pagina" aria-selected="' + (admin.tab === "pagina") + '">📝 Textos y contactos</button>' +
+      '</div><div class="drawer-cnt">' + (admin.tab === "config" ? tabConfig() : admin.tab === "pagina" ? tabPagina() : (admin.tab === "usuarios" ? tabUsuarios() : listaPremios())) + '</div>';
+    return '<aside class="drawer adm" role="dialog" aria-label="Panel de administración">' +
+      '<div class="drawer-head"><h2>' + titulo + '</h2><div class="drawer-acts"><button class="btn btn-ghost btn-sm peligro" type="button" data-a="salir" title="Cerrar la sesión de administrador">⎋ Cerrar sesión</button><button class="btn btn-ghost btn-sm" type="button" data-a="cerrar">Cerrar panel</button></div></div>' +
+      '<div class="drawer-body' + (admin.editando ? '' : ' rail') + '">' + cuerpo + '</div>' +
       (admin.editando ? '' :
         '<div class="drawer-foot">' +
         '<button class="btn btn-fuchsia" type="button" data-a="publicar"' + (sucio ? '' : ' disabled') + '>Guardar y publicar</button>' +

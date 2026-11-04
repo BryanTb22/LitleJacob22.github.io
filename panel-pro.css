@@ -1,0 +1,288 @@
+/* ============================================================
+   Panel admin "pro" — LitleJacob Store (plata / rojo / negro)
+   Mejora visual del panel (#ljPanelAdmin) y del panel de Rifas
+   (html.lj-rifas .drawer.adm). Se carga después de espejo.css.
+   ============================================================ */
+
+#ljPanelAdmin {
+  --pp-acc: #ff5a63;
+  --pp-acc2: #c8161f;
+  --pp-dim: #8b9097;
+  --pp-tx: #eef0f3;
+  --pp-line: #26272b;
+  --pp-line2: #3d3f45;
+  --pp-card: rgba(255, 255, 255, .035);
+  --pp-card2: rgba(255, 255, 255, .06);
+  --pp-bg: #121114;
+  --pp-ok: #41d98f;
+  --pp-bad: #ff7a7a;
+  --pp-acc-soft: rgba(255, 90, 99, .13);
+}
+
+/* Más ancho en pantallas grandes */
+@media (min-width: 1280px) {
+  #ljPanelAdmin .pa-drawer { width: min(90vw, 780px); }
+}
+
+/* ---------- Cabecera ---------- */
+#ljPanelAdmin .pa-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid var(--pp-line2); }
+#ljPanelAdmin .pa-head h2 { margin: 0; flex: 1 1 auto; min-width: 0; }
+#ljPanelAdmin .pa-head-b { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* ---------- Cuerpo ---------- */
+#ljPanelAdmin .pa-body { padding: 0 20px 24px; scrollbar-width: thin; scrollbar-color: var(--pp-line2) transparent; }
+#ljPanelAdmin .pa-body::-webkit-scrollbar { width: 8px; }
+#ljPanelAdmin .pa-body::-webkit-scrollbar-thumb { background: var(--pp-line2); border-radius: 8px; }
+#ljPanelAdmin .pa-cnt { min-width: 0; }
+
+/* ---------- Pestañas: celular = fila deslizable pegada arriba ---------- */
+#ljPanelAdmin .pa-tabs {
+  display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain;
+  position: sticky; top: 0; z-index: 6;
+  margin: 0 -20px 14px; padding: 12px 20px;
+  background: var(--pp-bg); border-bottom: 1px solid var(--pp-line);
+  scrollbar-width: none;
+}
+#ljPanelAdmin .pa-tabs::-webkit-scrollbar { display: none; }
+#ljPanelAdmin .pa-tabs button {
+  flex: 0 0 auto; white-space: nowrap;
+  border: 1px solid var(--pp-line2); border-radius: 999px;
+  background: var(--pp-card); color: var(--pp-dim);
+  padding: 9px 14px; font-weight: 700; font-size: 12.5px; letter-spacing: .05em;
+  transition: background .15s, color .15s, border-color .15s;
+}
+#ljPanelAdmin .pa-tabs button:hover { color: var(--pp-tx); border-color: #565a62; }
+#ljPanelAdmin .pa-tabs button[aria-selected="true"] { background: var(--pp-acc-soft); border-color: var(--pp-acc); color: var(--pp-acc); }
+
+/* ---------- Pestañas: PC = menú lateral ---------- */
+@media (min-width: 1280px) {
+  #ljPanelAdmin .pa-body { padding-top: 16px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 18px; align-items: start; }
+  #ljPanelAdmin .pa-tabs {
+    position: sticky; top: 0; z-index: 2;
+    flex-direction: column; overflow: visible; gap: 4px;
+    margin: 0; padding: 8px; border-bottom: 0;
+    background: var(--pp-card); border: 1px solid var(--pp-line2); border-radius: 14px;
+  }
+  #ljPanelAdmin .pa-tabs button {
+    width: 100%; text-align: left; border-radius: 10px;
+    border: 1px solid transparent; background: transparent;
+    padding: 10px 12px 10px 16px; position: relative; font-size: 13px;
+  }
+  #ljPanelAdmin .pa-tabs button::before {
+    content: ""; position: absolute; left: 5px; top: 9px; bottom: 9px; width: 3px;
+    border-radius: 3px; background: transparent; transition: background .15s;
+  }
+  #ljPanelAdmin .pa-tabs button:hover { background: rgba(255, 255, 255, .05); }
+  #ljPanelAdmin .pa-tabs button[aria-selected="true"] { background: var(--pp-acc-soft); border-color: transparent; color: var(--pp-acc); }
+  #ljPanelAdmin .pa-tabs button[aria-selected="true"]::before { background: var(--pp-acc); }
+}
+
+/* ---------- Tarjetas de resumen ---------- */
+#ljPanelAdmin .adm-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+#ljPanelAdmin .adm-stat {
+  border: 1px solid var(--pp-line2); border-radius: 13px; padding: 11px 13px;
+  background: linear-gradient(180deg, var(--pp-card2), var(--pp-card));
+  display: grid; gap: 3px; min-width: 0;
+}
+#ljPanelAdmin .adm-stat small { font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--pp-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ljPanelAdmin .adm-stat b { font-size: 20px; line-height: 1.1; color: var(--pp-tx); font-variant-numeric: tabular-nums; }
+#ljPanelAdmin .adm-stat.acc b { color: var(--pp-acc); }
+
+/* ---------- Grupos ---------- */
+#ljPanelAdmin .pa-grp { background: var(--pp-card); border: 1px solid var(--pp-line2); border-radius: 14px; padding: 16px; margin: 0 0 14px; }
+#ljPanelAdmin .pa-grp > h3 { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--pp-line); }
+
+/* ---------- Campos ---------- */
+#ljPanelAdmin .pa-field input:focus,
+#ljPanelAdmin .pa-field select:focus,
+#ljPanelAdmin .pa-field textarea:focus {
+  outline: none; border-color: var(--pp-acc) !important;
+  box-shadow: 0 0 0 3px var(--pp-acc-soft);
+}
+
+/* ---------- Subpestañas / filtros ---------- */
+#ljPanelAdmin .pa-sub {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px;
+  padding: 5px; background: var(--pp-card); border: 1px solid var(--pp-line2); border-radius: 12px;
+}
+#ljPanelAdmin .pa-sub button {
+  flex: 1 1 auto; border: 1px solid transparent; border-radius: 9px;
+  background: transparent; color: var(--pp-dim);
+  padding: 8px 12px; font-weight: 700; font-size: 12.5px; white-space: nowrap;
+}
+#ljPanelAdmin .pa-sub button:hover { color: var(--pp-tx); }
+#ljPanelAdmin .pa-sub button[aria-selected="true"] { background: var(--pp-acc-soft); color: var(--pp-acc); border-color: transparent; }
+
+/* ---------- Lista de usuarios ---------- */
+#ljPanelAdmin .pa-ulist { display: grid; gap: 8px; }
+#ljPanelAdmin .pa-urow { border: 1px solid var(--pp-line2); border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, .22); transition: border-color .15s; }
+#ljPanelAdmin .pa-urow:hover { border-color: #565a62; }
+#ljPanelAdmin .pa-urow.open { border-color: var(--pp-acc); background: rgba(0, 0, 0, .32); }
+#ljPanelAdmin .pa-urow-h { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 13px; background: transparent; border: 0; color: var(--pp-tx); cursor: pointer; text-align: left; }
+#ljPanelAdmin .pa-urow-h b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ljPanelAdmin .pa-urow-h i { font-style: normal; color: var(--pp-dim); }
+#ljPanelAdmin .pa-urow.open .pa-urow-h i { color: var(--pp-acc); }
+#ljPanelAdmin .pa-usal {
+  flex: 0 0 auto; padding: 4px 10px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: var(--pp-ok); background: rgba(65, 217, 143, .12); border: 1px solid rgba(65, 217, 143, .35);
+}
+#ljPanelAdmin .pa-ut { display: grid; gap: 4px; padding: 0 13px 10px; color: var(--pp-dim); font-size: 13.5px; }
+#ljPanelAdmin .pa-ucred { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 13px 13px; }
+#ljPanelAdmin .pa-ico { min-width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--pp-line2); background: var(--pp-card); color: var(--pp-tx); font-weight: 800; }
+#ljPanelAdmin .pa-ico:hover { border-color: var(--pp-acc); color: var(--pp-acc); }
+#ljPanelAdmin .pa-credset { width: 92px; text-align: center; background: rgba(0, 0, 0, .3); color: var(--pp-tx); border: 1px solid var(--pp-line2); border-radius: 10px; padding: 8px 6px; font-weight: 700; }
+#ljPanelAdmin .pa-credset:focus { outline: none; border-color: var(--pp-acc); box-shadow: 0 0 0 3px var(--pp-acc-soft); }
+#ljPanelAdmin .pa-mas { width: 100%; }
+
+/* ---------- Interruptores ---------- */
+#ljPanelAdmin .pa-cfg { border: 1px solid var(--pp-line2); border-radius: 12px; padding: 12px 14px; margin: 0 0 10px; background: rgba(0, 0, 0, .2); transition: border-color .15s; }
+#ljPanelAdmin .pa-cfg:hover { border-color: #565a62; }
+
+/* ---------- Pie ---------- */
+#ljPanelAdmin .pa-foot { border-top: 1px solid var(--pp-line2); }
+#ljPanelAdmin .pa-foot .pa-btn.ancho { font-weight: 800; letter-spacing: .05em; }
+#ljPanelAdmin .pa-foot .pa-btn[disabled] { opacity: .55; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 560px) {
+  #ljPanelAdmin .pa-head { padding: 13px 14px; }
+  #ljPanelAdmin .pa-body { padding: 0 14px 14px; }
+  #ljPanelAdmin .pa-tabs { margin: 0 -14px 12px; padding: 10px 14px; }
+  #ljPanelAdmin .adm-stats { gap: 8px; }
+  #ljPanelAdmin .adm-stat { padding: 9px 10px; }
+  #ljPanelAdmin .adm-stat b { font-size: 17px; }
+}
+
+/* ============================================================
+   Panel admin de RIFAS (rifas.html, .drawer.adm) — mismo estilo
+   ============================================================ */
+html.lj-rifas .drawer.adm {
+  --pp-acc: #ff5a63; --pp-dim: #8b9097; --pp-tx: #eef0f3;
+  --pp-line: #26272b; --pp-line2: #3d3f45;
+  --pp-card: rgba(255, 255, 255, .035); --pp-card2: rgba(255, 255, 255, .06);
+  --pp-bg: #121114; --pp-ok: #41d98f; --pp-bad: #ff7a7a;
+  --pp-acc-soft: rgba(255, 90, 99, .13);
+}
+@media (min-width: 1280px) { html.lj-rifas .drawer.adm { width: min(90vw, 780px) !important; } }
+html.lj-rifas .drawer.adm .drawer-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid var(--pp-line2); }
+html.lj-rifas .drawer.adm .drawer-head h2 { margin: 0; flex: 1 1 auto; }
+html.lj-rifas .drawer.adm .drawer-acts { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+html.lj-rifas .drawer.adm .btn.peligro { color: var(--pp-bad); }
+html.lj-rifas .drawer.adm .drawer-body { padding: 0 20px 24px; scrollbar-width: thin; scrollbar-color: var(--pp-line2) transparent; }
+html.lj-rifas .drawer.adm .drawer-cnt { min-width: 0; }
+html.lj-rifas .drawer.adm .tabs {
+  display: flex; flex-wrap: nowrap; gap: 8px !important; overflow-x: auto;
+  position: sticky; top: 0; z-index: 6;
+  margin: 0 -20px 14px; padding: 12px 20px;
+  background: var(--pp-bg); border-bottom: 1px solid var(--pp-line);
+  scrollbar-width: none;
+}
+html.lj-rifas .drawer.adm .tabs::-webkit-scrollbar { display: none; }
+html.lj-rifas .drawer.adm .tab { flex: 0 0 auto; white-space: nowrap; transition: background .15s, color .15s, border-color .15s; }
+html.lj-rifas .drawer.adm .tab[aria-selected="true"] { background: var(--pp-acc-soft) !important; border-color: var(--pp-acc) !important; color: var(--pp-acc) !important; }
+@media (min-width: 1280px) {
+  html.lj-rifas .drawer.adm .drawer-body.rail { padding-top: 16px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 18px; align-items: start; }
+  html.lj-rifas .drawer.adm .rail .tabs { position: sticky; top: 0; flex-direction: column; overflow: visible; gap: 4px !important; margin: 0; padding: 8px; border-bottom: 0; background: var(--pp-card); border: 1px solid var(--pp-line2); border-radius: 14px; }
+  html.lj-rifas .drawer.adm .rail .tab { width: 100%; text-align: left; border-radius: 10px !important; border-color: transparent !important; background: transparent !important; padding: 10px 12px 10px 16px; position: relative; }
+  html.lj-rifas .drawer.adm .rail .tab::before { content: ""; position: absolute; left: 5px; top: 9px; bottom: 9px; width: 3px; border-radius: 3px; background: transparent; transition: background .15s; }
+  html.lj-rifas .drawer.adm .rail .tab:hover { background: rgba(255, 255, 255, .05) !important; }
+  html.lj-rifas .drawer.adm .rail .tab[aria-selected="true"] { background: var(--pp-acc-soft) !important; border-color: transparent !important; }
+  html.lj-rifas .drawer.adm .rail .tab[aria-selected="true"]::before { background: var(--pp-acc); }
+}
+html.lj-rifas .drawer.adm .adm-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+html.lj-rifas .drawer.adm .adm-stat { border: 1px solid var(--pp-line2); border-radius: 13px; padding: 11px 13px; background: linear-gradient(180deg, var(--pp-card2), var(--pp-card)); display: grid; gap: 3px; min-width: 0; }
+html.lj-rifas .drawer.adm .adm-stat small { font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--pp-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.lj-rifas .drawer.adm .adm-stat b { font-size: 20px; line-height: 1.1; color: var(--pp-tx); font-variant-numeric: tabular-nums; }
+html.lj-rifas .drawer.adm .adm-stat.acc b { color: var(--pp-acc); }
+html.lj-rifas .drawer.adm .grp { background: var(--pp-card); border: 1px solid var(--pp-line2); border-radius: 14px; padding: 16px; margin: 0 0 14px; }
+html.lj-rifas .drawer.adm .grp > h3 { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--pp-line); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--pp-dim); }
+html.lj-rifas .drawer.adm .field label { font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--pp-dim); }
+html.lj-rifas .drawer.adm .field input:focus,
+html.lj-rifas .drawer.adm .field select:focus,
+html.lj-rifas .drawer.adm .field textarea:focus { outline: none; border-color: var(--pp-acc) !important; box-shadow: 0 0 0 3px var(--pp-acc-soft); }
+html.lj-rifas .drawer.adm .subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; padding: 5px; background: var(--pp-card); border: 1px solid var(--pp-line2); border-radius: 12px; }
+html.lj-rifas .drawer.adm .subtab { flex: 1 1 auto; border: 1px solid transparent !important; border-radius: 9px !important; background: transparent !important; color: var(--pp-dim) !important; padding: 8px 12px; font-weight: 700; white-space: nowrap; }
+html.lj-rifas .drawer.adm .subtab[aria-selected="true"] { background: var(--pp-acc-soft) !important; color: var(--pp-acc) !important; }
+html.lj-rifas .drawer.adm .ulist { display: grid; gap: 8px; }
+html.lj-rifas .drawer.adm .urow { border: 1px solid var(--pp-line2); border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, .22); }
+html.lj-rifas .drawer.adm .urow.open { border-color: var(--pp-acc); background: rgba(0, 0, 0, .32); }
+html.lj-rifas .drawer.adm .urow-h { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 13px; background: transparent; border: 0; color: var(--pp-tx); cursor: pointer; text-align: left; }
+html.lj-rifas .drawer.adm .urow-h b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.lj-rifas .drawer.adm .usal { flex: 0 0 auto; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 800; color: var(--pp-ok); background: rgba(65, 217, 143, .12); border: 1px solid rgba(65, 217, 143, .35); }
+html.lj-rifas .drawer.adm .iconbtn { min-width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--pp-line2); background: var(--pp-card); color: var(--pp-tx); font-weight: 800; }
+html.lj-rifas .drawer.adm .iconbtn:hover { border-color: var(--pp-acc); color: var(--pp-acc); }
+html.lj-rifas .drawer.adm .credset:focus { outline: none; border-color: var(--pp-acc); box-shadow: 0 0 0 3px var(--pp-acc-soft); }
+html.lj-rifas .drawer.adm .cfg-row { border: 1px solid var(--pp-line2); border-radius: 12px; padding: 12px 14px; margin: 0 0 10px; background: rgba(0, 0, 0, .2); }
+html.lj-rifas .drawer.adm .drawer-foot { padding: 14px 20px 18px; border-top: 1px solid var(--pp-line2); background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, .45)); display: grid; gap: 10px; }
+html.lj-rifas .drawer.adm .drawer-foot .btn { width: 100%; font-weight: 800; letter-spacing: .03em; }
+html.lj-rifas .drawer.adm .drawer-foot .msg { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--pp-dim); background: var(--pp-card); border: 1px solid var(--pp-line2); }
+html.lj-rifas .drawer.adm .drawer-foot .msg::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+html.lj-rifas .drawer.adm .drawer-foot .msg.ok { color: var(--pp-ok); }
+html.lj-rifas .drawer.adm .drawer-foot .msg.err { color: var(--pp-bad); }
+@media (max-width: 560px) {
+  html.lj-rifas .drawer.adm .drawer-head { padding: 13px 14px; }
+  html.lj-rifas .drawer.adm .drawer-body { padding: 0 14px 14px; }
+  html.lj-rifas .drawer.adm .tabs { margin: 0 -14px 12px; padding: 10px 14px; }
+  html.lj-rifas .drawer.adm .adm-stat b { font-size: 17px; }
+}
+
+/* ============ Ronda 2 ============ */
+#ljPanelAdmin .pa-sub button { box-shadow: none !important; }
+@media (min-width: 1280px) {
+  #ljPanelAdmin .pa-body { grid-template-columns: 224px minmax(0, 1fr); }
+  #ljPanelAdmin .pa-tabs button { overflow: hidden; text-overflow: ellipsis; }
+}
+#ljPanelAdmin .pa-cnt select { background: rgba(0, 0, 0, .28); color: var(--pp-tx); border: 1px solid var(--pp-line2); border-radius: 10px; padding: 9px 12px; }
+#ljPanelAdmin .pa-mas {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--pp-card) !important; color: var(--pp-tx) !important;
+  border: 1px solid var(--pp-line2) !important; border-radius: 10px !important;
+  padding: 10px 12px; font-weight: 700; box-shadow: none !important;
+}
+#ljPanelAdmin .pa-mas:hover { border-color: var(--pp-acc) !important; color: var(--pp-acc) !important; }
+#ljPanelAdmin .pa-usal.cero { color: var(--pp-dim); background: rgba(255, 255, 255, .06); border-color: var(--pp-line2); }
+#ljPanelAdmin .pa-head h2 { font-size: 20px; line-height: 1.2; }
+@media (max-width: 560px) {
+  #ljPanelAdmin .pa-head { gap: 8px; }
+  #ljPanelAdmin .pa-head h2 { font-size: 16px; }
+  #ljPanelAdmin .pa-head-b .pa-btn { padding: 7px 10px; font-size: 11px; }
+}
+
+/* Rifas: subpestañas, filas de usuario y cabecera */
+html.lj-rifas .drawer.adm .subtab { box-shadow: none !important; }
+@media (min-width: 1280px) {
+  html.lj-rifas .drawer.adm .drawer-body.rail { grid-template-columns: 224px minmax(0, 1fr); }
+  html.lj-rifas .drawer.adm .rail .tab { overflow: hidden; text-overflow: ellipsis; }
+}
+html.lj-rifas .drawer.adm .drawer-cnt select { background: rgba(0, 0, 0, .28); color: var(--pp-tx); border: 1px solid var(--pp-line2); border-radius: 10px; padding: 9px 12px; }
+html.lj-rifas .drawer.adm .urow-sum { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 13px; background: transparent; border: 0; color: var(--pp-tx); cursor: pointer; text-align: left; }
+html.lj-rifas .drawer.adm .urow-sum b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.lj-rifas .drawer.adm .urow-sum i { font-style: normal; color: var(--pp-dim); }
+html.lj-rifas .drawer.adm .ucr { flex: 0 0 auto; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--pp-ok); background: rgba(65, 217, 143, .12); border: 1px solid rgba(65, 217, 143, .35); }
+html.lj-rifas .drawer.adm .ucr.cero { color: var(--pp-dim); background: rgba(255, 255, 255, .06); border-color: var(--pp-line2); }
+html.lj-rifas .drawer.adm .pbtn { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--pp-card) !important; color: var(--pp-tx) !important; border: 1px solid var(--pp-line2) !important; border-radius: 10px !important; padding: 10px 12px; font-weight: 700; box-shadow: none !important; }
+html.lj-rifas .drawer.adm .drawer-head h2 { font-size: 20px !important; line-height: 1.2; }
+@media (max-width: 560px) {
+  html.lj-rifas .drawer.adm .drawer-head { gap: 8px; }
+  html.lj-rifas .drawer.adm .drawer-head h2 { font-size: 16px !important; }
+  html.lj-rifas .drawer.adm .drawer-acts .btn { padding: 7px 10px; font-size: 11px; }
+}
+
+
+/* ============ Ronda 3 ============ */
+/* Cabecera: título a la izquierda y botones a la derecha, siempre */
+#ljPanelAdmin .pa-head { display: flex !important; }
+#ljPanelAdmin .pa-head-b { display: flex !important; flex-wrap: wrap; justify-content: flex-end; }
+/* Sin brillos alrededor de las pestañas */
+#ljPanelAdmin .pa-tabs button { box-shadow: none !important; }
+html.lj-rifas .drawer.adm .tab { box-shadow: none !important; }
+/* Formulario de premio (cuerpo sin pestañas) recupera el aire de arriba */
+html.lj-rifas .drawer.adm .drawer-body:not(.rail) { padding-top: 16px; }
+@media (max-width: 560px) { html.lj-rifas .drawer.adm .drawer-body:not(.rail) { padding-top: 14px; } }
+
+/* Botones de la cabecera en celular (gana a .pa-btn.sm de espejo.css) */
+@media (max-width: 560px) {
+  #ljPanelAdmin .pa-head-b .pa-btn.sm { padding: 6px 10px; font-size: 11px; }
+  html.lj-rifas .drawer.adm .drawer-acts .btn.btn-sm { padding: 7px 10px; font-size: 11px; }
+}
