@@ -1223,7 +1223,7 @@
       if (!r.ok) throw new Error(r.status === 403 ? "Falta agregar la regla de cuentas en Firebase." : "Error " + r.status);
       return r.json();
     }).then(function (j) {
-      admin.usuarios = (j.documents || []).map(leerPerfilDoc).sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
+      admin.usuarios = (j.documents || []).map(leerPerfilDoc).sort(function (a, b) { return ((Number(b.creditos) || 0) - (Number(a.creditos) || 0)) || a.nombre.localeCompare(b.nombre); });
       admin.uMsg = ""; render();
     }).catch(function (e) { admin.usuarios = []; admin.uMsg = e.message; render(); });
   }
