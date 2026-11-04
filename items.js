@@ -1240,8 +1240,8 @@
     return '<div class="pa-grp"><h3>Items en venta (' + l.length + ')</h3><button class="pa-btn rojo ancho" type="button" data-itx="nuevo">+ Agregar item</button>' +
       '<p class="pa-hint">Los cambios se guardan al instante (no hace falta publicar). Cuando vendas uno por WhatsApp, baja su stock aquí o en 📦 Stock.</p>' +
       '<div class="pa-acc"><button class="pa-btn ghost" type="button" data-itx="stkAbrir">📦 Stock de items</button></div></div>' +
-      '<div class="pa-grp">' + (items.cargando && !l.length ? '<p class="pa-hint">Cargando items…</p>' : l.length ? l.map((it) => '<div class="pa-it' + (it.stock > 0 ? '' : ' agot') + '"><a class="pa-it-go" href="#item/' + encodeURIComponent(it.id) + '" target="_blank" rel="noopener" title="Ver la página del item ↗"><span class="pa-it-img">' + (imgTag(it.img, it.nombre) || "") + '</span><span class="pa-it-tx"><b>' + esc(it.nombre) + '</b><small>' + fmtPrecio(it.precio) + ' · stock ' + it.stock + (it.activo === false ? ' · oculto' : '') + '</small></span></a>' +
-        (adm.itemDel === it.id ? '<button class="pa-btn rojo sm" type="button" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Borrar?</button>' : '<button class="pa-ico" type="button" data-itx="editar" data-id="' + esc(it.id) + '" aria-label="Editar ' + esc(it.nombre) + '">✎</button><button class="pa-ico" type="button" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar ' + esc(it.nombre) + '">🗑</button>') + '</div>').join("") : '<p class="pa-hint">Todavía no hay items.</p>') + '</div>';
+      '<div class="pa-grp">' + (items.cargando && !l.length ? '<p class="pa-hint">Cargando items…</p>' : l.length ? l.map((it) => '<div class="pa-it' + (it.stock > 0 ? '' : ' agot') + '"><a class="pa-it-go" href="#item/' + encodeURIComponent(it.id) + '" target="_blank" rel="noopener" title="Ver la página del item ↗"><span class="pa-it-img">' + (imgTag(it.img, it.nombre) || "") + '</span><span class="pa-it-tx"><b>' + esc(it.nombre) + '</b><small>' + fmtPrecio(it.precio) + (it.stock > 0 ? ' · stock ' + it.stock + (it.activo === false ? ' · oculto' : '') : ' · 💰 VENDIDO') + '</small></span></a>' +
+        (adm.itemDel === it.id ? '<button class="pa-btn rojo sm" type="button" data-itx="borrarSi" data-id="' + esc(it.id) + '">¿Borrar?</button>' : (it.stock > 0 ? '<button class="pa-ico" type="button" data-itx="vendi" data-id="' + esc(it.id) + '" title="Vendí 1 fuera de la página: baja 1 de stock" aria-label="Marcar vendido ' + esc(it.nombre) + '">💰</button>' : '') + '<button class="pa-ico" type="button" data-itx="editar" data-id="' + esc(it.id) + '" aria-label="Editar ' + esc(it.nombre) + '">✎</button><button class="pa-ico" type="button" data-itx="borrar" data-id="' + esc(it.id) + '" aria-label="Quitar ' + esc(it.nombre) + '">🗑</button>') + '</div>').join("") : '<p class="pa-hint">Todavía no hay items.</p>') + '</div>';
   }
   /* ---------- Admin: lista de precios de compra (rayas_compra) ---------- */
   function comprasAdminHtml() {
@@ -1556,6 +1556,7 @@
       case "completo": if (adm.form) { adm.form.soloCambios = false; renderTodo(); } break;
       case "quitar1": adm.itemDel = t.getAttribute("data-id"); renderTodo(); break;
       case "quitarSi": quitarUnidad(t.getAttribute("data-id")); break;
+      case "vendi": { const idv = t.getAttribute("data-id"), o = itemPorId(idv); if (o && o.stock > 0) { const q = "¿Marcar 1 \"" + o.nombre + "\" como vendido fuera de la página?\nEl stock baja de " + o.stock + " a " + (o.stock - 1) + (o.stock === 1 ? " y el item queda como VENDIDO (oculto al cliente, no se borra)." : "."); if (confirm(q)) cambiarStock(idv, -1); } break; }
       case "borrar": adm.itemDel = t.getAttribute("data-id"); renderTodo(); break;
       case "borrarSi": borrarItem(t.getAttribute("data-id")); break;
       case "venVer": verInventario(); break;
@@ -1673,6 +1674,11 @@
     }
     return it ? { href: "#item/" + encodeURIComponent(it.id), img: imgTag(it.img, it.nombre) || "" } : null;
   }
-  window.ljItems = { render: renderTodo, adminLista: adminListaHtml, porPedido: porPedido, compras: () => comprasAdminHtml().replace('<details class="itx-form" style="margin-top:22px">', '<details class="itx-form pa-compras" open>'), hidratar: hidratarImgs };
+  function itemDe(id, nombre) {
+    let it = id ? items.lista.find((x) => x.id === id) : null;
+    if (!it && nombre) { const k = sinTildes(nombre), cand = items.lista.filter((x) => sinTildes(x.nombre) === k); it = cand.find((x) => x.stock > 0) || cand[0] || null; }
+    return it || null;
+  }
+  window.ljItems = { render: renderTodo, adminLista: adminListaHtml, porPedido: porPedido, itemDe: itemDe, compras: () => comprasAdminHtml().replace('<details class="itx-form" style="margin-top:22px">', '<details class="itx-form pa-compras" open>'), hidratar: hidratarImgs };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar); else iniciar();
 })();

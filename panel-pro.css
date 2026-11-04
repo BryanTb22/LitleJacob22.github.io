@@ -315,3 +315,7 @@ html.lj-rifas .drawer.adm .drawer-body:not(.rail) { padding-top: 16px; }
 /* Item agotado en la lista: foto apagada y aviso */
 #ljPanelAdmin .pa-it.agot img { filter: grayscale(1); opacity: .55; }
 #ljPanelAdmin .pa-it.agot .pa-it-tx small { color: var(--pp-bad); }
+
+/* ============ Informe y vendido ============ */
+#ljPanelAdmin .pa-ico.wide { min-width: 0; width: auto; height: 30px; padding: 0 12px; font-size: 12px; margin-left: 8px; }
+#ljPanelAdmin .pa-it.agot .pa-it-tx small { font-weight: 700; }
