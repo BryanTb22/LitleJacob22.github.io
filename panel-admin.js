@@ -363,7 +363,7 @@
     var f = d.fields || {}, sv = function (k) { return f[k] && f[k].stringValue || ""; }, nv = function (k) { var x = f[k]; return x ? Number(x.doubleValue !== undefined ? x.doubleValue : x.integerValue || 0) : 0; };
     var its = ((f.items && f.items.arrayValue && f.items.arrayValue.values) || []).map(function (v) {
       var m = (v.mapValue && v.mapValue.fields) || {};
-      return { nombre: m.name && m.name.stringValue || "Item", qty: Number(m.qty && (m.qty.integerValue || m.qty.doubleValue) || 1), precio: Number(m.price && (m.price.doubleValue !== undefined ? m.price.doubleValue : m.price.integerValue) || 0) };
+      return { id: m.id && m.id.stringValue || "", nombre: m.name && m.name.stringValue || "Item", qty: Number(m.qty && (m.qty.integerValue || m.qty.doubleValue) || 1), precio: Number(m.price && (m.price.doubleValue !== undefined ? m.price.doubleValue : m.price.integerValue) || 0) };
     });
     return { id: d.name.split("/").pop(), code: sv("code") || d.name.split("/").pop(), cliente: sv("customerName"), steam: sv("steamId"), email: sv("email"), tradelink: sv("tradelink"),
       whatsapp: sv("phone"), uid: sv("uid"), correoAdmin: !!(f.correoAdmin && f.correoAdmin.booleanValue), correoCliente: !!(f.correoCliente && f.correoCliente.booleanValue), correoError: sv("correoError"),
@@ -385,13 +385,20 @@
     }).then(function (r) { if (!r.ok) throw new Error("Error " + r.status); }).catch(function (e) { p.estado = antes; st.pedMsg = "No se guardó: " + e.message; pintar(); });
   }
   function pedClave(p) { return p.uid || p.steam || (p.cliente || "").toLowerCase(); }
+  // Línea de item del pedido: foto + nombre con enlace a su página (como se vende).
+  function pedItemHtml(i, mini) {
+    var r = window.ljItems && window.ljItems.porPedido ? window.ljItems.porPedido(i.id, i.nombre) : null;
+    var tn = esc(i.qty + " × " + i.nombre);
+    return '<span class="ped-it' + (mini ? ' mini' : '') + '"><span class="ped-fo">' + (r && r.img || "🎁") + '</span>' +
+      (r ? '<a class="ped-ln" href="' + r.href + '" target="_blank" rel="noopener" title="Ver el item como se vende ↗">' + tn + ' ↗</a>' : '<span class="ped-ln">' + tn + '</span>') + '</span>';
+  }
   function historialHtml(p) {
     var k = pedClave(p), todos = (st.pedidos || []).filter(function (x) { return pedClave(x) === k; }), vivos = todos.filter(function (x) { return x.estado !== "cancelado"; });
     var gastado = vivos.reduce(function (a, x) { return a + x.total; }, 0);
     return '<div class="pa-hist"><b>📜 Historial de compras de este cliente</b><small>' + vivos.length + (vivos.length === 1 ? ' compra' : ' compras') + ' · ' + fmtPrecio(gastado) + ' en total</small>' +
       todos.map(function (x) {
-        var est = (PED_ESTADOS.filter(function (e) { return e[0] === x.estado; })[0] || [0, x.estado])[1], n = x.items.map(function (i) { return i.qty + ' × ' + i.nombre; }).join(", ");
-        return '<div class="pa-histr' + (x.id === p.id ? ' cur' : '') + '"><span>' + esc(x.fecha ? x.fecha.toLocaleDateString("es-PE") : "") + ' · <b>' + esc(x.code) + '</b></span><span>' + esc(n) + '</span><span>' + fmtPrecio(x.total) + ' · ' + esc(est) + '</span></div>';
+        var est = (PED_ESTADOS.filter(function (e) { return e[0] === x.estado; })[0] || [0, x.estado])[1], its = x.items.map(function (i) { return pedItemHtml(i, true); }).join("");
+        return '<div class="pa-histr' + (x.id === p.id ? ' cur' : '') + '"><span>' + esc(x.fecha ? x.fecha.toLocaleDateString("es-PE") : "") + ' · <b>' + esc(x.code) + '</b></span><span class="hist-its">' + its + '</span><span>' + fmtPrecio(x.total) + ' · ' + esc(est) + '</span></div>';
       }).join("") + '</div>';
   }
   function tabPedidos() {
@@ -409,7 +416,7 @@
         var cab = '<button type="button" class="pa-urow-h" data-pa="pedAbrir" data-id="' + esc(p.id) + '" aria-expanded="' + ab + '"><b>' + esc(p.cliente || "Sin nombre") + ' · ' + n + (n === 1 ? ' item' : ' items') + (p.estado === "cooldown" ? ' <small class="pedcd">🔒 entregar el ' + esc(fechaCorta(p.entregaDesde)) + '</small>' : '') + '</b><span class="pa-usal">' + fmtPrecio(p.total) + '</span><i>' + (ab ? "▴" : "▾") + '</i></button>';
         if (!ab) return '<div class="pa-urow">' + cab + '</div>';
         return '<div class="pa-urow open">' + cab + '<div class="pa-ut"><span>Pedido <b>' + esc(p.code) + '</b> · ' + (p.fecha ? esc(p.fecha.toLocaleString("es-PE")) : "") + '</span>' +
-          p.items.map(function (i) { return '<span>' + i.qty + ' × ' + esc(i.nombre) + ' — ' + fmtPrecio(i.precio * i.qty) + '</span>'; }).join("") +
+          p.items.map(function (i) { return '<span class="ped-row">' + pedItemHtml(i) + '<b class="ped-pr">' + fmtPrecio(i.precio * i.qty) + '</b></span>'; }).join("") +
           '<span>ID de Steam: ' + esc(p.steam || "—") + '</span><span>WhatsApp: ' + esc(p.whatsapp || "—") + '</span><span>' + esc(p.email) + '</span>' +
           (tradeValido(p.tradelink) ? '<span><a href="' + esc(p.tradelink) + '" target="_blank" rel="noopener">Abrir trade link ↗</a></span>' : '<span class="pa-warn">Sin trade link</span>') +
           '<span>Pagado con saldo: ' + fmtPrecio(p.creditos) + '</span>' +
