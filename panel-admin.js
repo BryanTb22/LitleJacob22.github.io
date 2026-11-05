@@ -732,7 +732,7 @@
   }
   /* ---------- Bot de Steam (módulo compartido bot-panel.js) ---------- */
   function tabBot() {
-    return window.BotPanel ? window.BotPanel.html({ token: token, projectId: FB.projectId, repintar: pintar, acento: "#e0313b" })
+    return window.BotPanel ? window.BotPanel.html({ token: token, projectId: FB.projectId, repintar: pintar, acento: "#e0313b", modo: "compacto", url: "bot.html" })
       : '<p class="pa-hint">Cargando el panel del bot…</p>';
   }
   function pintar() {
