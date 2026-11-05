@@ -21,7 +21,7 @@
     var min = Math.ceil(ms / 60000), h = Math.floor(min / 60), d = Math.floor(h / 24);
     return d >= 1 ? d + " d " + (h % 24) + " h" : h >= 1 ? h + " h " + (min % 60) + " min" : min + " min";
   }
-  var TABS = { config: "⚙ Configuración", usuarios: "👥 Usuarios y saldo", pagina: "📝 Textos y contactos", items: "🧩 Items", pedidos: "🛒 Pedidos", compras: "📥 Compras", pub: "🖼 Publicaciones", reclamos: "📕 Reclamos", ventas: "📊 Ventas" };
+  var TABS = { bot: "🤖 Bot de Steam", config: "⚙ Configuración", usuarios: "👥 Usuarios y saldo", pagina: "📝 Textos y contactos", items: "🧩 Items", pedidos: "🛒 Pedidos", compras: "📥 Compras", pub: "🖼 Publicaciones", reclamos: "📕 Reclamos", ventas: "📊 Ventas" };
 
   var st = {
     abierto: false, tab: "", raiz: null,
@@ -221,7 +221,7 @@
       '<div class="pa-ulist">' + (filas || '<p class="pa-hint">' + (fl === "pendiente" ? "🎉 No hay reclamos pendientes." : "No hay reclamos aquí.") + '</p>') + '</div>' +
       '<div class="pa-acc"><button class="pa-btn ghost sm" type="button" data-pa="recRecargar">↻ Actualizar</button></div></div>';
   }
-  function tabsDe(sc) { return sc === "items" ? ["config", "ventas", "items", "pedidos", "compras", "usuarios", "pub", "reclamos"] : ["config", "ventas", "usuarios", "pagina", "pub", "reclamos"]; }
+  function tabsDe(sc) { return sc === "items" ? ["config", "ventas", "items", "pedidos", "bot", "compras", "usuarios", "pub", "reclamos"] : ["config", "ventas", "usuarios", "pagina", "pub", "reclamos"]; }
 
   /* ---------- estado compartido (rayas/estado) ---------- */
   function leerEstado() {
@@ -730,12 +730,17 @@
   function estadoPublicacion() {
     var d = document.getElementById("draftStatus"); return d ? d.textContent.replace(/^[^A-Za-zÁÉÍÓÚáéíóú]+/, "") : "";
   }
+  /* ---------- Bot de Steam (módulo compartido bot-panel.js) ---------- */
+  function tabBot() {
+    return window.BotPanel ? window.BotPanel.html({ token: token, projectId: FB.projectId, repintar: pintar, acento: "#e0313b" })
+      : '<p class="pa-hint">Cargando el panel del bot…</p>';
+  }
   function pintar() {
     var r = st.raiz; if (!r || !st.abierto) return;
     var sc = seccion(), lista = tabsDe(sc);
     if (lista.indexOf(st.tab) < 0) st.tab = lista[0];
     var nom = sc === "items" ? "Compra y venta de items" : "General";
-    var cuerpo = st.tab === "config" ? tabConfig(sc) : st.tab === "usuarios" ? tabUsuarios() : st.tab === "pagina" ? tabPagina() : st.tab === "items" ? tabItems() : st.tab === "pedidos" ? tabPedidos() : st.tab === "pub" ? tabPub() : st.tab === "reclamos" ? tabReclamos() : st.tab === "ventas" ? tabVentas() : tabCompras();
+    var cuerpo = st.tab === "config" ? tabConfig(sc) : st.tab === "usuarios" ? tabUsuarios() : st.tab === "pagina" ? tabPagina() : st.tab === "items" ? tabItems() : st.tab === "bot" ? tabBot() : st.tab === "pedidos" ? tabPedidos() : st.tab === "pub" ? tabPub() : st.tab === "reclamos" ? tabReclamos() : st.tab === "ventas" ? tabVentas() : tabCompras();
     var body = r.querySelector(".pa-body"), top = body ? body.scrollTop : 0, foco = document.activeElement && r.contains(document.activeElement) ? document.activeElement.id : "", sel = foco && document.activeElement.selectionStart;
     var pill = document.getElementById("draftStatus"), pub = estadoPublicacion(), sucio = !!(pill && pill.classList.contains("dirty"));
     r.innerHTML = '<div class="pa-scrim" data-pa="cerrar"></div><aside class="pa-drawer" role="dialog" aria-modal="true" aria-label="Panel de administración">' +
