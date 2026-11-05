@@ -18,7 +18,7 @@
     raiz: null, abierto: false, slot: "juego", copiado: "",
     cat: { lista: null, cargando: false, err: "", q: "" }, item: null, ia: null, iaEst: "", iaMsg: "",
     web: null, webEst: "", webMsg: "", auto: leerAuto(), webSel: -1, webUsada: false, fbEnviado: false, fbMsg: "", apEst: "", apMsg: "", lista: null, listaEst: "", listaMsg: "",
-    img: { juego: null, oficial: null, logo: null },
+    img: { juego: null, juego2: null, juego3: null, oficial: null, logo: null },
     d: { tipo: "", nombre: "", efecto: "", precio: "", steam: "", stock: "1", entrega: "Entrega inmediata", px: 50, py: 50 }
   };
 
@@ -118,8 +118,21 @@
     var ix = 60, iy = 400, iw = 960, ih = 630;
     ctx.save(); ctx.shadowColor = "rgba(200,22,31,.75)"; ctx.shadowBlur = 60;
     rr(ctx, ix, iy, iw, ih, 24); ctx.fillStyle = "#120a0c"; ctx.fill(); ctx.restore();
+    var extra = juego ? [st.img.juego2, st.img.juego3].filter(Boolean) : [];
     ctx.save(); rr(ctx, ix, iy, iw, ih, 24); ctx.clip();
-    if (base) cubrir(ctx, base, ix, iy, iw, ih, d.px, d.py);
+    if (extra.length) {
+      // collage: foto principal grande a la izquierda y 1 o 2 fotos más a la derecha
+      var gap = 12, lw0 = 600, rx = ix + lw0 + gap, rw = iw - lw0 - gap;
+      ctx.fillStyle = "#0b0709"; ctx.fillRect(ix, iy, iw, ih);
+      cubrir(ctx, juego, ix, iy, lw0, ih, d.px, d.py);
+      var rh = extra.length === 1 ? ih : (ih - gap) / 2;
+      extra.forEach(function (im, k) { cubrir(ctx, im, rx, iy + k * (rh + gap), rw, rh, 50, 50); });
+      ctx.restore(); ctx.save();
+      ctx.lineWidth = 3; ctx.strokeStyle = "#aaaeb6";
+      ctx.beginPath(); ctx.moveTo(ix + lw0 + gap / 2, iy); ctx.lineTo(ix + lw0 + gap / 2, iy + ih); ctx.stroke();
+      if (extra.length === 2) { ctx.beginPath(); ctx.moveTo(rx, iy + rh + gap / 2); ctx.lineTo(ix + iw, iy + rh + gap / 2); ctx.stroke(); }
+    }
+    else if (base) cubrir(ctx, base, ix, iy, iw, ih, d.px, d.py);
     else {
       ctx.fillStyle = "#16111a"; ctx.fillRect(ix, iy, iw, ih);
       ctx.fillStyle = C.dim; ctx.font = osw(40, 500); ctx.textAlign = "center"; ctx.fillText("SUBE LA FOTO IN-GAME", W / 2, iy + ih / 2);
@@ -132,7 +145,7 @@
       ctx.fillStyle = C.steelHi; ctx.textAlign = "left"; ctx.fillText(lab, ix + 38, iy + 43);
     }
     // miniatura oficial (solo si hay foto in-game y foto oficial)
-    if (juego && ofi) {
+    if (juego && ofi && !extra.length) {
       var mw = 300, mh = 198, mx = ix + iw - mw - 20, my = iy + ih - mh - 20;
       rr(ctx, mx - 4, my - 4, mw + 8, mh + 8, 16); ctx.fillStyle = C.steel; ctx.fill();
       ctx.save(); rr(ctx, mx, my, mw, mh, 13); ctx.clip(); cubrir(ctx, ofi, mx, my, mw, mh, 50, 50); ctx.restore();
@@ -246,7 +259,7 @@
     st.d.stock = String(Math.max(1, it.stock)); st.d.entrega = cdTxt(it) || "Entrega inmediata";
     msg("Cargando fotos…"); render();
     Promise.all([fotoDe(it.previas[0]), fotoDe(it.img)]).then(function (f) {
-      st.img.juego = f[0]; st.img.oficial = f[1]; st.slot = f[0] ? "oficial" : "juego";
+      st.img.juego = f[0]; st.img.oficial = f[1]; st.img.juego2 = null; st.img.juego3 = null; st.slot = f[0] ? "oficial" : "juego";
       render(); msg(f[0] || f[1] || st.auto ? "" : "Este item no tiene fotos guardadas: súbelas tú.");
       if (st.auto) automatico(!!f[0]);
     });
@@ -526,6 +539,8 @@
       '<button type="button" class="pb-btn rojo" data-pb="autoYa">⚡ Hacerlo ahora con lo que escribí</button></div>' +
       '<div class="pb-grp"><h3>1 · Fotos</h3><div class="pb-fotos">' +
       cajaFoto("juego", "Foto in-game", "Toca para subir o pega con Ctrl+V") +
+      cajaFoto("juego2", "Foto in-game 2", "Opcional: arma un collage") +
+      cajaFoto("juego3", "Foto in-game 3", "Opcional") +
       cajaFoto("oficial", "Foto oficial (opcional)", "Render de Steam") + '</div>' +
       '<div id="pb-web"></div>' +
       '<p class="pb-hint">Ctrl+V pega en el recuadro marcado en rojo. Si solo subes la oficial, se usa como foto principal.</p>' +
