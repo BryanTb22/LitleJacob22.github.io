@@ -1,11 +1,11 @@
 /* TEMPORADA HALLOWEEN de LitleJacob Store ("Noche de Diretide").
-   Se prende sola del 1 de octubre al 10 de noviembre y luego vuelve el diseño normal
+   Se prende sola del 1 de octubre al 9 de noviembre y luego vuelve el diseño normal
    (sus archivos no se tocan: Halloween solo agrega tema-halloween.css y tema-halloween.js).
    Forzar en este navegador:  ?temporada=halloween  ·  ?temporada=normal  ·  ?temporada=auto (volver a la fecha)
    Todo se agrega al terminar de cargar la página para que "Publicar" (Sets Caché) no lo copie al index.html. */
 (function () {
   "use strict";
-  var HW_DESDE = 1001, HW_HASTA = 1110, hoy = new Date(), md = (hoy.getMonth() + 1) * 100 + hoy.getDate();
+  var HW_DESDE = 1001, HW_HASTA = 1109, hoy = new Date(), md = (hoy.getMonth() + 1) * 100 + hoy.getDate();
   var hw = md >= HW_DESDE && md <= HW_HASTA;
   try {
     var tq = (location.search.match(/[?&]temporada=([a-z]+)/) || [])[1];
