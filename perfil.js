@@ -332,42 +332,42 @@
     if (e.target.id === "pf-buscar") { st.tBuscar = e.target.value; filtrar(); }
     else if (e.target.id === "pf-tipo") { st.tTipo = e.target.value; filtrar(); }
   }
-  /* ---------- cabecera (misma que la tienda y Rifas) ---------- */
+  /* ---------- cabecera (misma que la tienda y Rifas: cabecera-mk.js) ---------- */
+  var cab = { items: false, rec: { wsp: true, qr: false, card: false } };
   function pintarCab() {
-    var der = document.getElementById("ljPfRight"); if (!der) return;
-    var s = leerSesion(), p = st.perfil;
-    if (!s) { der.innerHTML = '<a class="ljc-navbtn" href="index.html#cuenta">Entrar / Registrarme</a>'; return; }
-    if (!p) { der.innerHTML = ''; return; }
-    var ab = !!st.menuAbierto, saldo = (Math.round(p.creditos * 100) / 100).toFixed(2).replace(/\.00$/, "");
-    der.innerHTML = '<a class="ljc-misrifas" href="rifas.html#misrifas">🎟️ Mis rifas</a>' +
-      '<span class="ljc-dropwrap"><button class="ljc-navbtn on" type="button" data-cab="toggle" aria-haspopup="menu" aria-expanded="' + ab + '"><b>◆ S/ ' + saldo + '</b><span class="nm"> · ' + esc(p.nombre || "Mi cuenta") + '</span><span class="fl" aria-hidden="true"> ▾</span></button>' +
-      '<div class="ljc-drop" role="menu"' + (ab ? '' : ' hidden') + '><div class="ljc-drop-head"><b>' + esc(p.nombre || "Mi cuenta") + '</b><small>' + esc(p.email || s.email || "") + '</small><span>Saldo: <b>S/ ' + saldo + '</b></span></div>' +
-      '<button type="button" role="menuitem" data-cab="recargar"><i>💎</i>Recargar saldo</button>' +
-      '<button type="button" role="menuitem" data-cab="info"><i>👤</i>Perfil</button>' +
-      '<button type="button" role="menuitem" data-cab="trans"><i>🧾</i>Transacciones</button>' +
-      '<button type="button" role="menuitem" class="out" data-cab="salir"><i>⎋</i>Cerrar sesión</button></div></span>';
+    var der = document.getElementById("ljPfRight"); if (!der || !window.ljMk) return;
+    var s = leerSesion();
+    der.classList.add("mk-der");
+    der.innerHTML = window.ljMk.der({ sesion: !!s, perfil: st.perfil, cesta: cab.items, rec: cab.rec });
   }
-  function alClicCab(e) {
-    var b = e.target.closest && e.target.closest("[data-cab]");
-    if (!b) { if (st.menuAbierto && !(e.target.closest && e.target.closest(".ljc-dropwrap"))) { st.menuAbierto = false; pintarCab(); } return; }
-    var a = b.getAttribute("data-cab");
-    if (a === "toggle") { st.menuAbierto = !st.menuAbierto; pintarCab(); return; }
-    st.menuAbierto = false; pintarCab();
-    if (a === "recargar") location.href = "index.html#recargar";
-    else if (a === "info" || a === "trans") { var h = RUTA[a]; if (location.hash !== h && !(a === "info" && !location.hash)) location.hash = h; }
-    else if (a === "salir") salir();
+  function accionesCab() {
+    if (!window.ljMk) return;
+    window.ljMk.acciones({
+      cesta: function () { location.href = "index.html?carrito=1#items"; },
+      wsp: function () { location.href = "index.html#recargar-wsp"; },
+      qr: function () { location.href = "index.html#recargar-qr"; },
+      card: function () { location.href = "index.html#recargar"; },
+      perfil: function () { if (location.hash && location.hash !== RUTA.info) location.hash = RUTA.info; },
+      trans: function () { if (location.hash !== RUTA.trans) location.hash = RUTA.trans; },
+      misRifas: function () { location.href = "rifas.html#misrifas"; },
+      salir: function () { salir(); },
+      entrar: function () { location.href = "index.html#cuenta"; },
+      registro: function () { location.href = "index.html#cuenta"; },
+      cuenta: function () { location.href = "index.html#cuenta"; }
+    });
   }
   function seccionesItems() {
     fetch(BASE + "rayas/estado", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       var j = d && d.fields && d.fields.json && JSON.parse(d.fields.json.stringValue);
-      if (j && j.secciones && j.secciones.items) document.querySelectorAll("[data-pf-items]").forEach(function (a) { a.hidden = false; });
+      if (j && j.secciones && j.secciones.items) { cab.items = true; document.querySelectorAll("[data-pf-items]").forEach(function (a) { a.hidden = false; }); }
+      var y = j && j.yape; cab.rec = { wsp: true, qr: !!(y && (y.qr || y.numero)), card: !!(j && j.pagos && j.pagos.culqi) };
+      pintarCab();
     }).catch(function () { /* sin conexión */ });
   }
   function montar() {
     raiz = document.getElementById("ljPerfilPagina");
     if (!raiz) return;   // en la tienda y en Rifas este archivo solo da el enlace a la página
-    document.addEventListener("click", alClicCab);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && st.menuAbierto) { st.menuAbierto = false; pintarCab(); } });
+    accionesCab();
     seccionesItems();
     raiz.addEventListener("click", alClic); raiz.addEventListener("submit", alEnviar); raiz.addEventListener("input", alInput); raiz.addEventListener("change", alInput);
     window.addEventListener("hashchange", function () { st.msg = ""; st.tipo = ""; st.claveAbierta = false; pintar(); });

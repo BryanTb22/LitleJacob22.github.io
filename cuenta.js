@@ -173,31 +173,41 @@
   function trasEntrar() { st.msg = ""; st.modo = "perfil"; return cargarPerfil(); }
 
   /* ---------- interfaz ---------- */
-  var raiz, boton, recBtn, caja, menu;
+  /* La parte derecha de la cabecera (canasta, saldo con "+" y menú del usuario) la dibuja cabecera-mk.js, igual que en Rayas Store. */
+  var raiz, der, recOps = { wsp: true, qr: false, card: false };
   function montar() {
     var nav = document.querySelector(".site-nav .nav-right");
-    if (nav && !document.getElementById("ljCuentaBtn")) {
-      boton = document.createElement("button");
-      boton.id = "ljCuentaBtn"; boton.type = "button"; boton.className = "ljc-navbtn";
-      // Con sesión de cliente, el botón abre un menú desplegable; si no, abre el panel de cuenta como siempre.
-      boton.addEventListener("click", function (e) {
-        var s = leerSesion();
-        if (s && !esAdmin(s) && st.perfil) { e.stopPropagation(); alternarMenu(); } else abrir();
-      });
-      caja = document.createElement("span"); caja.className = "ljc-dropwrap";
-      menu = document.createElement("div"); menu.className = "ljc-drop"; menu.setAttribute("role", "menu"); menu.hidden = true;
-      menu.addEventListener("click", alClicMenu);
-      caja.appendChild(boton); caja.appendChild(menu);
+    if (nav && !document.getElementById("ljMkDer")) {
+      der = document.createElement("span"); der.id = "ljMkDer"; der.className = "mk-der";
       var adm = document.getElementById("loginOpenBtn");
-      nav.insertBefore(caja, adm || null);
-      document.addEventListener("click", function (e) { if (menu && !menu.hidden && !(caja && caja.contains(e.target))) cerrarMenu(); });
+      nav.insertBefore(der, adm || null);
+      var sn = nav.closest(".site-nav"); if (sn) sn.classList.add("mk-head");
     }
+    if (window.ljMk) window.ljMk.acciones({
+      cesta: function () { var c = document.querySelector("[data-itx-cart]"); if (c) c.click(); else location.href = "index.html?carrito=1#items"; },
+      wsp: function () { if (window.ljRecarga) window.ljRecarga.wsp(); },
+      qr: function () { if (window.ljRecarga) window.ljRecarga.abrir("yape"); },
+      card: function () { if (window.ljRecarga) window.ljRecarga.abrir(); },
+      perfil: function () { abrir("perfil", "info"); },
+      trans: function () { abrir("perfil", "trans"); },
+      misRifas: function () { location.href = "rifas.html#misrifas"; },
+      salir: function () { window.ljCuenta.salir(); },
+      entrar: function () { abrir("login"); },
+      registro: function () { abrir("registro"); },
+      cuenta: function () { abrir(); },
+      admin: function () { abrir(); }
+    });
+    // La canasta sigue al botón "Carrito" de la tienda (items.js lo muestra/oculta y le pone el número).
+    var cart = document.querySelector("[data-itx-cart]");
+    if (cart && window.MutationObserver) new MutationObserver(function () { pintarBoton(); }).observe(cart, { attributes: true, attributeFilter: ["hidden"], childList: true, characterData: true, subtree: true });
+    window.addEventListener("storage", function (e) { if (e.key === "lj_carro_items_v1") pintarBoton(); });
+    if (window.ljRecarga && window.ljRecarga.opciones) window.ljRecarga.opciones().then(function (o) { recOps = { wsp: true, qr: !!o.qr, card: !!o.card }; pintarBoton(); });
     raiz = document.createElement("div");
     raiz.id = "ljCuenta"; raiz.className = "ljc"; raiz.hidden = true;
     document.body.appendChild(raiz);
     raiz.addEventListener("click", alClic);
     raiz.addEventListener("submit", alEnviar);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { cerrarMenu(); if (st.abierto) cerrar(); } });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && st.abierto) cerrar(); });
     document.addEventListener("click", function (e) {   // botón "💎 Recargar" del menú
       var a = e.target.closest && e.target.closest("[data-recargar]"); if (!a) return;
       e.preventDefault(); if (window.ljRecarga) window.ljRecarga.abrir();
@@ -213,61 +223,25 @@
         st.msg = vs.msg; st.tipo = "ok"; st.modo = "perfil"; abrir("perfil", "seg"); cargarPerfil().then(function () { st.msg = vs.msg; st.tipo = "ok"; pintar(); });
       } else { st.msg = vs.msg; st.tipo = "err"; st.modo = "login"; abrir("login"); }
     } else if (leerSesion()) {
-      var conRecarga = /^#recargar$/.test(location.hash);   // viene de "Recargar" en perfil.html
+      var conRecarga = /^#recargar(-wsp|-qr)?$/.exec(location.hash);   // viene del "+" de la cabecera en perfil.html o Rifas
       cargarPerfil().then(function () {
         if (!conRecarga || !st.perfil || !window.ljRecarga) return;
         try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* nada */ }
-        window.ljRecarga.abrir();
+        if (conRecarga[1] === "-wsp") window.ljRecarga.wsp(); else window.ljRecarga.abrir(conRecarga[1] === "-qr" ? "yape" : "");
       });
     }
     // Permite abrir la cuenta con #cuenta en la dirección
     if (/^#cuenta$/.test(location.hash)) abrir();
   }
   function pintarBoton() {
-    if (!boton) return;
     var s = leerSesion(), p = st.perfil;
-    if (recBtn) recBtn.hidden = esAdmin(s);
     document.querySelectorAll("[data-recargar]").forEach(function (a) { a.hidden = esAdmin(s); });   // el administrador no recarga
-    // Mismo botón que Rayas Store: "◆ S/ saldo · nombre ▾" (abre el menú de usuario en cualquier sección).
-    boton.innerHTML = esAdmin(s) ? '<span class="ljc-ico">🔧</span>Admin' : s ? (p ? '<b>◆ S/ ' + fmtS(p.creditos) + '</b><span class="nm"> · ' + esc(p.nombre || "Mi cuenta") + '</span><span class="fl" aria-hidden="true"> ▾</span>' : "Mi cuenta") : "Entrar / Registrarme";
-    boton.classList.toggle("on", !!s);
-    boton.setAttribute("aria-haspopup", s && !esAdmin(s) && p ? "menu" : "false");
-    var mr = document.getElementById("ljMisRifasBtn");   // "Mis rifas" junto al usuario, como en Rayas
-    if (s && !esAdmin(s) && p) {
-      if (!mr && caja && caja.parentNode) { mr = document.createElement("a"); mr.id = "ljMisRifasBtn"; mr.className = "ljc-misrifas"; mr.href = "rifas.html#misrifas"; mr.innerHTML = "🎟️ Mis rifas"; caja.parentNode.insertBefore(mr, caja); }
-    } else if (mr) mr.remove();
-    pintarMenu();
-    if (!recBtn && boton.parentNode && !document.querySelector("[data-recargar]")) {   // si el menú ya trae Recargar, no se duplica
-      recBtn = document.createElement("button");
-      recBtn.id = "ljRecargarBtn"; recBtn.type = "button"; recBtn.className = "ljc-navbtn ljc-recbtn";
-      recBtn.addEventListener("click", function () { if (window.ljRecarga) window.ljRecarga.abrir(); });
-      recBtn.textContent = "💎 Recargar";
-      (caja || boton).parentNode.insertBefore(recBtn, caja || boton);
-    }
+    if (!der || !window.ljMk) return;
+    var cart = document.querySelector("[data-itx-cart]");
+    der.innerHTML = window.ljMk.der({ admin: esAdmin(s), sesion: !!s, perfil: p, cesta: !!(cart && !cart.hidden), rec: recOps,
+      adminHtml: '<button class="mk-btn" type="button" data-mk="admin">🔧 Admin</button>' });
   }
-  /* ---------- menú desplegable de usuario ---------- */
-  function pintarMenu() {
-    if (!menu) return;
-    var s = leerSesion(), p = st.perfil;
-    if (!s || esAdmin(s) || !p) { menu.hidden = true; menu.innerHTML = ""; if (boton) boton.setAttribute("aria-expanded", "false"); return; }
-    var abierto = !menu.hidden;
-    menu.innerHTML = '<div class="ljc-drop-head"><b>' + esc(p.nombre || "Mi cuenta") + '</b><small>' + esc(p.email || s.email || "") + '</small><span>Saldo: <b>S/ ' + fmtS(p.creditos) + '</b></span></div>' +
-      '<button type="button" role="menuitem" data-m="recargar"><i>💎</i>Recargar saldo</button>' +
-      '<button type="button" role="menuitem" data-m="perfil"><i>👤</i>Perfil</button>' +
-      '<button type="button" role="menuitem" data-m="movs"><i>🧾</i>Transacciones</button>' +
-      '<button type="button" role="menuitem" class="out" data-m="salir"><i>⎋</i>Cerrar sesión</button>';
-    menu.hidden = !abierto;
-  }
-  function alternarMenu() { if (!menu) return; menu.hidden = !menu.hidden; boton.setAttribute("aria-expanded", String(!menu.hidden)); }
-  function cerrarMenu() { if (menu && !menu.hidden) { menu.hidden = true; if (boton) boton.setAttribute("aria-expanded", "false"); } }
-  function alClicMenu(e) {
-    var b = e.target.closest("[data-m]"); if (!b) return;
-    var m = b.getAttribute("data-m"); cerrarMenu();
-    if (m === "recargar") { if (window.ljRecarga) window.ljRecarga.abrir(); }
-    else if (m === "perfil") abrir("perfil", "info");
-    else if (m === "movs") abrir("perfil", "trans");
-    else if (m === "salir") window.ljCuenta.salir();
-  }
+  function cerrarMenu() { if (window.ljMk) window.ljMk.cerrar(); }
 
   /* ---------- historial de compras (Mis movimientos) ---------- */
   var EST = { pagado: "Por entregar", entregado: "Entregado", cancelado: "Cancelado" };
