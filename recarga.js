@@ -89,11 +89,11 @@
     else if (m.vista === "error") h = '<h3>No se pudo completar</h3><p class="rc-h" role="alert">' + esc(m.err) + '</p><button class="rc-btn gold" data-a="volver" type="button">Volver</button><button class="rc-btn ghost" data-a="cerrar" type="button">Cerrar</button>';
     else if (m.vista === "yape") {
       var yp = m.yape || {};
-      h = '<h3>Pagar con Yape 💜</h3><p class="rc-h">Yapea <b>S/ ' + fmtSol(m.sel) + '</b> (sin comisión) y avísanos por WhatsApp con tu captura. Te cargamos <b>S/ ' + creditosPara(m.sel) + '</b>.</p>' +
+      h = '<h3>Pagar con Yape 💜</h3><p class="rc-h">' + (m.sel ? 'Yapea <b>S/ ' + fmtSol(m.sel) + '</b> (sin comisión) y avísanos por WhatsApp con tu captura. Te cargamos <b>S/ ' + creditosPara(m.sel) + '</b>.' : 'Yapea el monto que quieras (desde S/ ' + PAGOS.min + ', sin comisión) y avísanos por WhatsApp con tu captura. Te cargamos ese monto a tu saldo' + (primera ? ' (primera recarga: S/ 50 → S/ 55 · S/ 100 → S/ 110)' : '') + '.') + '</p>' +
         (m.qrUrl ? '<div style="text-align:center"><img src="' + m.qrUrl + '" alt="QR de Yape" width="240" height="240" style="max-width:100%;height:auto;background:#fff;padding:8px;border-radius:12px"></div>' : (yp.qr ? '<p class="rc-note">Cargando QR…</p>' : '')) +
         (yp.numero || yp.nombre ? '<p class="rc-note" style="text-align:center">' + (yp.numero ? 'Yape al <b>' + esc(yp.numero) + '</b>' : '') + (yp.nombre ? ' · a nombre de <b>' + esc(yp.nombre) + '</b>' : '') + '</p>' : '') +
         '<p class="rc-note"><b>1.</b> Escanea el QR o yapea al número. <b>2.</b> Toca el botón y envía la captura por WhatsApp. <b>3.</b> Cargamos tu saldo (usa el mismo nombre/correo de tu cuenta).</p>' +
-        '<button class="rc-btn ghost" type="button" data-a="bajarqr">⬇ Descargar QR</button><a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">✅ Ya pagué · enviar captura por WhatsApp</a><button class="rc-btn ghost" type="button" data-a="volver">← Cambiar monto</button>';
+        '<button class="rc-btn ghost" type="button" data-a="bajarqr">⬇ Descargar QR</button><a class="rc-btn gold" href="' + esc(wspLink()) + '" target="_blank" rel="noopener">✅ Ya pagué · enviar captura por WhatsApp</a>' + (m.sel ? '<button class="rc-btn ghost" type="button" data-a="volver">← Cambiar monto</button>' : '<button class="rc-btn ghost" type="button" data-a="cerrar">Cerrar</button>');
     }
     else {
       var sel = m.sel;
@@ -207,14 +207,24 @@
       }).then(function () { m.vista = "ok"; pintar(); })
       .catch(function (e) { m.vista = "error"; m.err = (e && e.message) || "No se pudo completar el pago."; pintar(); });
   }
-  function abrir() {
+  // vista "yape": abre directo el QR de Yape (sin elegir monto), desde el "+" de la cabecera.
+  function abrir(vista) {
     montar();
     var a = api();
     if (!a || !a.sesion()) { a && a.abrir("registro", "Para recargar primero crea tu cuenta (o entra si ya tienes una)."); return; }
     if (!perfil()) { a.abrir("perfil"); return; }
-    m.sel = 0; m.err = ""; m.vista = "monto";
-    leerEstado().then(function (e) { m.pagosOn = e.on; m.yape = e.yape; m.qrUrl = ""; pintar(); });
+    m.sel = 0; m.err = ""; m.vista = vista === "yape" ? "yape" : "monto";
+    leerEstado().then(function (e) { m.pagosOn = e.on; m.yape = e.yape; m.qrUrl = ""; pintar(); if (m.vista === "yape") cargarQr(); });
     m.pagosOn = false; pintar(); raiz.hidden = false;
   }
-  window.ljRecarga = { abrir: abrir };
+  // Pedir saldo por WhatsApp sin elegir monto (botón "Por WhatsApp" del "+").
+  function wsp() {
+    var a = api();
+    if (!a || !a.sesion()) { a && a.abrir("registro", "Para recargar primero crea tu cuenta (o entra si ya tienes una)."); return; }
+    m.sel = 0; window.open(wspLink(), "_blank", "noopener");
+  }
+  // Qué formas de pago mostrar en el "+": QR de Yape si el admin lo subió, tarjeta si Culqi está prendido.
+  var opc = null;
+  function opciones() { if (!opc) opc = leerEstado().then(function (e) { return { qr: !!(e.yape && (e.yape.qr || e.yape.numero)), card: !!e.on }; }).catch(function () { return { qr: false, card: false }; }); return opc; }
+  window.ljRecarga = { abrir: abrir, wsp: wsp, opciones: opciones };
 })();
