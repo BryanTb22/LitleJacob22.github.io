@@ -1,0 +1,44 @@
+/* rapido.css — mismo aspecto, menos trabajo para el celular y la PC (10/11/2026). Igual que en Rayas Store.
+   1) Sin "vidrio esmerilado" (backdrop-filter): con el fondo oscuro casi no se nota y era de lo más pesado
+      (se recalculaba en cada cuadro porque detrás se mueven las brasas).
+   2) Los brillos de las tarjetas de sets sin filtro de desenfoque (degradado suave en su lugar).
+   3) Las animaciones que nunca paran ahora solo usan transform/opacity (las hace la tarjeta gráfica, sin repintar). */
+
+*, *::before, *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.site-nav { background: rgba(8, 8, 10, .94) !important; }
+html.lj-rifas .topbar { background: rgba(8, 8, 10, .94) !important; }
+html.lj-rifas .topbar .site-nav { background: none !important; }
+html.af .itx-tabs, html.af .itx-filt { background: rgba(18, 9, 9, .9) !important; }
+html.af .itx-pop { background: rgba(16, 8, 8, .97) !important; }
+
+/* Haz de luz de cada set (eran ~90 desenfoques a la vez): mismo color con bordes suaves sin filtro */
+.armory-spotlight { filter: none !important; opacity: .85;
+  -webkit-mask-image: linear-gradient(90deg, transparent 18%, #000 42%, #000 58%, transparent 82%); mask-image: linear-gradient(90deg, transparent 18%, #000 42%, #000 58%, transparent 82%); }
+
+/* Cinta "Novedades en Sets Caché": en su propia capa */
+.lj-vit-in { will-change: transform; }
+#emberCanvas { will-change: contents; }
+
+/* Brillo que cruza los botones de las rifas y las tarjetas de ganadores (antes movía "left") */
+@keyframes rpBrilloBtn { 0%, 55% { transform: translateX(-150%); } 100% { transform: translateX(325%); } }
+@keyframes rpBrillo { 0%, 55% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+.card .btn-yellow::after { left: 0 !important; animation-name: rpBrilloBtn !important; will-change: transform; }
+.winner .in::after, #ganadores .winner.frame.gold::after, #ganadores .winner .thumb::after { left: 0 !important; right: 0 !important; animation-name: rpBrillo !important; will-change: transform; }
+
+/* "ABIERTA": latido del punto rojo con escala/opacidad (antes animaba box-shadow) */
+@keyframes rpLatido { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: .5; } }
+.status.activa { animation: none !important; }
+.status.activa::before { animation: rpLatido 1.8s ease-in-out infinite !important; will-change: transform, opacity; }
+
+/* Aviso "Cada premio indica…" de Rifas: brillo que late con opacidad (antes animaba box-shadow) */
+@keyframes rpResplandor { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+#rifas .sec-title > p { animation: none !important; position: relative; }
+#rifas .sec-title > p::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: 0 0 0 9px rgba(196, 200, 206, .08), 0 10px 40px rgba(200, 22, 31, .4); animation: rpResplandor 2.4s ease-in-out infinite; will-change: opacity; }
+
+/* Contador de las rifas: parpadeo solo con opacidad, en su propia capa */
+.timer { will-change: opacity; }
+
+@media (prefers-reduced-motion: reduce) {
+  .status.activa::before, #rifas .sec-title > p::after { animation: none !important; }
+}
