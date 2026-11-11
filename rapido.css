@@ -42,3 +42,9 @@ html.af .itx-pop { background: rgba(16, 8, 8, .97) !important; }
 @media (prefers-reduced-motion: reduce) {
   .status.activa::before, #rifas .sec-title > p::after { animation: none !important; }
 }
+
+/* Ventanas (recargar saldo, avisos, formularios): barra de desplazamiento fina y discreta, sin cuadrito en la esquina (11/11/2026, espejo de Rayas). */
+.itx-dialog, .itx-pop, .elegir { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .22) transparent; overscroll-behavior: contain; }
+.itx-dialog::-webkit-scrollbar, .itx-pop::-webkit-scrollbar, .elegir::-webkit-scrollbar { width: 6px; height: 6px; }
+.itx-dialog::-webkit-scrollbar-thumb, .itx-pop::-webkit-scrollbar-thumb, .elegir::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .22); border-radius: 6px; }
+.itx-dialog::-webkit-scrollbar-corner, .itx-pop::-webkit-scrollbar-corner, .elegir::-webkit-scrollbar-corner { background: transparent; }
