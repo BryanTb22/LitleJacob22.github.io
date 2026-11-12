@@ -11,7 +11,7 @@
   var PAGOS = { pk: "pk_test_iK8JCBNB6dJmRlUZ", min: 3, max: 500, minYape: 6,
     url: "https://us-central1-" + PROJ + ".cloudfunctions.net/cobrar", urlOrden: "https://us-central1-" + PROJ + ".cloudfunctions.net/crearOrden", js: "https://checkout.culqi.com/js/v4",
     doc: "https://firestore.googleapis.com/v1/projects/" + PROJ + "/databases/(default)/documents/rayas/estado", wa: "51952997030" };
-  var PACKS = [{ s: 10, b: 10 }, { s: 20, b: 20 }, { s: 50, b: 50, p: 55 }, { s: 100, b: 100, p: 110 }];
+  var PACKS = [{ s: 10, b: 10 }, { s: 20, b: 20 }, { s: 50, b: 50 }, { s: 100, b: 100 }];
   var m = { sel: 0, err: "", vista: "monto", info: null, pagosOn: false, yape: null, qrUrl: "" }, raiz = null, culqiCarga = null;
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -19,7 +19,7 @@
   function perfil() { var a = api(); return a && a.perfil && a.perfil(); }
   function creditosPara(s) {
     var pk = PACKS.filter(function (x) { return x.s === s; })[0];
-    return pk && pk.p && perfil() && !perfil().promoUsada ? pk.p : s;
+    return s;   // sin promo de recarga (quitada el 11/11/2026)
   }
   // Comisión de Culqi a cargo del comprador (misma fórmula que functions/packs.js; el servidor es quien cobra).
   var COM = { pct: 0.0399, fijoUsd: 0.20, tc: 3.85, igv: 0 };
@@ -80,7 +80,7 @@
 
   function pintar() {
     if (!raiz) return;
-    var p = perfil(), primera = !!(p && !p.promoUsada), h = "";
+    var p = perfil(), primera = false, h = "";
     if (m.vista === "cargando") h = '<h3>Procesando…</h3><p class="rc-h">Un momento por favor. No cierres esta ventana.</p>';
     else if (m.vista === "pendiente") h = '<h3>Código de pago listo 💵</h3><p class="rc-h">Se abrió tu código de pago por <b>S/ ' + m.sel + '</b>. Págalo en un agente, banco, app bancaria o con QR (vale 24 horas). Cuando Culqi lo confirme tu saldo se suma solo; puede tardar unos minutos.</p><p class="rc-h">Tienes <b>S/ ' + (p ? p.creditos : "") + '</b> ahora.</p>' +
       '<button class="rc-btn red" data-a="refrescar" type="button">🔄 Ya pagué · actualizar mi saldo</button><button class="rc-btn ghost" data-a="cerrar" type="button">Cerrar</button>';
