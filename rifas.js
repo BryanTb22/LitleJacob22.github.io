@@ -26,8 +26,8 @@
   var PACKS_UI = [
     { id: "p10", soles: 10, base: 10 },
     { id: "p20", soles: 20, base: 20 },
-    { id: "p50", soles: 50, base: 50, promo: 55 },
-    { id: "p100", soles: 100, base: 100, promo: 110 }
+    { id: "p50", soles: 50, base: 50 },
+    { id: "p100", soles: 100, base: 100 }
   ];
   // Comisión de Culqi a cargo del comprador (misma fórmula que functions/packs.js; el servidor es quien cobra).
   var COM = { pct: 0.0399, fijoUsd: 0.20, tc: 3.85, igv: 0 };
@@ -210,7 +210,7 @@
     logo1: "LITLEJACOB", logo2: "RIFAS",
     kicker: "Rifas de Dota 2",
     btnVer: "Ver rifas", btnCreditos: "Recargar saldo",
-    badge1: "Promo primera recarga", badge2: "Ganador al azar", badge3: "Entrega por Steam",
+    badge1: "Recarga desde S/ 3", badge2: "Ganador al azar", badge3: "Entrega por Steam",
     rifasKicker: "Premios en juego", rifasT1: "Rifas", rifasT2: "activas", rifasSub: "Cada premio indica cuántos soles cuesta entrar.",
     vacioT: "Pronto nuevas rifas", vacioS: "Recarga tu saldo y te avisamos cuando abra la próxima.",
     msgCredPerfil: "¡Hola! 👋🔥 Soy *{nombre}* (📧 {correo}).\n\n💎 Quiero recargar saldo para participar en las rifas de *LitleJacob Store* 🎁🏆\n\n¿Me ayudas con mi recarga? 🙏✨",
@@ -218,7 +218,7 @@
     btnParticipar: "Participar", btnPronto: "Muy pronto", lblCreditos: "por ticket",
     comoKicker: "Paso a paso", comoT1: "Cómo", comoT2: "participar",
     paso1T: "Crea tu cuenta", paso1: "Regístrate con tu correo o con Google y deja tu link de intercambio de Steam.",
-    paso2T: "Recarga saldo", paso2: "Recarga desde tu cuenta. Tu primera recarga puede traer saldo de regalo.",
+    paso2T: "Recarga saldo", paso2: "Recarga desde tu cuenta con Culqi, Yape o por WhatsApp.",
     paso3T: "Entra a la rifa", paso3: "Elige el premio y usa tu saldo. Al cierre, el ganador sale al azar.",
     btnCreditos2: "Recargar mi saldo",
     ganKicker: "Salón de la fama", ganT: "Ganadores", ganVacioT: "Aún no hay ganadores", ganVacioS: "Cuando cierre la primera rifa, el ganador aparecerá aquí.",
@@ -257,7 +257,7 @@
     var nt = {};
     Object.keys(TEXTOS_BASE).forEach(function (k) {
       if (k === "reglas") return;
-      nt[k] = typeof t[k] === "string" && t[k].trim() ? t[k] : TEXTOS_BASE[k];
+      nt[k] = typeof t[k] === "string" && t[k].trim() && !/primera recarga|saldo de regalo/i.test(t[k]) ? t[k] : TEXTOS_BASE[k];
     });
     nt.reglas = Array.isArray(t.reglas) && t.reglas.length ? t.reglas.filter(function (x) { return typeof x === "string" && x.trim(); }) : TEXTOS_BASE.reglas.slice();
     /* Todo en soles: textos guardados antes con la palabra "créditos" se muestran como soles/saldo. */
@@ -324,7 +324,7 @@
   // Créditos que recibe por un monto (solo para mostrar; el servidor calcula el real).
   function creditosPara(soles) {
     var pk = PACKS_UI.filter(function (x) { return x.soles === soles; })[0];
-    return (pk && pk.promo && cuenta.perfil && !cuenta.perfil.promoUsada) ? pk.promo : soles;
+    return soles;   // sin promo de recarga (quitada el 11/11/2026)
   }
   function cargarParts(tok) {
     var acc = {}, uid = uidSesion();
@@ -486,7 +486,7 @@
       btns = (recargaOn() ? '<button class="btn btn-fuchsia" type="button" data-a="recargar">💳 Recargar saldo</button>' : '') +
         (rl ? '<a class="btn btn-yellow" href="' + esc(rl) + '"' + (rl === "#elegir" ? ' data-a="elegir"' : ' target="_blank" rel="noopener"') + '>💎 ' + (pagosOn() ? 'Pedir por WhatsApp' : 'Recargar saldo') + '</a>' : '') + cerrar;
     } else if (m.tipo === "recarga") {
-      var primera = !!(c && !c.promoUsada), sel = m.sel || 0, cred = sel ? creditosPara(sel) : 0;
+      var primera = false, sel = m.sel || 0, cred = sel ? creditosPara(sel) : 0;
       h = '<h3>Recargar saldo 💎</h3>' +
         (primera ? '<div class="promo-banner"><b>🎁 PROMO PRIMERA RECARGA</b><span>S/ 50 → <b>S/ 55</b> · S/ 100 → <b>S/ 110</b></span></div>' : '') +
         '<p class="hint"><b>1.</b> Elige cuánto quieres recargar</p>' +
@@ -1483,7 +1483,7 @@
           '<div><button class="btn btn-yellow btn-sm" type="submit">Guardar cambios</button></div>' +
           '<p class="hint" role="status" id="tradeMsg"></p></form>' +
           '<div class="grp">' + (pagosOn()
-            ? '<p class="hint">Recarga con tarjeta (o Yape / QR desde S/ ' + PAGOS.minYape + ') y tu saldo se suma al instante.' + (p.promoUsada ? '' : ' ¡Tu primera recarga trae saldo extra! 🎁') + '</p>' +
+            ? '<p class="hint">Recarga con tarjeta (o Yape / QR desde S/ ' + PAGOS.minYape + ') y tu saldo se suma al instante.' + '' + '</p>' +
               '<button class="btn btn-fuchsia" type="button" data-a="recargar">💳 Recargar saldo</button>' +
               (link ? '<p class="hint">¿Algún problema con tu recarga? Escríbenos.</p><a class="btn btn-ghost btn-sm" href="' + esc(link) + '"' + (link === "#elegir" ? ' data-a="elegir"' : ' target="_blank" rel="noopener"') + '>Escribir por WhatsApp</a>' : '')
             : '<p class="hint">Para recibir saldo, escribe al encargado. Él los carga en tu cuenta.</p>' +
@@ -2499,44 +2499,7 @@
   window.addEventListener("hashchange", revisarHash);
 
 
-  /* ================= Anuncio al entrar ================= */
-  (function () {
-    var KEY = "promo_rifas_v1";
-    try { if (sessionStorage.getItem(KEY)) return; } catch (e) { /* sin almacenamiento */ }
-    if (/[?&]recargar=1(&|$)/.test(location.search)) return;   // si vienes a recargar, no se tapa la ventana con el cartel
-    function cerrar() {
-      var el = document.getElementById("promoPop"); if (el) { el.classList.remove("on"); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 250); }
-      document.removeEventListener("keydown", tecla);
-      try { sessionStorage.setItem(KEY, "1"); } catch (e) { /* sin almacenamiento */ }
-    }
-    function tecla(ev) { if (ev.key === "Escape") cerrar(); }
-    function mostrar() {
-      if (admin.puede || !rifasOn() || document.getElementById("promoPop")) return;
-      var href = creditoHref();
-      var d = document.createElement("div");
-      d.id = "promoPop"; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", "Promoción de primera recarga");
-      d.innerHTML = '<div class="promo-box"><button type="button" class="promo-x" aria-label="Cerrar">✕</button>' +
-        '<div class="promo-card">' +
-          '<div class="pc-brand"><img src="favicon.png" alt="" width="36" height="36"><b>Litlejacob Store</b></div>' +
-          '<p class="pc-kick">PROMO DE BIENVENIDA</p><h3 class="pc-tit">PRIMERA RECARGA</h3>' +
-          '<div class="pc-box"><span>RECARGA</span><b>S/ 50</b><i>▼</i><em>S/ 55</em></div>' +
-          '<div class="pc-box"><span>RECARGA</span><b>S/ 100</b><i>▼</i><em>S/ 110</em></div>' +
-          '<p class="pc-pill">+10% DE SALDO EXTRA</p><p class="pc-url">litlejacob.trade</p></div>' +
-        '<div class="promo-acts">' + (recargaOn() ? '<button type="button" class="btn btn-yellow" id="promoPagar">Recargar ahora</button>'
-          : (href ? '<a class="btn btn-yellow" id="promoCta" href="' + esc(href) + '"' + (href === "#elegir" ? '' : ' target="_blank" rel="noopener"') + '>Pedir saldo</a>' : '')) +
-        '<button type="button" class="btn btn-ghost" id="promoNo">Ahora no</button></div></div>';
-      document.body.appendChild(d);
-      requestAnimationFrame(function () { d.classList.add("on"); });
-      d.addEventListener("click", function (ev) {
-        var t = ev.target;
-        if (t === d || t.closest(".promo-x") || t.id === "promoNo") { cerrar(); return; }
-        if (t.id === "promoPagar") { cerrar(); abrirRecarga(); return; }
-        if (t.id === "promoCta") { cerrar(); if (href === "#elegir") { ev.preventDefault(); elegirAbierto = true; render(); } else cerrar(); }
-      });
-      document.addEventListener("keydown", tecla);
-    }
-    setTimeout(mostrar, 900);
-  })();
+  /* Anuncio de promo de primera recarga: quitado (11/11/2026). */
   render();
   var quiereRecarga = /[?&]recargar=1(&|$)/.test(location.search);
   var pRemoto = cargarRemoto();

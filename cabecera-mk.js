@@ -30,7 +30,7 @@
     if (o.admin) return o.adminHtml || '';
     if (!o.sesion) return cesta + '<button class="mk-btn ghost" type="button" data-mk="entrar">Entrar</button><button class="mk-btn" type="button" data-mk="registro">Crear cuenta</button>';
     if (!p) return cesta + '<button class="mk-btn ghost" type="button" data-mk="cuenta">Mi cuenta</button>';
-    var r = o.rec || { wsp: true }, primera = !p.promoUsada;
+    var r = o.rec || { wsp: true }, primera = false;   // sin promo de recarga
     var pop = '<div class="mk-pop" role="menu" aria-label="Recargar saldo">' +
       '<div class="mk-pop-h"><b>Recargar saldo</b><span>Tienes <b>S/ ' + fmt(p.creditos) + '</b></span></div>' +
       (primera ? '<p class="mk-pop-promo">🎁 Primera recarga: S/ 50 → <b>S/ 55</b> · S/ 100 → <b>S/ 110</b></p>' : '') +
