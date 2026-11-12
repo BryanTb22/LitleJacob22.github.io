@@ -2082,7 +2082,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
 <link rel="stylesheet" href="cabecera-mk.css?v=6">
 <link rel="stylesheet" href="rapido.css?v=2">
 <link rel="stylesheet" href="tailwind.css?v=1" data-keep="">
-<link rel="stylesheet" href="afinado.css?v=4"><link rel="stylesheet" href="vitrina.css?v=1"><script src="vitrina.js?v=1" defer=""></script><script src="servicios.js?v=2" defer=""></script><script src="legal.js?v=5" defer=""></script><script src="temporada.js?v=3"></script></head>
+<link rel="stylesheet" href="afinado.css?v=4"><link rel="stylesheet" href="vitrina.css?v=1"><script src="vitrina.js?v=1" defer=""></script><script src="servicios.js?v=3" defer=""></script><link rel="stylesheet" href="portafolio.css?v=1"><script src="portafolio.js?v=1" defer=""></script><script src="legal.js?v=5" defer=""></script><script src="temporada.js?v=3"></script></head>
 <body class="relative selection:bg-amber-500 selection:text-black">
 
     <!-- Canvas de Partículas y Brillos Sutiles Estilo Dota 2 -->
@@ -2102,6 +2102,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
                 <a href="#vender" class="nav-link" data-route="vender" data-itx-nav="" data-itx-label="Vender items" hidden="">Vender items</a>
                 <a href="#" class="nav-link" data-itx-cart="" hidden="">🛒 Carrito</a>
                 <a href="rifas.html" class="nav-link nav-link-rifas">Rifas</a>
+                <a href="#paginas-web" class="nav-link" data-route="paginas-web">Páginas web</a>
                 <a href="#recargar" class="nav-link nav-link-recargar" data-recargar="" role="button">💎 Recargar</a>
             </div>
             <div class="nav-right">
@@ -2550,6 +2551,9 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
                 <p class="font-cinzel text-xs sm:text-sm tracking-[0.22em] text-amber-100 uppercase font-semibold mt-2">LitleJacob Store • Compro inventarios y cuentas • WhatsApp +51 952 997 030</p>
             </footer>
         </div>
+
+        <!-- Creación de páginas web: portafolio.js lo llena (ruta #paginas-web) -->
+        <div id="view-web" class="view" hidden=""></div>
 
     </div>
 
@@ -3025,7 +3029,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
     })();
     </script>
     <script src="mejoras.js?v=3"></script>
-    <script src="detalles.js?v=2" defer=""></script>
+    <script src="detalles.js?v=3" defer=""></script>
 <script src="items.js?v=50" defer=""></script>
 
     <!-- ================= SCRIPT PRINCIPAL ================= -->
@@ -4145,7 +4149,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
         // =======================================================================
         // PÁGINA DE INICIO Y NAVEGACIÓN (#inicio | #sets-cache)
         // =======================================================================
-        const ROUTES = { "inicio": "view-home", "sets-cache": "view-sets", "items": "view-items", "vender": "view-vender", "compro": "view-compro" };
+        const ROUTES = { "inicio": "view-home", "sets-cache": "view-sets", "items": "view-items", "vender": "view-vender", "compro": "view-compro", "paginas-web": "view-web" };
         function currentRoute() {
             const h = location.hash.replace(/^#\/?/, "");
             if (/^item\//.test(h) || /^items\//.test(h)) return "items";
@@ -4155,7 +4159,7 @@ a.wa-user, a.wa-user:visited { color: #ffb4b8 !important; text-decoration: under
             const route = currentRoute();
             Object.entries(ROUTES).forEach(([r, id]) => { document.getElementById(id).hidden = r !== route; });
             document.querySelectorAll(".nav-link[data-route]").forEach(a => a.classList.toggle("active", a.dataset.route === route));
-            document.title = route === "items" ? "Comprar items • LitleJacob Store" : route === "vender" ? "Vender items • LitleJacob Store" : route === "sets-cache" ? "Sets Caché • LitleJacob Store" : route === "compro" ? "Compro inventarios y cuentas • LitleJacob Store" : "LitleJacob Store • Items, Sets y Rifas de Dota 2";
+            document.title = route === "items" ? "Comprar items • LitleJacob Store" : route === "vender" ? "Vender items • LitleJacob Store" : route === "sets-cache" ? "Sets Caché • LitleJacob Store" : route === "compro" ? "Compro inventarios y cuentas • LitleJacob Store" : route === "paginas-web" ? "Creación de páginas web • LitleJacob Store" : "LitleJacob Store • Items, Sets y Rifas de Dota 2";
             const hint = document.getElementById("adminHint");
             if (hint) hint.textContent = route === "inicio"
                 ? "Toca los espacios a los lados del nombre para subir tus logos. Usa “Editar comunidad” para el grupo de WhatsApp."

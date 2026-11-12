@@ -980,7 +980,8 @@
     var lock = !(estado.secciones && estado.secciones.items) && admin.puede ? " 🔒" : "";
     return '<a class="nav-link" href="index.html#inicio">Inicio</a><a class="nav-link" href="index.html#sets-cache">Sets Caché</a><a class="nav-link" href="index.html#compro">Compro</a>' +
       (on ? '<a class="nav-link" href="index.html#items">Comprar items' + lock + '</a><a class="nav-link" href="index.html#vender">Vender items' + lock + '</a>' : '') +
-      (admin.puede || rifasOn() ? '<a class="nav-link nav-link-rifas active" href="rifas.html" aria-current="page">Rifas' + (rifasOn() ? '' : ' 🔒') + '</a>' : '');
+      (admin.puede || rifasOn() ? '<a class="nav-link nav-link-rifas active" href="rifas.html" aria-current="page">Rifas' + (rifasOn() ? '' : ' 🔒') + '</a>' : '') +
+      '<a class="nav-link" href="index.html#paginas-web">Páginas web</a>';
   }
   // Menú desplegable de usuario (mismo que la tienda y que Rayas Store).
   function menuUsuarioHtml() {
@@ -1359,7 +1360,7 @@
       '<span class="logo"><img class="logo-img" src="favicon.png" alt="" width="36" height="36" loading="lazy">Litlejacob <i>Store</i></span>' +
       '<nav class="fnav" aria-label="Enlaces rápidos"><a href="index.html#inicio">Inicio</a><a href="index.html#sets-cache">Sets Caché</a><a href="index.html#compro">Compro</a>' +
         (admin.puede || rifasOn() ? '<a href="#rifas">Rifas</a><a href="#como">Cómo participar</a><a href="#ganadores">Ganadores</a><a href="#reglas">Reglas</a>' : '') +
-        (admin.puede || (estado.secciones && estado.secciones.items) ? '<a href="index.html#items">Comprar items</a><a href="index.html#vender">Vender items</a>' : '') + '</nav>' +
+        (admin.puede || (estado.secciones && estado.secciones.items) ? '<a href="index.html#items">Comprar items</a><a href="index.html#vender">Vender items</a>' : '') + '<a href="index.html#paginas-web">Páginas web</a></nav>' +
       (V ? '<button type="button" class="btn btn-ghost btn-sm" data-a="editContactos">✎ Editar contactos de WhatsApp</button>'
          : (contactos().length ? '<span>WhatsApp: ' + contactos().map(function (c) { return esc(c.nombre) + ' <span class="wa">' + esc(waBonito(c.numero)) + '</span>'; }).join(' · ') + '</span>' : '')) +
       tx("span", "pie") +
