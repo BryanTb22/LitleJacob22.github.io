@@ -33,7 +33,7 @@
       '<span class="lj-pie2-wa">WhatsApp: LitleJacob <b>+51 952 997 030</b> · Rayas <b>+51 900 049 694</b></span></div>' +
       '<nav class="lj-pie2-nav" aria-label="Enlaces rápidos"><a href="index.html#inicio">Inicio</a><a href="index.html#sets-cache">Sets Caché</a><a href="index.html#compro">Compro</a>' +
       '<a href="index.html#items" data-itx-nav="" data-itx-label="Comprar items" hidden>Comprar items</a><a href="index.html#vender" data-itx-nav="" data-itx-label="Vender items" hidden>Vender items</a>' +
-      '<a href="rifas.html" class="nav-link-rifas">Rifas</a></nav>' +
+      '<a href="rifas.html" class="nav-link-rifas">Rifas</a><a href="index.html#paginas-web">Páginas web</a></nav>' +
       '<small>No afiliado a Valve. Dota 2 es una marca de Valve Corporation.</small>';
     ult.insertAdjacentElement("afterend", d);
     try { window.dispatchEvent(new Event("lj-cfg")); } catch (e) { /* nada */ }   // items.js muestra u oculta Comprar/Vender según la configuración
